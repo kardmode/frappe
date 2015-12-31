@@ -14,7 +14,7 @@ def get_pdf(html, options=None):
 		"print-media-type": None,
 		"background": None,
 		"images": None,
-		'margin-top': '15mm',
+		'margin-top': '34mm',
 		'margin-right': '15mm',
 		'margin-bottom': '15mm',
 		'margin-left': '15mm',
@@ -25,6 +25,12 @@ def get_pdf(html, options=None):
 
 	if frappe.session and frappe.session.sid:
 		options['cookie'] = [('sid', '{0}'.format(frappe.session.sid))]
+		
+	fontname = frappe.db.get_single_value("Print Settings", "font")
+	fontsize = frappe.db.get_single_value("Print Settings", "font_size") or 9
+
+	options['footer-font-name'] = fontname
+	options['footer-font-size'] = fontsize
 
 	if not options.get("page-size"):
 		options['page-size'] = frappe.db.get_single_value("Print Settings", "pdf_page_size") or "A4"

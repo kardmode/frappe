@@ -122,6 +122,23 @@ def get_html(doc, name=None, print_format=None, meta=None,
 
 	return html
 
+	
+@frappe.whitelist()
+def make_pdf_header(doc, template=None, type=None):
+	
+	from frappe.utils import get_request_site_address
+	path = frappe.utils.get_request_site_address()
+	if template:
+		template = template.replace("/", path+"/", 1)
+	
+	if type == 1:
+		return doc.get("letter_head") + "-footer.html"
+	
+	return doc.get("letter_head") + "-header.html"
+
+
+	
+	
 @frappe.whitelist()
 def get_html_and_style(doc, name=None, print_format=None, meta=None,
 	no_letterhead=None, trigger_print=False):
@@ -142,9 +159,23 @@ def get_html_and_style(doc, name=None, print_format=None, meta=None,
 
 @frappe.whitelist()
 def download_pdf(doctype, name, format=None):
+	
+	
 	html = frappe.get_print(doctype, name, format)
 	frappe.local.response.filename = "{name}.pdf".format(name=name.replace(" ", "-").replace("/", "-"))
-	frappe.local.response.filecontent = get_pdf(html)
+	doc = frappe.get_doc(doctype, name)
+	
+	no_letterhead = 0
+	letter_head = get_letter_head(doc, no_letterhead,0)
+	fname = make_pdf_header(doc,letter_head,0)
+	
+	options = {}
+	options.update({
+		'header-html' : fname,
+		'footer-right': 'Page [page] of [toPage]'
+	})
+	
+	frappe.local.response.filecontent = get_pdf(html,options)
 	frappe.local.response.type = "download"
 
 def validate_print_permission(doc):
@@ -157,13 +188,19 @@ def validate_print_permission(doc):
 			and not frappe.has_website_permission(doc.doctype, ptype, doc)):
 			raise frappe.PermissionError(_("No {0} permission").format(ptype))
 
-def get_letter_head(doc, no_letterhead):
+def get_letter_head(doc, no_letterhead, type=None):
 	if no_letterhead:
 		return ""
 	if doc.get("letter_head"):
+		if type == 1:
+			return frappe.db.get_value("Letter Head", doc.letter_head, "footer")
+
 		return frappe.db.get_value("Letter Head", doc.letter_head, "content")
 	else:
+		if type == 1:
+			return frappe.db.get_value("Letter Head", doc.letter_head, "footer")
 		return frappe.db.get_value("Letter Head", {"is_default": 1}, "content") or ""
+
 
 def get_print_format(doctype, print_format):
 	if print_format.disabled:
