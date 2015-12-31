@@ -75,7 +75,7 @@ def get_bootinfo():
 
 def load_conf_settings(bootinfo):
 	from frappe import conf
-	bootinfo.max_file_size = conf.get('max_file_size') or 5242880
+	bootinfo.max_file_size = conf.get('max_file_size') or 10485760
 	for key in ['developer_mode']:
 		if key in conf: bootinfo[key] = conf.get(key)
 
@@ -119,7 +119,7 @@ def get_fullnames():
 	ret = frappe.db.sql("""select name,
 		concat(ifnull(first_name, ''),
 			if(ifnull(last_name, '')!='', ' ', ''), ifnull(last_name, '')) as fullname,
-			user_image as image, gender, email
+			user_image as image, gender, email, username
 		from tabUser where enabled=1 and user_type!="Website User" """, as_dict=1)
 
 	d = {}

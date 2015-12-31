@@ -10,6 +10,7 @@ from frappe.desk.notifications import clear_notifications
 from frappe.utils.user import get_system_managers
 import frappe.permissions
 import frappe.share
+import re
 
 STANDARD_USERS = ("Guest", "Administrator")
 
@@ -38,6 +39,8 @@ class User(Document):
 		self.update_gravatar()
 		self.ensure_unique_roles()
 		self.remove_all_roles_for_guest()
+		self.validate_username()
+
 		if self.language == "Loading...":
 			self.language = None
 
@@ -85,7 +88,7 @@ class User(Document):
 		self.share_with_self()
 		clear_notifications(user=self.name)
 		frappe.clear_cache(user=self.name)
-		self.send_password_notifcation(self.__new_password)
+		self.send_password_notification(self.__new_password)
 
 	def share_with_self(self):
 		if self.user_type=="System User":
@@ -103,7 +106,7 @@ class User(Document):
 			else:
 				frappe.throw(_("Sorry! Sharing with Website User is prohibited."))
 
-	def send_password_notifcation(self, new_password):
+	def send_password_notification(self, new_password):
 		try:
 			if self.in_insert:
 				if self.name not in STANDARD_USERS:
@@ -295,6 +298,48 @@ class User(Document):
 				self.get("user_roles").remove(d)
 			else:
 				exists.append(d.role)
+
+	def validate_username(self):
+		if not self.username and self.is_new() and self.first_name:
+			self.username = frappe.scrub(self.first_name)
+
+		if not self.username:
+			return
+
+		# strip space and @
+		self.username = self.username.strip(" @")
+
+		if self.username_exists():
+			frappe.msgprint(_("Username {0} already exists").format(self.username))
+			self.suggest_username()
+			self.username = ""
+
+		# should be made up of characters, numbers and underscore only
+		if self.username and not re.match(r"^[\w]+$", self.username):
+			frappe.msgprint(_("Username should not contain any special characters other than letters, numbers and underscore"))
+			self.username = ""
+
+	def suggest_username(self):
+		def _check_suggestion(suggestion):
+			if self.username != suggestion and not self.username_exists(suggestion):
+				return suggestion
+
+			return None
+
+		# @firstname
+		username = _check_suggestion(frappe.scrub(self.first_name))
+
+		if not username:
+			# @firstname_last_name
+			username = _check_suggestion(frappe.scrub("{0} {1}".format(self.first_name, self.last_name or "")))
+
+		if username:
+			frappe.msgprint(_("Suggested Username: {0}").format(username))
+
+		return username
+
+	def username_exists(self, username=None):
+		return frappe.db.get_value("User", {"username": username or self.username, "name": ("!=", self.name)})
 
 @frappe.whitelist()
 def get_languages():
@@ -490,3 +535,7 @@ def notifify_admin_access_to_system_manager(login_manager=None):
 		frappe.sendmail(recipients=get_system_managers(), subject=_("Administrator Logged In"),
 			message=message, bulk=True)
 
+def extract_mentions(txt):
+	"""Find all instances of @username in the string.
+	The mentions will be separated by non-word characters or may appear at the start of the string"""
+	return re.findall(r'(?:[^\w]|^)@([\w]*)', txt)

@@ -114,7 +114,9 @@ def install_app(name, verbose=False, set_as_patched=True):
 		frappe.only_for("System Manager")
 
 	for before_install in app_hooks.before_install or []:
-		frappe.get_attr(before_install)()
+		out = frappe.get_attr(before_install)()
+		if out==False:
+			return
 
 	if name != "frappe":
 		add_module_defs(name)
@@ -197,7 +199,7 @@ def set_all_patches_as_completed(app):
 			frappe.get_doc({
 				"doctype": "Patch Log",
 				"patch": patch
-			}).insert()
+			}).insert(ignore_permissions=True)
 		frappe.db.commit()
 
 def init_singles():
