@@ -122,6 +122,39 @@ def get_html(doc, name=None, print_format=None, meta=None,
 
 	return html
 
+@frappe.whitelist()
+def download_multi_pdf(doctype, name, format=None):
+
+	totalhtml = ""
+	pagebreak = """<p style="page-break-after:always;"></p>"""
+	names = name.split("-")   
+
+	for ss in names:
+		if ss:
+			html = frappe.get_print(doctype, ss, format)
+			if ss == names[len(names)-1]:
+				totalhtml = totalhtml + html
+			else:
+				totalhtml = totalhtml + html + pagebreak
+	
+	doc = frappe.get_doc(doctype, ss)	
+	no_letterhead = 0
+	letter_head = get_letter_head(doc, no_letterhead,0)
+	fname = make_pdf_header(doc,letter_head,0)
+	
+	frappe.local.response.filename = "{doctype}.pdf".format(doctype=doctype.replace(" ", "-").replace("/", "-"))
+
+	options = {}
+	options.update({
+		'header-html' : fname,
+				'title': doctype,
+		'header-spacing': '0'
+	})
+	
+	frappe.local.response.filecontent = get_pdf(totalhtml,options)
+	frappe.local.response.type = "download"
+	
+	
 	
 @frappe.whitelist()
 def make_pdf_header(doc, template=None, type=None):
@@ -131,11 +164,27 @@ def make_pdf_header(doc, template=None, type=None):
 	if template:
 		template = template.replace("/", path+"/", 1)
 	
-	if type == 1:
-		return doc.get("letter_head") + "-footer.html"
-	
-	return doc.get("letter_head") + "-header.html"
+		if doc.get("company"):
+			letter_head = frappe.db.get_value("Company", doc.company, "default_letter_head") or ""
+			if not letter_head:
+				return ""
+		elif doc.get("letter_head"):
+			letter_head = doc.letter_head
 
+		if type == 1:
+			fname = letter_head + "-footer.html"
+		else:
+			fname = letter_head + "-header.html"
+
+		f = open(fname,'w')
+		message = """<!DOCTYPE html><head></head><body style="margin:0; padding:0;">""" + template + """</body></html>"""
+		letterheadhtml = message
+		f.write(letterheadhtml)
+		f.close()
+	
+		return fname
+	else:
+		return ""
 
 	
 	
@@ -165,6 +214,10 @@ def download_pdf(doctype, name, format=None):
 	frappe.local.response.filename = "{name}.pdf".format(name=name.replace(" ", "-").replace("/", "-"))
 	doc = frappe.get_doc(doctype, name)
 	
+	footer_right = 1
+	if doctype == "Salary Slip":
+		footer_right = 0
+	
 	no_letterhead = 0
 	letter_head = get_letter_head(doc, no_letterhead,0)
 	fname = make_pdf_header(doc,letter_head,0)
@@ -172,8 +225,14 @@ def download_pdf(doctype, name, format=None):
 	options = {}
 	options.update({
 		'header-html' : fname,
-		'footer-right': 'Page [page] of [toPage]'
+		'title': name
 	})
+	
+	if footer_right:
+		options.update({
+			'footer-right': 'Page [page] of [toPage]'
+		})		
+
 	
 	frappe.local.response.filecontent = get_pdf(html,options)
 	frappe.local.response.type = "download"
@@ -191,14 +250,20 @@ def validate_print_permission(doc):
 def get_letter_head(doc, no_letterhead, type=None):
 	if no_letterhead:
 		return ""
-	if doc.get("letter_head"):
+	if doc.get("company"):
+		letter_head = frappe.db.get_value("Company", doc.company, "default_letter_head") or ""
+		if not letter_head:
+			return ""
 		if type == 1:
-			return frappe.db.get_value("Letter Head", doc.letter_head, "footer")
-
-		return frappe.db.get_value("Letter Head", doc.letter_head, "content")
+			return frappe.db.get_value("Letter Head", letter_head, "footer") or ""
+		return frappe.db.get_value("Letter Head", letter_head, "content") or ""
+	elif doc.get("letter_head"):
+		if type == 1:
+			return frappe.db.get_value("Letter Head", doc.letter_head, "footer") or ""
+		return frappe.db.get_value("Letter Head", doc.letter_head, "content") or ""
 	else:
 		if type == 1:
-			return frappe.db.get_value("Letter Head", doc.letter_head, "footer")
+			return frappe.db.get_value("Letter Head", {"is_default": 1}, "footer") or ""
 		return frappe.db.get_value("Letter Head", {"is_default": 1}, "content") or ""
 
 

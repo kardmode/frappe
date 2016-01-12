@@ -39,12 +39,19 @@ def trigger_email_alerts(doc, method=None):
 			if alert.event=="Days After":
 				diff_days = -diff_days
 
-			for name in frappe.db.sql_list("""select name from `tab{0}` where
+				for name in frappe.db.sql_list("""select name from `tab{0}` where
 				DATE({1}) = ADDDATE(DATE(%s), INTERVAL %s DAY)""".format(alert.document_type, alert.date_changed),
 					(nowdate(), diff_days or 0)):
 
-				evaluate_alert(frappe.get_doc(alert.document_type, name),
+					evaluate_alert(frappe.get_doc(alert.document_type, name),
 					alert, alert.event)
+			else:
+				for name in frappe.db.sql_list("""select name from `tab{0}` where
+					DATE({1}) <= ADDDATE(DATE(%s), INTERVAL %s DAY)""".format(alert.document_type, alert.date_changed),
+						(nowdate(), diff_days or 0)):
+
+					evaluate_alert(frappe.get_doc(alert.document_type, name),
+						alert, alert.event)	
 	else:
 		if method in ("on_update", "validate") and doc.flags.in_insert:
 			# don't call email alerts multiple times for inserts
