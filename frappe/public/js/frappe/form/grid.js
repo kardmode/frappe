@@ -55,6 +55,11 @@ frappe.ui.form.Grid = Class.extend({
 			me.set_focus_on_row();
 			return false;
 		});
+		
+		$(this.wrapper).find(".grid-remove-rows").click(function() {
+			me.remove_rows();
+			return false;
+		});
 
 		this.custom_buttons = {};
 		this.grid_buttons = this.wrapper.find('.grid-buttons');
@@ -142,6 +147,11 @@ frappe.ui.form.Grid = Class.extend({
 			this.last_display_status = this.display_status;
 			this.last_docname = this.frm.docname;
 			frappe.utils.scroll_to(_scroll_y);
+			
+			if(this.df.fieldname == "items"){
+ 				this.frm.script_manager.trigger(this.frm.doc.doctype + "_refresh", this.frm.doc.doctype, this.frm.doc.name);
+ 			}
+			
 		}
 	},
 	setup_toolbar: function() {
@@ -151,12 +161,12 @@ frappe.ui.form.Grid = Class.extend({
 			// show, hide buttons to add rows
 			if(this.cannot_add_rows) {
 				// add 'hide' to buttons
-				this.wrapper.find(".grid-add-row, .grid-add-multiple-rows")
-					.addClass('hide');
+				this.wrapper.find(".grid-add-row, .grid-add-multiple-rows, .grid-remove-rows")
+						.addClass('hide');
 			} else {
 				// show buttons
 				this.wrapper.find(".grid-add-row").removeClass('hide');
-
+				this.wrapper.find(".grid-remove-rows").removeClass('hide')
 				if(this.multiple_set) {
 					this.wrapper.find(".grid-add-multiple-rows").removeClass('hide')
 				}
@@ -429,6 +439,32 @@ frappe.ui.form.Grid = Class.extend({
 		});
 		this.multiple_set = true;
 	},
+	remove_rows: function() {
+		if(this.is_editable()) {
+			var me = this;
+			var dl = this.get_checked_items();
+			console.log(dl);
+			if(!dl.length)
+				return;
+			frappe.confirm(__('Delete rows?'),
+				function() {
+					
+					$.each(dl, function(i, doc){
+						doc.remove();
+						//frappe.model.clear_doc(doc.doctype, doc.name);
+					})
+					
+					me.frm.dirty();
+					me.refresh();
+				}
+			);
+		}
+	},
+	get_checked_items: function() {
+		return $.map($(this.wrapper).find('.grid-delete:checked'), function(e) {
+			return $(e).parents(".grid-row:first").data("grid_row");
+		});
+	},
 	setup_allow_bulk_edit: function() {
 		var me = this;
 		if(this.frm.get_docfield(this.df.fieldname).allow_bulk_edit) {
@@ -552,7 +588,17 @@ frappe.ui.form.GridRow = Class.extend({
 	},
 	make: function() {
 		var me = this;
-		this.wrapper = $('<div class="grid-row"></div>').appendTo(this.parent).data("grid_row", this);
+		//this.wrapper = $('<div class="grid-row"></div>').appendTo(this.parent).data("grid_row", this);
+		
+		// Selectable rows
+		if(this.doc && this.grid.is_editable())
+			txt = '<input class="grid-delete" type="checkbox">';
+		else
+			txt = '';
+
+		this.wrapper = $('<div class="grid-row">'+txt+'</div>').appendTo(this.parent).data("grid_row", this);
+		
+		
 		this.row = $('<div class="data-row row sortable-handle"></div>').appendTo(this.wrapper)
 			.on("click", function() {
 				if(me.grid.allow_on_grid_editing() && me.grid.is_editable()) {
@@ -562,6 +608,8 @@ frappe.ui.form.GridRow = Class.extend({
 					return false;
 				}
 			});
+		
+			
 
 		if(this.grid.template && !this.grid.meta.editable_grid) {
 			this.render_template();

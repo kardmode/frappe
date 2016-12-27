@@ -46,6 +46,10 @@ frappe.ui.form.on('User', {
 		frm.toggle_display(['sb1', 'sb3', 'modules_access'], false);
 
 		if(!doc.__islocal){
+			frm.add_custom_button(__("Update TFA"), function() {
+				frm.events.update_tfa(frm);
+			});
+			
 			frm.add_custom_button(__("Set Desktop Icons"), function() {
 				frappe.route_options = {
 					"user": doc.name
@@ -76,6 +80,42 @@ frappe.ui.form.on('User', {
 				}
 			}
 		}
+	},
+	update_tfa: function(frm) {
+		return frappe.call({
+			doc: frm.doc,
+			method: "update_tfa",
+			freeze: true,
+			callback: function(r) {
+				console.log(r);
+				if(r.message){
+					cur_frm.set_value("secret_key", r.message);
+					frm.save();
+					script = "<script type='text/javascript' src='assets/js/qrcode.min.js'></script>";
+					div = "<div id='qrcode'></div>";
+					
+				
+					html = script + div;
+					dialog = new frappe.ui.Dialog({
+							title: __('Use the authenticator app to set up two factor authentication.'),
+							  fields: [
+								  {fieldtype: "Section Break"},
+								  {"fieldtype": "HTML" , "fieldname": "Message" , "label": "Message", "options": html},
+
+								],
+
+						  });
+					authstring = "otpauth://totp/" + frm.doc.email + "?secret=" + r.message;
+					new QRCode(document.getElementById("qrcode"), authstring);
+
+					dialog.show()
+					
+					
+					
+				}
+					
+			}
+		})
 	},
 	validate: function(frm) {
 		if(frm.roles_editor) {

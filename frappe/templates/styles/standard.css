@@ -8,7 +8,7 @@
 		box-shadow: 0px 0px 9px rgba(0,0,0,0.5);
 		max-width: 8.3in;
 		min-height: 11.69in;
-		padding: 0.75in;
+		padding: 0.5in;
 	    margin: auto;
 	}
 
@@ -125,7 +125,8 @@ table.no-border, table.no-border td {
 
 .print-format td, .print-format th {
 	vertical-align: top !important;
-	padding: 6px !important;
+	padding: 3px !important;
+	line-height = 1 !important;
 }
 
 .print-format p {
@@ -143,5 +144,10 @@ table td div {
 }
 
 [document-status] {
-	margin-bottom: 5mm;
+	margin-bottom: 1mm;
+}
+
+.print-format hr {
+	margin-top:10px !important;
+	margin-bottom:10px !important;
 }

@@ -185,14 +185,21 @@ def validate_print_permission(doc):
 		if (not frappe.has_permission(doc.doctype, ptype, doc)
 			and not frappe.has_website_permission(doc)):
 			raise frappe.PermissionError(_("No {0} permission").format(ptype))
-
 def get_letter_head(doc, no_letterhead):
 	if no_letterhead:
 		return {}
 	if doc.get("letter_head"):
 		return frappe.db.get_value("Letter Head", doc.letter_head, ["content", "footer"], as_dict=True)
+	
+	elif doc.get("company"):
+		letter_head = frappe.db.get_value("Company", doc.company, "default_letter_head") or ""
+		if letter_head:
+			return frappe.db.get_value("Letter Head", letter_head, ["content", "footer"], as_dict=True)
+		else:
+			return {}
 	else:
 		return frappe.db.get_value("Letter Head", {"is_default": 1}, ["content", "footer"], as_dict=True) or {}
+
 
 def get_print_format(doctype, print_format):
 	if print_format.disabled:

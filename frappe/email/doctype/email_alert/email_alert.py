@@ -69,21 +69,46 @@ def get_context(context):
 	def get_documents_for_today(self):
 		'''get list of documents that will be triggered today'''
 		docs = []
-
+		
 		diff_days = self.days_in_advance
+
 		if self.event=="Days After":
 			diff_days = -diff_days
+			
+			for name in frappe.db.sql_list("""select name from `tab{0}` where
+			DATE(`{1}`) >= ADDDATE(DATE(%s), INTERVAL %s DAY)""".format(self.document_type,
+				self.date_changed), (nowdate(), diff_days or 0)):
+				
+				doc = frappe.get_doc(self.document_type, name)
 
-		for name in frappe.db.sql_list("""select name from `tab{0}` where
+				if self.condition and not eval(self.condition, get_context(doc)):
+					continue
+
+				docs.append(doc)
+		elif self.event=="Days Before":
+
+			for name in frappe.db.sql_list("""select name from `tab{0}` where
+			DATE(`{1}`) <= ADDDATE(DATE(%s), INTERVAL %s DAY)""".format(self.document_type, self.date_changed),
+					(nowdate(), diff_days or 0)):
+					
+				doc = frappe.get_doc(self.document_type, name)
+
+				if self.condition and not eval(self.condition, get_context(doc)):
+					continue
+
+				docs.append(doc)
+		else:
+			for name in frappe.db.sql_list("""select name from `tab{0}` where
 			DATE(`{1}`) = ADDDATE(DATE(%s), INTERVAL %s DAY)""".format(self.document_type,
 				self.date_changed), (nowdate(), diff_days or 0)):
+				
+				doc = frappe.get_doc(self.document_type, name)
 
-			doc = frappe.get_doc(self.document_type, name)
+				if self.condition and not eval(self.condition, get_context(doc)):
+					continue
 
-			if self.condition and not eval(self.condition, get_context(doc)):
-				continue
-
-			docs.append(doc)
+				docs.append(doc)
+			
 
 		return docs
 

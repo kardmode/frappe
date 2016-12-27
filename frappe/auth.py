@@ -127,6 +127,8 @@ class LoginManager:
 		self.set_user_info()
 
 	def set_user_info(self, resume=False):
+		frappe.db.set_value("User", self.user, "invalid_login_attempts", 0)
+
 		# set sid again
 		frappe.local.cookie_manager.init_cookies()
 
@@ -180,11 +182,13 @@ class LoginManager:
 			clear_sessions(frappe.session.user, keep_current=True)
 
 	def authenticate(self, user=None, pwd=None):
+		self.validate_ban_list()
+		
 		if not (user and pwd):
 			user, pwd = frappe.form_dict.get('usr'), frappe.form_dict.get('pwd')
 		if not (user and pwd):
 			self.fail('Incomplete login details')
-
+		
 		self.check_if_enabled(user)
 		self.user = self.check_password(user, pwd)
 
@@ -200,8 +204,44 @@ class LoginManager:
 			# returns user in correct case
 			return check_password(user, pwd)
 		except frappe.AuthenticationError:
-			self.fail('Incorrect password')
+			max_attempts = frappe.db.get_value('System Settings', None, 'max_invalid_login_attempts') or 5
+			attempts = frappe.db.get_value('User', user, 'invalid_login_attempts') or 0
+			attempts = int(attempts) + 1
+			frappe.db.sql('update tabUser set invalid_login_attempts=%s where name=%s', (str(attempts), user))
+			frappe.db.commit()
 
+			if attempts > int(max_attempts):
+				
+				ip_list = frappe.db.get_value('System Settings', None, 'ban_ip', ignore=True)
+				if ip_list:	
+					if not self.test_ip(ip_list):
+						ip_list = str(ip_list) + ',' + str(frappe.local.request_ip)
+						frappe.db.sql('update tabSystem Settings set ban_ip=%s', (str(ip_list)))
+
+				else:
+					ip_list = str(frappe.local.request_ip)
+					frappe.db.sql('update tabSystem Settings set ban_ip=%s', (str(ip_list)))
+
+				
+				frappe.db.sql('update tabUser set enabled=0 where name=%s', (user))
+				frappe.db.commit()
+
+				self.fail('Max invalid login attempts')
+			else:
+				self.fail('Incorrect password')
+
+	def test_ip(self,ip_list):
+	
+		test_ip_list = ip_list
+		test_ip_list = test_ip_list.replace(",", "\n").split('\n')
+		test_ip_list = [i.strip() for i in test_ip_list]
+		for ip in test_ip_list:
+			if frappe.local.request_ip.startswith(ip):
+				return true
+				
+		return false
+
+	
 	def fail(self, message):
 		frappe.local.response['message'] = message
 		raise frappe.AuthenticationError
@@ -209,21 +249,53 @@ class LoginManager:
 	def run_trigger(self, event='on_login'):
 		for method in frappe.get_hooks().get(event, []):
 			frappe.call(frappe.get_attr(method), login_manager=self)
-
-	def validate_ip_address(self):
+	
+	def validate_ban_list(self):
 		"""check if IP Address is valid"""
+		global_ban_list = frappe.db.get_value('System Settings', None, 'ban_ip', ignore=True)
+
+		if global_ban_list:
+			global_ban_list = global_ban_list.replace(",", "\n").split('\n')
+			global_ban_list = [i.strip() for i in global_ban_list]
+			for ip in global_ban_list:
+				if frappe.local.request_ip.startswith(ip):
+					frappe.throw(_("Authentication Error"), frappe.AuthenticationError)
+					
+		global_ip_list = frappe.db.get_value('System Settings', None, 'restrict_ip', ignore=True)
+
+		if not global_ip_list:
+			return
+		
+		global_ip_list = global_ip_list.replace(",", "\n").split('\n')
+		global_ip_list = [i.strip() for i in global_ip_list]
+		for ip in global_ip_list:
+			if frappe.local.request_ip.startswith(ip):
+				return 
+		
+		frappe.throw(_("Authentication Error"), frappe.AuthenticationError)	
+		
+	def validate_ip_address(self):
+
+		"""check if IP Address is valid"""
+
 		ip_list = frappe.db.get_value('User', self.user, 'restrict_ip', ignore=True)
+		
+			
+		
 		if not ip_list:
 			return
-
+		
 		ip_list = ip_list.replace(",", "\n").split('\n')
 		ip_list = [i.strip() for i in ip_list]
-
 		for ip in ip_list:
 			if frappe.local.request_ip.startswith(ip):
-				return
+				return 
+		
+		
+			
+		frappe.throw(_("Authentication Error"), frappe.AuthenticationError)
 
-		frappe.throw(_("Not allowed from this IP Address"), frappe.AuthenticationError)
+	
 
 	def validate_hour(self):
 		"""check if user is logging in during restricted hours"""

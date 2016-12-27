@@ -111,3 +111,16 @@
     border-bottom: 0px;
   }
 }
+
+
+.module-body .section-head {
+  font-size:20px;
+  font-weight:bold;
+}
+.module-section .module-section-link {
+  font-size: 16px;
+}
+.module-sidebar-item{
+	
+	font-size:medium;
+}

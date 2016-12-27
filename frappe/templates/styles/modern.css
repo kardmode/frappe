@@ -1,19 +1,48 @@
 .print-heading {
 	text-align: right;
 	text-transform: uppercase;
-	color: #666;
-	padding-bottom: 20px;
-	margin-bottom: 20px;
-	border-bottom: 1px solid #d1d8dd;
+	font-color: #888;
+	font-weight: bold;
+	padding-bottom: 7px;
+	margin-bottom: 15px;
+	border-bottom: 3px solid #aaa;
 }
 
-.print-heading h2 {
-	font-size: 24px;
+.print-format table.table-bordered {
+	border-top: 2px solid #aaa;
 }
 
 .print-format th {
 	background-color: #eee !important;
-	border-bottom: 0px !important;
 }
 
-/* modern format: don't remove this line */
+.rTable {   	display: table;   	width: 100%; } 
+.rTableRow {   	display: table-row; } 
+.rTableHeading {   	display: table-header-group;   	background-color: #ddd; } 
+.rTableCell, .rTableHead {   	display: table-cell;   	padding: 3px 10px;   	border: 1px solid #ddd; } 
+.rTableHead {   	background-color: #eee; border-color:#ccc } 
+.rTableHeading {   	display: table-header-group;   	background-color: #ddd;   	font-weight: bold; } 
+.rTableFoot {   	display: table-footer-group;   	font-weight: bold;   	background-color: #ddd; } 
+.rTableBody {   	display: table-row-group; } 
+
+
+[document-status] {
+	margin-bottom: 0 !important;
+}
+
+.signature-box{
+	height: 100px;
+}
+
+.signature-box img{
+	margin:10px auto;
+	max-height:150px;
+}
+
+img.stamp{
+	margin-left:40px;
+}
+
+.letter-head-header{
+
+}

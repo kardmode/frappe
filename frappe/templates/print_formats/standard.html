@@ -1,25 +1,16 @@
 {%- from "templates/print_formats/standard_macros.html" import add_header,
 	 render_field -%}
+	 
+	 <div {% if print_settings.repeat_header_footer %} id="header-html" class="hidden-pdf" {% endif %}>
+		{{ add_header(1, layout|len, doc, letter_head, no_letterhead, footer, print_settings) }}
+	</div>
+
 
 {% for page in layout %}
 <div class="page-break">
-	<div {% if print_settings.repeat_header_footer %} id="header-html" class="hidden-pdf" {% endif %}>
-		{{ add_header(loop.index, layout|len, doc, letter_head, no_letterhead, footer, print_settings) }}
-	</div>
+	
 
-	{% if print_settings.repeat_header_footer %}
-	<div id="footer-html" class="visible-pdf">
-		{% if not no_letterhead and footer %}
-		<div class="letter-head-footer">
-			{{ footer }}
-		</div>
-		{% endif %}
-		<p class="text-center small page-number visible-pdf">
-			{{ _("Page {0} of {1}").format('<span class="page"></span>', '<span class="topage"></span>') }}
-		</p>
-	</div>
-	{% endif %}
-
+	
     {% for section in page %}
     <div class="row section-break">
 		{%- if doc._line_breaks and loop.index != 1 -%}<hr>{%- endif -%}
@@ -35,5 +26,25 @@
         {% endfor %}
     </div>
     {% endfor %}
+	
+	<div id="footer-html" class="visible-pdf">
+	{% if print_settings.repeat_header_footer %}
+		
+			{% if not no_letterhead and footer %}
+			<div class="letter-head-footer">
+				{{ footer }}
+			</div>
+			{% endif %}
+			
+	{% else %}
+	 <div id="variables" style="display: none;"><span id="margin-bottom">25mm</span></div>
+	{% endif %}
+	{% if layout|len > 1 %}
+		<p class="text-right small page-number visible-pdf">
+			{{ _("{0} of {1}").format('<span class="page"></span>', '<span class="topage"></span>') }}
+		</p>
+		{% endif %}
+	</div>
+	
 </div>
 {% endfor %}

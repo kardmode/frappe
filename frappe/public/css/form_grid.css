@@ -203,3 +203,6 @@
   margin-right: 8px;
   margin-bottom: 4px;
 }
+.form-grid .grid-row.highlight-custom {
+    background-color: #ddd;
+  }

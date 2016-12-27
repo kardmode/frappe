@@ -171,8 +171,9 @@ frappe.views.QueryReport = Class.extend({
 
 			frappe.render_grid({content:content, title:__(this.report_name)});
 		} else {
-			frappe.render_grid({grid:this.grid, report: this, title:__(this.report_name)});
-		}
+			var title = this.get_title();
+
+			frappe.render_grid({grid:this.grid, report: this, title:__(title)});		}
 	},
 	pdf_report: function() {
 		base_url = frappe.urllib.get_base_url(); 
@@ -193,11 +194,13 @@ frappe.views.QueryReport = Class.extend({
 		} else {
 			var columns = this.grid.getColumns();
 			var data = this.grid.getData().getItems();
-			var content = frappe.render_template("print_grid", {columns:columns, data:data, title:__(this.report_name)})
+			
+			var title = this.get_title();
+			var content = frappe.render_template("print_grid", {columns:columns, data:data,title:__(title)})
 
 			//Render Report in HTML
 			var html = frappe.render_template("print_template",
-				{content:content, title:__(this.report_name), base_url: base_url, print_css: print_css});
+				{content:content, title:__(title), base_url: base_url, print_css: print_css});
 		}
 
 		//Create a form to place the HTML content
@@ -733,7 +736,7 @@ frappe.views.QueryReport = Class.extend({
 		 	function(row) {
 				return [row.splice(1)];
 		});
-		this.title = this.report_name;
+		this.title = this.get_title();
 		frappe.tools.downloadify(result, null, this.title);
 		return false;
 	},
@@ -765,5 +768,26 @@ frappe.views.QueryReport = Class.extend({
 		if(this.chart) {
 			this.chart_area.toggle(true);
 		}
+	},
+	
+	get_title: function(){
+		
+		var filters = this.get_values();
+		var title = this.report_name;
+		var title_enable = false
+		
+		$.each(filters || [], function(i, f) {
+			if (i == "title"){
+				title += " " + f;
+				title_enable = true;
+			}
+		});
+		
+		if (title_enable)
+			return title;
+		$.each(filters || [], function(i, f) {
+			title += " " + f;
+		});
+		return title;
 	}
 })

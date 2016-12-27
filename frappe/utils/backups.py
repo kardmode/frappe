@@ -9,7 +9,7 @@ from __future__ import unicode_literals
 from frappe import _
 import os, frappe
 from datetime import datetime
-from frappe.utils import cstr, get_url, now_datetime
+from frappe.utils import cstr, get_url, now_datetime,cint
 
 #Global constants
 verbose = 0
@@ -58,15 +58,12 @@ class BackupGenerator:
 			self.backup_path_private_files = last_private_file
 
 	def set_backup_file_name(self):
-		import random
+		todays_date = datetime.today().strftime("%d%m%Y_%H%M%S")
 
-		todays_date = now_datetime().strftime('%Y%m%d_%H%M%S')
-		random_string = frappe.generate_hash(length=8)
-
-		#Generate a random name using today's date and a 8 digit random number
-		for_db = todays_date + "_" + random_string + "_database.sql.gz"
-		for_public_files = todays_date + "_" + random_string + "_files.tar"
-		for_private_files = todays_date + "_" + random_string + "_private_files.tar"
+		#Generate a name using today's date with time
+		for_db = todays_date + "_database.sql.gz"
+		for_public_files = todays_date + "_files.tar"
+		for_private_files = todays_date + "_private_files.tar"
 		backup_path = get_backup_path()
 
 		if not self.backup_path_db:
@@ -166,7 +163,8 @@ def scheduled_backup(older_than=6, ignore_files=False, backup_path_db=None, back
 	return odb
 
 def new_backup(older_than=6, ignore_files=False, backup_path_db=None, backup_path_files=None, backup_path_private_files=None, force=False):
-	delete_temp_backups(older_than = frappe.conf.keep_backups_for_hours or 24)
+	older_than = cint(frappe.db.get_value('System Settings', None, 'keep_backups_for'))
+	delete_temp_backups(older_than)
 	odb = BackupGenerator(frappe.conf.db_name, frappe.conf.db_name,\
 						  frappe.conf.db_password,
 						  backup_path_db=backup_path_db, backup_path_files=backup_path_files,

@@ -117,8 +117,7 @@ def check_record(d):
 		val = d[key]
 		if docfield:
 			if docfield.reqd and (val=='' or val==None):
-				frappe.msgprint(_("{0} is required").format(docfield.label), raise_exception=1)
-
+				frappe.msgprint(_("{0} is a required field. Check column for empty cells.").format(docfield.label), raise_exception=1)
 			if docfield.fieldtype=='Select' and val and docfield.options:
 				if val not in docfield.options.split('\n'):
 					frappe.throw(_("{0} must be one of {1}").format(_(docfield.label), comma_or(docfield.options.split("\n"))))

@@ -74,6 +74,14 @@ class User(Document):
 		clear_notifications(user=self.name)
 		frappe.clear_cache(user=self.name)
 		self.send_password_notification(self.__new_password)
+	
+	def update_tfa(self):
+		secret_key = ""
+		from pyotp import TOTP, random_base32
+		secret_key = random_base32()
+		return secret_key
+		
+		
 
 	def has_website_permission(self, ptype, verbose=False):
 		"""Returns true if current user is the session user"""
@@ -473,6 +481,9 @@ class User(Document):
 			frappe.throw(_("Sorry. You have reached the maximum user limit for your subscription. You can either disable an existing user or buy a higher subscription plan."),
 				MaxUsersReachedError)
 
+
+
+				
 @frappe.whitelist()
 def get_timezones():
 	import pytz
