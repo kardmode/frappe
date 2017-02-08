@@ -45,6 +45,16 @@ frappe.ui.form.PrintPreview = Class.extend({
 				me.lang_code = me.language_sel.val()
 				me.multilingual_preview()
 			});
+		
+		me.orientation = "Portrait";		
+		this.orientation_sel = this.wrapper
+			.find(".orientation")
+			.on("change", function(){
+				me.orientation = me.orientation_sel.val()
+			});
+			
+		
+			
 
 		this.wrapper.find(".btn-print-print").click(function() {
 			if(me.is_old_style()) {
@@ -64,16 +74,31 @@ frappe.ui.form.PrintPreview = Class.extend({
 
 		this.wrapper.find(".btn-download-pdf").click(function() {
 			if(!me.is_old_style()) {
-				var w = window.open(
-					frappe.urllib.get_full_url("/api/method/frappe.utils.print_format.download_pdf?"
-					+"doctype="+encodeURIComponent(me.frm.doc.doctype)
-					+"&name="+encodeURIComponent(me.frm.doc.name)
-					+"&format="+me.selected_format()
-					+"&no_letterhead="+(me.with_letterhead() ? "0" : "1")
-					+(me.lang_code ? ("&_lang="+me.lang_code) : "")));
-				if(!w) {
-					msgprint(__("Please enable pop-ups")); return;
+				if(!me.orientation) {
+					me.orientation = "Portrait";
 				}
+				var w = window.open(
+							frappe.urllib.get_full_url("/api/method/frappe.utils.print_format.download_pdf?"
+							+"doctype="+encodeURIComponent(me.frm.doc.doctype)
+							+"&name="+encodeURIComponent(me.frm.doc.name)
+							+"&format="+me.selected_format()
+							+"&no_letterhead="+(me.with_letterhead() ? "0" : "1")
+							+"&orientation="+encodeURIComponent(me.orientation)
+							+(me.lang_code ? ("&_lang="+me.lang_code) : "")));
+						if(!w) {
+							msgprint(__("Please enable pop-ups")); return;
+						}
+				/* frappe.prompt({fieldname:"orientation", fieldtype:"Select", reqd: 1,
+					label: __("Orientation"),
+			options: "Portrait\nLandscape",
+			default: "Portrait"}, function(data) {
+						
+						
+					
+				}, __("Orientation"), __("Print"));
+				 */
+				
+				
 			}
 		});
 
@@ -218,4 +243,49 @@ frappe.ui.form.PrintPreview = Class.extend({
 	set_style: function(style) {
 		frappe.dom.set_style(style || frappe.boot.print_css, "print-style");
 	}
-})
+});
+
+;
+
+frappe.ui.get_print_settings = function(pdf, callback, letter_head) {
+	var print_settings = locals[":Print Settings"]["Print Settings"];
+
+	var default_letter_head = locals[":Company"]
+		? locals[":Company"][frappe.defaults.get_default('company')]["default_letter_head"]
+		: '';
+
+	columns = [{
+		fieldtype: "Check",
+		fieldname: "with_letter_head",
+		label: __("With Letter head")
+	},{
+		fieldtype: "Select",
+		fieldname: "letter_head",
+		label: __("Letter Head"),
+		depends_on: "with_letter_head",
+		options: $.map(frappe.boot.letter_heads, function(i,d){ return d }),
+		default: letter_head || default_letter_head
+	}];
+
+	if(pdf) {
+		columns.push({
+			fieldtype: "Select",
+			fieldname: "orientation",
+			label: __("Orientation"),
+			options: "Landscape\nPortrait",
+			default: "Landscape"
+		})
+	}
+
+	frappe.prompt(columns, function(data) {
+		var data = $.extend(print_settings, data);
+		if(!data.with_letter_head) {
+			data.letter_head = null;
+		}
+		if(data.letter_head) {
+			data.letter_head = frappe.boot.letter_heads[print_settings.letter_head];
+		}
+		callback(data);
+	}, __("Print Settings"));
+}
+

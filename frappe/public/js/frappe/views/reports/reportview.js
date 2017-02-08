@@ -212,7 +212,7 @@ frappe.views.ReportView = frappe.ui.Listing.extend({
 
 	set_route_filters: function(first_load) {
 		var me = this;
-		if(frappe.route_options) {
+		if(frappe.route_options && !this.list_settings.filters) {
 			this.set_filters_from_route_options();
 			return true;
 		} else if(this.list_settings
@@ -522,7 +522,7 @@ frappe.views.ReportView = frappe.ui.Listing.extend({
 		var me = this;
 
 		this.page.add_inner_button(__('Show Totals'), function() {
-			me.add_totals_row = 1 - me.add_totals_row;
+			me.add_totals_row = 1 - (me.add_totals_row ? me.add_totals_row : 0);
 			me.render_list();
 		});
 	},

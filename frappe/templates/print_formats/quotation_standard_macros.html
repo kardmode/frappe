@@ -266,3 +266,36 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
     </div>
 	{%- endif -%}
 {%- endmacro -%}
+
+{%- macro add_sign(doc) -%}
+	{%- if doc.doctype in ("Purchase Order") -%}
+		{{ frappe.db.get_value("Print Fields", "PO Signature", "print_field")}}
+	{%- elif doc.doctype in ("Delivery Note","Invoice","Sales Order","Purchase Receipt") -%}
+		{{ frappe.db.get_value("Print Fields", "DO Signatures", "print_field")}}
+	{%- endif -%}
+
+{%- endmacro -%}
+
+{%- macro add_footer(max_pages,doc,no_letterhead,footer,print_settings=None) -%}
+	<div id="footer-html" class="visible-pdf">
+			<div class="letter-head-footer">
+
+	{{ add_sign(doc) }}
+	
+	{% if print_settings.repeat_header_footer %}
+		
+			{% if not no_letterhead and footer %}
+
+			{{ footer }}
+
+			{% endif %}
+			
+	{% else %}
+	 <div id="variables" style="display: none;"><span id="margin-bottom">25mm</span></div>
+	{% endif %}
+	</div>
+	<p class="text-right small page-number visible-pdf">
+			{{ _("{0} of {1}").format('<span class="page"></span>', '<span class="topage"></span>') }}
+		</p>
+	</div>
+{%- endmacro -%}

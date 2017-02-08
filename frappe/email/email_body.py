@@ -185,10 +185,9 @@ class EMail:
 
 	def set_message_id(self, message_id):
 		if message_id:
-			self.msg_root["Message-Id"] = message_id
+			self.msg_root["Message-Id"] = '<' + message_id + '>'
 		else:
 			self.msg_root["Message-Id"] = get_message_id()
-			self.msg_root["References"] = '<notification>'
 
 	def set_in_reply_to(self, in_reply_to):
 		"""Used to send the Message-Id of a received email back as In-Reply-To"""

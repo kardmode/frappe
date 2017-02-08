@@ -1,6 +1,12 @@
 {% macro render_field(df, doc) -%}
 	{%- if df.fieldtype=="Table" -%}
-		{{ render_table(df, doc) }}
+	
+		{%- if df.fieldname not in ("items")-%}
+			{{ render_table(df, doc) }}
+		{%- else -%}
+			{{ render_table_custom(df, doc) }}
+		{%- endif -%}
+		
 	{%- elif df.fieldtype=="HTML" -%}
 		<div>{{ frappe.render_template(df.options, {"doc": doc}) or "" }}</div>
 	{%- elif df.fieldtype in ("Text", "Text Editor", "Code") -%}
@@ -10,6 +16,52 @@
 		{{ render_image(df, doc) }}
 	{%- else -%}
 		{{ render_field_with_label(df, doc) }}
+	{%- endif -%}
+{%- endmacro -%}
+
+{%- macro render_table_custom(df, doc) -%}
+	{%- set table_meta = frappe.get_meta(df.options) -%}
+	{%- set data = doc.get(df.fieldname)[df.start:df.end] -%}
+	{%- if doc.print_templates and
+			doc.print_templates.get(df.fieldname) -%}
+		{% include doc.print_templates[df.fieldname] %}
+	{%- else -%}
+		{%- if data -%}
+		
+			
+		{%- set visible_columns = get_visible_columns(doc.get(df.fieldname),
+			table_meta, df) -%}
+		<div {{ fieldmeta(df) }}>
+			<table class="table table-bordered table-condensed">
+				<thead>
+					<tr>
+						<th style="width: 40px" class="table-sr">Sr</th>
+						{% for tdf in visible_columns %}
+						{%- if tdf.fieldname not in ("rate","amount") -%}
+							<th style="width: {{ get_width(tdf) }};" class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>
+								{{ _(tdf.label) }}</th>
+						{%- endif -%}
+						{% endfor %}
+					</tr>
+				</thead>
+				<tbody>
+					{% for d in data %}
+					<tr>
+						<td class="table-sr">{{ d.idx }}</td>
+						{% for tdf in visible_columns %}
+												{%- if tdf.fieldname not in ("rate","amount") -%}
+
+							<td class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>
+                                <div class="value">{{ print_value(tdf, d, doc) }}</div></td>
+														{%- endif -%}
+
+						{% endfor %}
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		{%- endif -%}
 	{%- endif -%}
 {%- endmacro -%}
 
@@ -167,7 +219,7 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 {%- macro add_sign(doc) -%}
 	{%- if doc.doctype in ("Purchase Order") -%}
 		{{ frappe.db.get_value("Print Fields", "PO Signature", "print_field")}}
-	{%- elif doc.doctype in ("Delivery Note","Invoice","Sales Order","Purchase Receipt") -%}
+	{%- elif doc.doctype in ("Delivery Note","Invoice","Sales Order") -%}
 		{{ frappe.db.get_value("Print Fields", "DO Signatures", "print_field")}}
 	{%- endif -%}
 

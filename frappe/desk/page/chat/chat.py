@@ -15,7 +15,6 @@ def get_list(arg=None):
 	frappe.form_dict['user'] = frappe.session['user']
 
 	# set all messages as read
-	frappe.db.begin()
 	frappe.db.sql("""UPDATE `tabCommunication` set seen = 1
 		where
 			communication_type in ('Chat', 'Notification')
