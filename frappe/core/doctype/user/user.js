@@ -46,9 +46,18 @@ frappe.ui.form.on('User', {
 		frm.toggle_display(['sb1', 'sb3', 'modules_access'], false);
 
 		if(!doc.__islocal){
-			frm.add_custom_button(__("Update TFA"), function() {
-				frm.events.update_tfa(frm);
-			});
+			if (doc.tfa_enabled)
+			{
+				frm.add_custom_button(__("Disable TFA"), function() {
+					frm.trigger("disable_tfa");
+				});
+				
+			}else{
+				frm.add_custom_button(__("Enable TFA"), function() {
+					frm.trigger("update_tfa");
+				});
+			}
+				
 			
 			frm.add_custom_button(__("Set Desktop Icons"), function() {
 				frappe.route_options = {
@@ -81,34 +90,110 @@ frappe.ui.form.on('User', {
 			}
 		}
 	},
+	disable_tfa: function(frm) {
+		html = "<div id='qrcode'></div>";
+		dialog = new frappe.ui.Dialog({
+				title: __('Use the authenticator app to set up two factor authentication.'),
+				  fields: [
+					  {fieldtype: "Section Break"},
+					  {"fieldtype": "Password" , "fieldname": "password" , "label": "Password"},
+					  {"fieldtype": "Data" , "fieldname": "token" , "label": "Token"},
+					],
+			  });
+		
+
+
+
+		dialog.set_primary_action(__("Verify"), function() {
+			args = dialog.get_values();
+			if(!args) return;
+			
+			return frappe.call({
+				type: "GET",
+				method: "frappe.core.doctype.user.user.verify_tfa",
+				args: {
+					token: args.token,
+					secret_key: frm.doc.secret_key,
+				},
+				freeze: false,
+				callback: function(r) {
+					console.log(r);
+					if(r.message[0]){
+						cur_frm.set_value('tfa_enabled', 0);
+						cur_frm.save();
+					}
+					else{
+						
+					}
+					dialog.hide();
+				}
+			})
+		});
+		
+		dialog.show();
+		
+	},
 	update_tfa: function(frm) {
 		return frappe.call({
-			doc: frm.doc,
-			method: "update_tfa",
-			freeze: true,
+			type: "GET",
+			method: "frappe.core.doctype.user.user.update_tfa",
+			freeze: false,
 			callback: function(r) {
 				console.log(r);
 				if(r.message){
-					cur_frm.set_value("secret_key", r.message);
-					frm.save();
-					script = "<script type='text/javascript' src='assets/js/qrcode.min.js'></script>";
-					div = "<div id='qrcode'></div>";
 					
-				
-					html = script + div;
+					html = "<div id='qrcode'></div>";
 					dialog = new frappe.ui.Dialog({
 							title: __('Use the authenticator app to set up two factor authentication.'),
 							  fields: [
 								  {fieldtype: "Section Break"},
-								  {"fieldtype": "HTML" , "fieldname": "Message" , "label": "Message", "options": html},
-
+								  {"fieldtype": "HTML" , "fieldname": "message" , "label": "Message", "options": html},
+								  {"fieldtype": "Data" , "fieldname": "token" , "label": "Token"},
 								],
 
 						  });
+					
 					authstring = "otpauth://totp/" + frm.doc.email + "?secret=" + r.message;
-					new QRCode(document.getElementById("qrcode"), authstring);
+								
+					var qrcode = new QRCode(document.getElementById("qrcode"), {
+						text: authstring,
+						width: 256,
+						height: 256,
+						colorDark : "#000000",
+						colorLight : "#ffffff",
+						correctLevel : QRCode.CorrectLevel.H
+					});
 
-					dialog.show()
+
+
+					dialog.set_primary_action(__("Verify"), function() {
+						args = dialog.get_values();
+						if(!args) return;
+						
+						return frappe.call({
+							type: "GET",
+							method: "frappe.core.doctype.user.user.verify_tfa",
+							args: {
+								token: args.token,
+								secret_key: r.message,
+							},
+							freeze: false,
+							callback: function(r) {
+								console.log(r);
+								if(r.message[0]){
+									cur_frm.set_value('tfa_enabled', 1);
+									cur_frm.set_value('secret_key', r.message[1]);
+									cur_frm.save();
+								}
+								else{
+									
+								}
+								dialog.hide();
+							}
+						})
+					});
+					
+					dialog.show();
 					
 					
 					

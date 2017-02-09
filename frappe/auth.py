@@ -181,6 +181,22 @@ class LoginManager:
 		if frappe.session.user != "Guest":
 			clear_sessions(frappe.session.user, keep_current=True)
 
+	def tfa_authenticate(self, user=None, pwd=None):
+		if not (user and pwd):
+			user, pwd = frappe.form_dict.get('usr'), frappe.form_dict.get('pwd')
+		if not (user and pwd):
+			self.fail('Incomplete login details', user=user)
+	
+		# tfa_code = frappe.form_dict.get('tfa_code')
+		
+		# if not tfa_code
+			# self.fail('Incomplete login details', user=user)
+			
+		# totp = pyotp.TOTP('base32secret3232')
+		# if totp.verify(tfa_code)
+		
+		
+		
 	def authenticate(self, user=None, pwd=None):
 		self.validate_ban_list()
 		
@@ -226,7 +242,7 @@ class LoginManager:
 				frappe.db.sql('update tabUser set enabled=0 where name=%s', (user))
 				frappe.db.commit()
 
-				self.fail('Max invalid login attempts')
+				self.fail('Max invalid login attempts', user=user)
 			else:
 				self.fail('Incorrect password', user=user)
 

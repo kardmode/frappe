@@ -78,13 +78,7 @@ class User(Document):
 		frappe.clear_cache(user=self.name)
 		self.send_password_notification(self.__new_password)
 	
-	def update_tfa(self):
-		secret_key = ""
-		from pyotp import TOTP, random_base32
-		secret_key = random_base32()
-		return secret_key
-		
-		
+	
 
 	def has_website_permission(self, ptype, verbose=False):
 		"""Returns true if current user is the session user"""
@@ -624,6 +618,21 @@ def sign_up(email, full_name, redirect_to):
 		else:
 			return _("Please ask your administrator to verify your sign-up")
 
+@frappe.whitelist()
+def update_tfa():
+		secret_key = ""
+		from pyotp import random_base32
+		secret_key = random_base32()
+		return secret_key
+		
+@frappe.whitelist()
+def verify_tfa(token,secret_key,window=2,interval_length=30):
+	import pyotp
+	totp = pyotp.TOTP(secret_key)
+	if totp.verify(token):
+		return True,secret_key
+	return False,secret_key
+			
 @frappe.whitelist(allow_guest=True)
 def reset_password(user):
 	if user=="Administrator":

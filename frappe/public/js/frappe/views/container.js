@@ -25,6 +25,11 @@ frappe.views.Container = Class.extend({
 			if(frappe.ui.pages[route_str] && !frappe.ui.pages[route_str].single_column) {
 				has_sidebar = true;
 			}
+			var n = route_str.search("query-report");
+			if( n < 0) {
+				has_sidebar = true;
+			}
+			
 			$("body").attr("data-sidebar", has_sidebar ? 1 : 0);
 		});
 
