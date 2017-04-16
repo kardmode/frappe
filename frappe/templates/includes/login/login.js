@@ -158,7 +158,6 @@ login.login_handlers = (function() {
 
 frappe.ready(function() {
 	login.bind_events();
-
 	if (!window.location.hash) {
 		window.location.hash = "#login";
 	} else {

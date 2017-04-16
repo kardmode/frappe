@@ -30,7 +30,6 @@
 		{%- set visible_columns = get_visible_columns(doc.get(df.fieldname),
 			table_meta, df) -%}
 		<div {{ fieldmeta(df) }}>
-		
 			{% set seccnt = [0] %}
 			{% for d in data %}
 				
@@ -44,7 +43,8 @@
 						
 					{% if seccnt.append(seccnt.pop() + 1) %}{% endif %}
 					<div style="margin:10px 0;">
-					<div style="float:left;width:50%;">{{ d.get_formatted("item_name", doc) }} - {{ d.get_formatted("description", doc) }}</div>
+					<div style="float:left;width:60%;">{{ d.get_formatted("item_name", doc) }} - {{ d.get_formatted("description", doc) }}</div>
+					<div style="float:left;width:25%;">Nos {{ d.get_formatted("qty", doc)}}</div>
 					<div style="float:right;">{{ "{:,.2f}".format(d.rate) }}</div>
 					<div style="clear:both;"></div></div>
 					<hr>

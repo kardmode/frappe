@@ -1159,7 +1159,7 @@ def format(*args, **kwargs):
 	import frappe.utils.formatters
 	return frappe.utils.formatters.format_value(*args, **kwargs)
 
-def get_print(doctype=None, name=None, print_format=None, style=None, html=None, as_pdf=False, doc=None, output = None):
+def get_print(doctype=None, name=None, print_format=None, style=None, html=None, as_pdf=False, doc=None, output = None,options=None,letterhead = None):
 	"""Get Print Format for given document.
 
 	:param doctype: DocType of document.
@@ -1175,12 +1175,13 @@ def get_print(doctype=None, name=None, print_format=None, style=None, html=None,
 	local.form_dict.format = print_format
 	local.form_dict.style = style
 	local.form_dict.doc = doc
+	local.form_dict.letterhead = letterhead
 
 	if not html:
 		html = build_page("print")
 
 	if as_pdf:
-		return get_pdf(html, output = output)
+		return get_pdf(html,options=options, output = output)
 	else:
 		return html
 

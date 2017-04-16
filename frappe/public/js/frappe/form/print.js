@@ -37,6 +37,12 @@ frappe.ui.form.PrintPreview = Class.extend({
 			.on("change", function() {
 				me.multilingual_preview()
 			});
+			
+		this.letterhead_sel = this.wrapper
+			.find(".print-letterhead-select")
+			.on("change", function() {
+				me.multilingual_preview()
+			});
 
 		//On selection of language get code and pass it to preview method
 		this.language_sel = this.wrapper
@@ -83,20 +89,13 @@ frappe.ui.form.PrintPreview = Class.extend({
 							+"&name="+encodeURIComponent(me.frm.doc.name)
 							+"&format="+me.selected_format()
 							+"&no_letterhead="+(me.with_letterhead() ? "0" : "1")
+							+"&letterhead="+ me.selected_letterhead()
 							+"&orientation="+encodeURIComponent(me.orientation)
 							+(me.lang_code ? ("&_lang="+me.lang_code) : "")));
 						if(!w) {
-							msgprint(__("Please enable pop-ups")); return;
+							msgprint(__("Please enable pop-ups")); 
+							return;
 						}
-				/* frappe.prompt({fieldname:"orientation", fieldtype:"Select", reqd: 1,
-					label: __("Orientation"),
-			options: "Portrait\nLandscape",
-			default: "Portrait"}, function(data) {
-						
-						
-					
-				}, __("Orientation"), __("Print"));
-				 */
 				
 				
 			}
@@ -161,6 +160,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 			+(printit ? "&trigger_print=1" : "")
 			+"&format="+me.selected_format()
 			+"&no_letterhead="+(me.with_letterhead() ? "0" : "1")
+			+"&letterhead="+ me.selected_letterhead()
 			+(me.lang_code ? ("&_lang="+me.lang_code) : "")));
 		if(!w) {
 			msgprint(__("Please enable pop-ups")); return;
@@ -173,6 +173,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 				doc: this.frm.doc,
 				print_format: this.selected_format(),
 				no_letterhead: !this.with_letterhead() ? 1 : 0,
+				letterhead: this.selected_letterhead(),
 				_lang: this.lang_code
 			},
 			callback: function(r) {
@@ -199,6 +200,12 @@ frappe.ui.form.PrintPreview = Class.extend({
 	},
 	refresh_print_options: function() {
 		this.print_formats = frappe.meta.get_print_formats(this.frm.doctype);
+		var default_letter_head = locals[":Company"]
+		? locals[":Company"][frappe.defaults.get_default('company')]["default_letter_head"]
+		: '';
+		
+		this.letterhead_sel.empty().add_options(["Default"]);
+		this.letterhead_sel.add_options($.map(frappe.boot.letter_heads, function(i,d){ return d }));
 		return this.print_sel
 			.empty().add_options(this.print_formats);
 	},
@@ -223,6 +230,9 @@ frappe.ui.form.PrintPreview = Class.extend({
 	selected_format: function() {
 		return this.print_sel.val() || this.frm.meta.default_print_format || "Standard";
 	},
+	selected_letterhead: function() {
+		return this.letterhead_sel.val() || "None";
+	},
 	is_old_style: function(format) {
 		return this.get_print_format(format).print_format_type==="Client";
 	},
@@ -244,8 +254,6 @@ frappe.ui.form.PrintPreview = Class.extend({
 		frappe.dom.set_style(style || frappe.boot.print_css, "print-style");
 	}
 });
-
-;
 
 frappe.ui.get_print_settings = function(pdf, callback, letter_head) {
 	var print_settings = locals[":Print Settings"]["Print Settings"];
@@ -288,4 +296,3 @@ frappe.ui.get_print_settings = function(pdf, callback, letter_head) {
 		callback(data);
 	}, __("Print Settings"));
 }
-

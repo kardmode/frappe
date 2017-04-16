@@ -175,6 +175,8 @@ _f.Frm.prototype.print_doc = function() {
 	}
 
 	this.print_preview.refresh_print_options().trigger("change");
+	//this.print_preview.refresh_letterhead_options().trigger("change");
+
 	this.page.set_view("print");
 	this.print_preview.set_user_lang();
 }

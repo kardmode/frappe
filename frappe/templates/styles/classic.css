@@ -43,6 +43,8 @@
 
 [document-status] {
 	margin-bottom: 0 !important;
+		margin-top: 0 !important;
+
 }
 .signature-box{
 	height: 100px;
@@ -62,7 +64,7 @@ img.stamp{
 }
 
 .page-break{
-	padding:15px 0 !important;
+	padding:10px 0 !important;
 }
 
 .table-bordered tr{

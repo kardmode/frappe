@@ -198,7 +198,7 @@ def append_number_if_name_exists(doc):
 		else:
 			count = "1"
 
-		doc.name = "{0}-{1}".format(doc.name, count)
+		doc.name = "{0} Rev. {1}".format(doc.name, count)
 
 	return doc
 

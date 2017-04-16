@@ -70,7 +70,7 @@
 
 
 					<div style="text-align:right;font-size:larger;font-weight:bold">
-						<div class="value">{{ d.get_formatted("item_name", doc) }} - {{ d.get_formatted("description", doc) }}</div>
+						<div class="value">{{ d.get_formatted("item_name", doc) }} - Qty {{ d.get_formatted("qty", doc) }}</div>
 					</div>
 					
 					
@@ -256,7 +256,7 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{% endif -%}
 {%- endmacro %}
 
-{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer) -%}
+{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None) -%}
 	{% if letter_head and not no_letterhead %}
 		<div class="letter-head">{{ letter_head }}</div>
 	{% endif %}
@@ -266,17 +266,18 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
     <div class="print-heading">
 		<h2>{{ doc.select_print_heading or (doc.print_heading if doc.print_heading != None
 			else _(doc.doctype)) }}<br>
-			<small>{{ doc.name }} - {{ print_date(doc) }}{% if doc.project %} - {{ doc.project }}{% endif %}</small>
+						<small>{{ doc.name }} - {{ print_date(doc) }}{% if doc.project %} - {{ doc.project }}{% endif %}</small>
+
         </h2>
     </div>
     {% endif %}
-	{%- if doc.meta.is_submittable and doc.docstatus==0-%}
-	<div class="text-center">
+	{%- if doc.meta.is_submittable and doc.docstatus==0 and (print_settings==None or print_settings.add_draft_heading) -%}
+	<div class="text-center" document-status="draft">
 		<h4 style="margin: 0px;">{{ _("DRAFT") }}</h4>
     </div>
 	{%- endif -%}
 	{%- if doc.meta.is_submittable and doc.docstatus==2-%}
-	<div class="text-center">
+	<div class="text-center" document-status="cancelled">
 		<h4 style="margin: 0px;">{{ _("CANCELLED") }}</h4>
     </div>
 	{%- endif -%}

@@ -31,6 +31,10 @@ def get_context(context):
 	else:
 		doc = frappe.get_doc(frappe.form_dict.doctype, frappe.form_dict.name)
 
+	if frappe.form_dict.letterhead:
+		letterhead = frappe.form_dict.letterhead	
+	else:
+		letterhead = None
 	meta = frappe.get_meta(doc.doctype)
 
 	print_format = get_print_format_doc(None, meta = meta)
@@ -38,7 +42,7 @@ def get_context(context):
 	return {
 		"body": get_html(doc, print_format = print_format,
 			meta=meta, trigger_print = frappe.form_dict.trigger_print,
-			no_letterhead=frappe.form_dict.no_letterhead),
+			no_letterhead=frappe.form_dict.no_letterhead,letterhead=letterhead),
 		"css": get_print_style(frappe.form_dict.style, print_format),
 		"comment": frappe.session.user,
 		"title": doc.get(meta.title_field) if meta.title_field else doc.name
@@ -60,7 +64,7 @@ def get_print_format_doc(print_format_name, meta):
 			return None
 
 def get_html(doc, name=None, print_format=None, meta=None,
-	no_letterhead=None, trigger_print=False):
+	no_letterhead=None, trigger_print=False,letterhead=None):
 
 	print_settings = frappe.db.get_singles_dict("Print Settings")
 
@@ -134,7 +138,7 @@ def get_html(doc, name=None, print_format=None, meta=None,
 	if template == "standard":
 		template = jenv.get_template(standard_format)
 
-	letter_head = frappe._dict(get_letter_head(doc, no_letterhead) or {})
+	letter_head = frappe._dict(get_letter_head(doc,no_letterhead,letterhead) or {})
 
 	convert_markdown(doc, meta)
 
@@ -166,7 +170,7 @@ def convert_markdown(doc, meta):
 
 @frappe.whitelist()
 def get_html_and_style(doc, name=None, print_format=None, meta=None,
-	no_letterhead=None, trigger_print=False):
+	no_letterhead=None, trigger_print=False,letterhead = None):
 	"""Returns `html` and `style` of print format, used in PDF etc"""
 
 	if isinstance(doc, basestring) and isinstance(name, basestring):
@@ -178,7 +182,7 @@ def get_html_and_style(doc, name=None, print_format=None, meta=None,
 	print_format = get_print_format_doc(print_format, meta=meta or frappe.get_meta(doc.doctype))
 	return {
 		"html": get_html(doc, name=name, print_format=print_format, meta=meta,
-	no_letterhead=no_letterhead, trigger_print=trigger_print),
+	no_letterhead=no_letterhead, trigger_print=trigger_print,letterhead = letterhead),
 		"style": get_print_style(print_format=print_format)
 	}
 
@@ -191,10 +195,26 @@ def validate_print_permission(doc):
 		if (not frappe.has_permission(doc.doctype, ptype, doc)
 			and not frappe.has_website_permission(doc)):
 			raise frappe.PermissionError(_("No {0} permission").format(ptype))
-def get_letter_head(doc, no_letterhead):
+
+def get_letter_head(doc, no_letterhead,letterhead=None):
 	if no_letterhead:
 		return {}
-	if doc.get("letter_head"):
+	if letterhead == "Default":
+		if doc.get("letter_head"):
+			return frappe.db.get_value("Letter Head", doc.letter_head, ["content", "footer"], as_dict=True)
+		
+		elif doc.get("company"):
+			letter_head = frappe.db.get_value("Company", doc.company, "default_letter_head") or ""
+			if letter_head:
+				return frappe.db.get_value("Letter Head", letter_head, ["content", "footer"], as_dict=True)
+			else:
+				return {}
+		else:
+			return frappe.db.get_value("Letter Head", {"is_default": 1}, ["content", "footer"], as_dict=True) or {}
+
+	elif letterhead:
+		return frappe.db.get_value("Letter Head", letterhead, ["content", "footer"], as_dict=True)
+	elif doc.get("letter_head"):
 		return frappe.db.get_value("Letter Head", doc.letter_head, ["content", "footer"], as_dict=True)
 	
 	elif doc.get("company"):
