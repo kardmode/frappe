@@ -216,7 +216,7 @@
  "issingle": 0, 
  "istable": 0, 
  "max_attachments": 1, 
- "modified": "2017-03-23 16:07:46.309023", 
+ "modified": "2016-12-29 14:40:40.407657", 
  "modified_by": "Administrator", 
  "module": "Website", 
  "name": "Blogger", 
@@ -268,7 +268,7 @@
  "quick_entry": 0, 
  "read_only": 0, 
  "read_only_onload": 0, 
- "sort_order": "ASC", 
  "title_field": "full_name", 
+ "track_changes": 1, 
  "track_seen": 0
 }

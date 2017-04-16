@@ -7,6 +7,8 @@ import frappe, json
 from frappe import _dict
 import frappe.share
 from frappe.utils import cint
+from frappe.boot import get_allowed_reports
+from frappe.permissions import get_roles, get_valid_perms
 
 class UserPermissions:
 	"""
@@ -69,10 +71,7 @@ class UserPermissions:
 	def build_perm_map(self):
 		"""build map of permissions at level 0"""
 		self.perm_map = {}
-		roles = self.get_roles()
-		for r in frappe.db.sql("""select * from tabDocPerm where docstatus=0
-			and ifnull(permlevel,0)=0
-			and role in ({roles})""".format(roles=", ".join(["%s"]*len(roles))), tuple(roles), as_dict=1):
+		for r in get_valid_perms():
 			dt = r['parent']
 
 			if not dt in  self.perm_map:
@@ -149,9 +148,9 @@ class UserPermissions:
 			if dt in self.can_read:
 				self.can_read.remove(dt)
 
-		if "System Manager" in self.roles:
-			self.can_import = filter(lambda d: d in self.can_create, frappe.db.sql_list("""select name from `tabDocType`
-				where allow_import = 1"""))
+		if "System Manager" in self.get_roles():
+			self.can_import = filter(lambda d: d in self.can_create,
+				frappe.db.sql_list("""select name from `tabDocType` where allow_import = 1"""))
 
 	def get_defaults(self):
 		import frappe.defaults
@@ -189,7 +188,7 @@ class UserPermissions:
 		return self.can_read
 
 	def load_user(self):
-		d = frappe.db.sql("""select email, first_name, last_name,
+		d = frappe.db.sql("""select email, first_name, last_name, creation,
 			email_signature, user_type, language, background_image, background_style, mute_sounds
 			from tabUser where name = %s""", (self.name,), as_dict=1)[0]
 
@@ -213,10 +212,7 @@ class UserPermissions:
 		return d
 
 	def get_all_reports(self):
-		reports =  frappe.db.sql("""select name, report_type, ref_doctype from tabReport
-		    where ref_doctype in ('{0}') and disabled = 0""".format("', '".join(self.can_get_report)), as_dict=1)
-
-		return frappe._dict((d.name, d) for d in reports)
+		return get_allowed_reports()
 
 def get_user_fullname(user):
 	fullname = frappe.db.sql("SELECT CONCAT_WS(' ', first_name, last_name) FROM `tabUser` WHERE name=%s", (user,))
@@ -240,7 +236,7 @@ def get_system_managers(only_name=False):
 		as fullname from tabUser p
 		where docstatus < 2 and enabled = 1
 		and name not in ({})
-		and exists (select * from tabUserRole ur
+		and exists (select * from `tabHas Role` ur
 			where ur.parent = p.name and ur.role="System Manager")
 		order by creation desc""".format(", ".join(["%s"]*len(STANDARD_USERS))),
 			STANDARD_USERS, as_dict=True)
@@ -265,32 +261,13 @@ def add_system_manager(email, first_name=None, last_name=None, send_welcome_emai
 		"user_type": "System User",
 		"send_welcome_email": 1 if send_welcome_email else 0
 	})
+
 	user.insert()
 
 	# add roles
 	roles = frappe.db.sql_list("""select name from `tabRole`
 		where name not in ("Administrator", "Guest", "All")""")
 	user.add_roles(*roles)
-
-def get_roles(user=None, with_standard=True):
-	"""get roles of current user"""
-	if not user:
-		user = frappe.session.user
-
-	if user=='Guest':
-		return ['Guest']
-
-	def get():
-		return [r[0] for r in frappe.db.sql("""select role from tabUserRole
-			where parent=%s and role not in ('All', 'Guest')""", (user,))] + ['All', 'Guest']
-
-	roles = frappe.cache().hget("roles", user, get)
-
-	# filter standard if required
-	if not with_standard:
-		roles = filter(lambda x: x not in ['All', 'Guest', 'Administrator'], roles)
-
-	return roles
 
 def get_enabled_system_users():
 	return frappe.db.sql("""select * from tabUser where
@@ -344,7 +321,7 @@ def disable_users(limits=None):
 				frappe.db.set_value("User", user, 'enabled', 0)
 
 		from frappe.core.doctype.user.user import get_total_users
-		
+
 		if get_total_users() > cint(limits.get('users')):
 			reset_simultaneous_sessions(cint(limits.get('users')))
 
