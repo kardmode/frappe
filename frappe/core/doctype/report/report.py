@@ -36,7 +36,10 @@ class Report(Document):
 
 		if self.report_type == "Report Builder":
 			self.update_report_json()
-
+			
+		# if not self.letter_head or self.letter_head == "Al Maarifa Letterhead":
+			# letter_head = frappe.db.get_value("Letter Head", {"is_default": 1}, ["content", "footer"], as_dict=True) or {}
+			# frappe.errprint(letter_head)
 		self.set_doctype_roles()
 
 	def on_update(self):

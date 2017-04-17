@@ -180,7 +180,7 @@ class LoginManager:
 			clear_sessions(frappe.session.user, keep_current=True)
 
 	def authenticate(self, user=None, pwd=None):
-		self.validate_ban_list()
+		# self.validate_ban_list()
 		if not (user and pwd):
 			user, pwd = frappe.form_dict.get('usr'), frappe.form_dict.get('pwd')
 		if not (user and pwd):
@@ -209,15 +209,15 @@ class LoginManager:
 
 			if attempts > int(max_attempts):
 				
-				ip_list = frappe.db.get_value('System Settings', None, 'ban_ip', ignore=True)
-				if ip_list:	
-					if not self.test_ip(ip_list):
-						ip_list = str(ip_list) + ',' + str(frappe.local.request_ip)
-						frappe.db.sql('update tabSystem Settings set ban_ip=%s', (str(ip_list)))
+				# ip_list = frappe.db.get_value('System Settings', None, 'ban_ip', ignore=True)
+				# if ip_list:	
+					# if not self.test_ip(ip_list):
+						# ip_list = str(ip_list) + ',' + str(frappe.local.request_ip)
+						# frappe.db.sql('update tabSystem Settings set ban_ip=%s', (str(ip_list)))
 
-				else:
-					ip_list = str(frappe.local.request_ip)
-					frappe.db.sql('update tabSystem Settings set ban_ip=%s', (str(ip_list)))
+				# else:
+					# ip_list = str(frappe.local.request_ip)
+					# frappe.db.sql('update tabSystem Settings set ban_ip=%s', (str(ip_list)))
 
 				
 				frappe.db.sql('update tabUser set enabled=0 where name=%s', (user))

@@ -47,7 +47,19 @@ cur_frm.cscript.refresh = function(doc) {
 			});
 		}, doc.disabled ? "fa fa-check" : "fa fa-off");
 	}
+	/* 
+	if((cint(doc.__islocal) == 1) && !doc.amended_from){
+		var default_letter_head = locals[":Company"]
+		? locals[":Company"][frappe.defaults.get_default('company')]["default_letter_head"]
+		: '';
 
+		if(!doc.letter_head && default_letter_head) {
+			cur_frm.set_value('letter_head', default_letter_head);
+		}
+	} */
+	
+	
+	
 	cur_frm.cscript.report_type(doc);
 }
 
@@ -58,6 +70,8 @@ frappe.ui.form.on('Report', {
 			// make the document read-only
 			frm.set_read_only();
 		}
+		
+		
 	},
 
 	ref_doctype: function(frm) {

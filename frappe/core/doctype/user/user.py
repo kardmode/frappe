@@ -6,7 +6,8 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import cint, has_gravatar, format_datetime, now_datetime, get_formatted_email
 from frappe import throw, msgprint, _
-from frappe.utils.password import update_password as _update_password
+from frappe.utils.password import update_password as _update_password, encrypt,decrypt
+
 from frappe.desk.notifications import clear_notifications
 from frappe.utils.user import get_system_managers
 import frappe.permissions
@@ -714,15 +715,16 @@ def sign_up(email, full_name, redirect_to):
 
 @frappe.whitelist()
 def update_tfa():
-		secret_key = ""
-		from pyotp import random_base32
-		secret_key = random_base32()
-		return secret_key
+	secret_key = ""
+	from pyotp import random_base32
+	secret_key = random_base32()
+	return secret_key,encrypt(secret_key)
 		
 @frappe.whitelist()
 def verify_tfa(token,secret_key,window=2,interval_length=30):
+	secret_key_decrypted = decrypt(secret_key)
 	import pyotp
-	totp = pyotp.TOTP(secret_key)
+	totp = pyotp.TOTP(secret_key_decrypted)
 	if totp.verify(token):
 		return True,secret_key
 	return False,secret_key

@@ -281,7 +281,7 @@ frappe.ui.get_print_settings = function(pdf, callback, letter_head) {
 			fieldname: "orientation",
 			label: __("Orientation"),
 			options: "Landscape\nPortrait",
-			default: "Landscape"
+			default: "Portrait"
 		})
 	}
 

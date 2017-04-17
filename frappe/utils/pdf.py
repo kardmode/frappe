@@ -66,34 +66,18 @@ def prepare_options(html, options):
 		'margin-right': '15mm',
 		'margin-left': '15mm',
 	})
-	
 
 	html, html_options = read_options_from_html(html)
 	options.update(html_options or {})
 
 	# cookies
-	if frappe.session and frappe.session.sid and frappe.session.user:
-	
-		info = frappe.db.get_value("User", frappe.session.user,
-			["user_type", "first_name", "last_name", "user_image"], as_dict=1)
-		full_name = " ".join(filter(None, [info.first_name,
-			info.last_name]))
-		user_type = info.user_type
-		options['cookie'] = [('sid', '{0}'.format(frappe.session.sid)),('user_id', '{0}'.format(frappe.session.user))
-		,('system_user', 'yes'),('full_name', '{0}'.format(full_name)),('user_image', '{0}'.format(info.user_image))]
-		# options['username'] = "Administrator"
-		# options['password'] = "tinkerbell57"
-		
-	else:
-		frappe.throw(_("No Session"))
+	if frappe.session and frappe.session.sid:
+		options['cookie'] = [('sid', '{0}'.format(frappe.session.sid))]
 
 	# page size
 	if not options.get("page-size"):
 		options['page-size'] = frappe.db.get_single_value("Print Settings", "pdf_page_size") or "A4"
 
-	
-	if not options.get("orientation"):
-		options['orientation'] = 'portrait'
 	return html, options
 
 def read_options_from_html(html):
@@ -101,7 +85,7 @@ def read_options_from_html(html):
 	soup = BeautifulSoup(html, "html5lib")
 
 	# extract pdfkit options from html
-	for html_id in ("orientation","margin-top", "margin-bottom", "margin-left", "margin-right", "page-size"):
+	for html_id in ("margin-top", "margin-bottom", "margin-left", "margin-right", "page-size"):
 		try:
 			tag = soup.find(id=html_id)
 			if tag and tag.contents:

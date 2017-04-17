@@ -177,17 +177,17 @@ def validate_name(doctype, name, case=None, merge=False):
 
 	return name
 
-def _set_amended_name(doc):
+def _set_amended_name(doc, separator='-'):
 	am_id = 1
 	am_prefix = doc.amended_from
 	if frappe.db.get_value(doc.doctype, doc.amended_from, "amended_from"):
-		am_id = cint(doc.amended_from.split('-')[-1]) + 1
-		am_prefix = '-'.join(doc.amended_from.split('-')[:-1]) # except the last hyphen
+		am_id = cint(doc.amended_from.split(separator)[-1]) + 1
+		am_prefix = separator.join(doc.amended_from.split(separator)[:-1]) # except the last hyphen
 
-	doc.name = am_prefix + '-' + str(am_id)
+	doc.name = am_prefix + separator + str(am_id)
 	return doc.name
 
-def append_number_if_name_exists(doctype, name, fieldname='name', separator='Rev.'):
+def append_number_if_name_exists(doctype, name, fieldname='name', separator='-'):
 	if frappe.db.exists(doctype, name):
 		last = frappe.db.sql("""select name from `tab{doctype}`
 			where {fieldname} regexp '^{name}{separator}[[:digit:]]+'
@@ -196,10 +196,10 @@ def append_number_if_name_exists(doctype, name, fieldname='name', separator='Rev
 					name=name, fieldname=fieldname, separator=separator))
 
 		if last:
-			count = str(cint(last[0][0].rsplit("-", 1)[1]) + 1)
+			count = str(cint(last[0][0].rsplit(separator, 1)[1]) + 1)
 		else:
 			count = "1"
 
-		name = "{0} {1} {2}".format(name, separator, count)
+		name = "{0}{1}{2}".format(name, separator, count)
 
 	return name
