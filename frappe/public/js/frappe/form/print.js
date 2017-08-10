@@ -261,7 +261,6 @@ frappe.ui.get_print_settings = function(pdf, callback, letter_head) {
 	var default_letter_head = locals[":Company"]
 		? locals[":Company"][frappe.defaults.get_default('company')]["default_letter_head"]
 		: '';
-
 	columns = [{
 		fieldtype: "Check",
 		fieldname: "with_letter_head",
@@ -294,5 +293,5 @@ frappe.ui.get_print_settings = function(pdf, callback, letter_head) {
 			data.letter_head = frappe.boot.letter_heads[print_settings.letter_head];
 		}
 		callback(data);
-	}, __("Print Settings"));
+	}, __("Print Settings"), __("Print"));
 }

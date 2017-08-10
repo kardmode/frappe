@@ -100,16 +100,12 @@ frappe.views.Container = Class.extend({
 			flag = $(`.page-container[data-page-route="${page_route}"] .layout-side-section`).length ? 1 : 0;
 		}
 
-		/* var has_sidebar = false;
-			if(frappe.ui.pages[route_str] && !frappe.ui.pages[route_str].single_column) {
-				has_sidebar = true;
-			}
-			var n = route_str.search("query-report");
-			if( n < 0) {
-				has_sidebar = true;
-			}
+		
+		var n = route_str.search("query-report");
+		if( n < 0) {
+			flag = 1;
+		}
 			
-			$("body").attr("data-sidebar", has_sidebar ? 1 : 0); */
 		return flag;
 	},
 });

@@ -1420,6 +1420,12 @@ frappe.ui.form.ControlLink = frappe.ui.form.ControlData.extend({
 				}
 			});
 		});
+		
+		/* this.$input.on("focus", function(e) {
+			console.log("focus");
+			me.awesomplete.evaluate();
+		}); */
+		
 
 		this.$input.on("awesomplete-open", function(e) {
 			me.$wrapper.css({"z-index": 100});

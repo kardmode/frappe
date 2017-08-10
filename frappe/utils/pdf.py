@@ -63,8 +63,8 @@ def prepare_options(html, options):
 		#'load-error-handling': 'ignore',
 
 		# defaults
-		'margin-right': '15mm',
-		'margin-left': '15mm',
+		'margin-right': '13mm',
+		'margin-left': '13mm',
 	})
 
 	html, html_options = read_options_from_html(html)

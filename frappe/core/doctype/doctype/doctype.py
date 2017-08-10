@@ -51,6 +51,7 @@ class DocType(Document):
 		self.scrub_field_names()
 		self.validate_series()
 		self.validate_document_type()
+		
 		validate_fields(self)
 
 		if self.istable:
@@ -361,6 +362,7 @@ class DocType(Document):
 			frappe.throw(_("DocType's name should start with a letter and it can only consist of letters, numbers, spaces and underscores"), frappe.NameError)
 
 def validate_fields_for_doctype(doctype):
+	frappe.errprint(doctype)
 	validate_fields(frappe.get_meta(doctype, cached=False))
 
 # this is separate because it is also called via custom field
@@ -568,6 +570,8 @@ def validate_fields(meta):
 	not_allowed_in_list_view.append("Attach Image")
 	if meta.istable:
 		not_allowed_in_list_view.remove('Button')
+	
+
 
 	for d in fields:
 		if not d.permlevel: d.permlevel = 0

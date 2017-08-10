@@ -38,7 +38,7 @@ frappe.ui.set_user_background = function(src, selector, style) {
 		}
 		var background = repl('background: url("%(src)s") center center;', {src: src});
 	} else {
-		var background = "background-color: #7788AA;";
+		var background = "background-color: #eee;";
 	}
 
 	frappe.dom.set_style(repl('%(selector)s { \

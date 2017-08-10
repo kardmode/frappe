@@ -149,7 +149,7 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
     <div class="print-heading">
 		<h2>{{ doc.select_print_heading or (doc.print_heading if doc.print_heading != None
 			else _(doc.doctype)) }}<br>
-						<small>{{ doc.name }} - {{ print_date(doc) }}{% if doc.project %} - {{ doc.project }}{% endif %}</small>
+				<small>{{ doc.name }} - {{ print_date(doc) }}{% if doc.project %} - {{ doc.project }}{% endif %}</small>
 
         </h2>
     </div>
@@ -170,9 +170,9 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 
 
 {%- macro add_sign(doc) -%}
-	{%- if doc.doctype in ("Purchase Order") -%}
+	{%- if doc.doctype in ("Purchase Order","Sales Invoice","Payment Request") -%}
 		{{ frappe.db.get_value("Print Fields", "PO Signature", "print_field")}}
-	{%- elif doc.doctype in ("Delivery Note","Invoice","Sales Order","Purchase Receipt") -%}
+	{%- elif doc.doctype in ("Delivery Note","Sales Order","Purchase Receipt") -%}
 		{{ frappe.db.get_value("Print Fields", "DO Signatures", "print_field")}}
 	{%- endif -%}
 

@@ -69,3 +69,49 @@ img.stamp{
 
 .table-bordered tr{
 }
+
+h1 small,
+h2 small,
+h3 small,
+h4 small,
+h5 small,
+h6 small,
+.h1 small,
+.h2 small,
+.h3 small,
+.h4 small,
+.h5 small,
+.h6 small,
+h1 .small,
+h2 .small,
+h3 .small,
+h4 .small,
+h5 .small,
+h6 .small,
+.h1 .small,
+.h2 .small,
+.h3 .small,
+.h4 .small,
+.h5 .small,
+.h6 .small {
+  font-weight: normal;
+  line-height: 1;
+  color: inherit !important;
+}
+
+h6.uppercase, .h6.uppercase {
+	    font-size: 12px;
+    font-weight: 500;
+}
+
+
+textarea.form-control {
+    height: 150px !important;
+}
+
+.form-section .section-head .collapse-indicator {
+	color: #aaa;
+}
+.octicon, .mega-octicon {
+    font: normal normal normal 18px/1 octicons;
+}
