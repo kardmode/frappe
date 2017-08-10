@@ -4,16 +4,17 @@
 globals attached to frappe module
 + some utility functions that should probably be moved
 """
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
+from six import iteritems, text_type
 from werkzeug.local import Local, release_local
 import os, sys, importlib, inspect, json
 
 # public
 from .exceptions import *
-from .utils.jinja import get_jenv, get_template, render_template
+from .utils.jinja import get_jenv, get_template, render_template, get_email_from_template
 
-__version__ = '8.0.18'
+__version__ = '8.7.3'
 __title__ = "Frappe Framework"
 
 local = Local()
@@ -56,14 +57,14 @@ def _(msg, lang=None):
 
 def as_unicode(text, encoding='utf-8'):
 	'''Convert to unicode if required'''
-	if isinstance(text, unicode):
+	if isinstance(text, text_type):
 		return text
 	elif text==None:
 		return ''
 	elif isinstance(text, basestring):
-		return unicode(text, encoding)
+		return text_type(text, encoding)
 	else:
-		return unicode(text)
+		return text_type(text)
 
 def get_lang_dict(fortype, name=None):
 	"""Returns the translated language dict for the given type and name.
@@ -137,7 +138,7 @@ def init(site, sites_path=None, new_site=False):
 
 	local.module_app = None
 	local.app_modules = None
-	local.system_settings = None
+	local.system_settings = _dict()
 
 	local.user = None
 	local.user_perms = None
@@ -145,10 +146,12 @@ def init(site, sites_path=None, new_site=False):
 	local.role_permissions = {}
 	local.valid_columns = {}
 	local.new_doc_templates = {}
+	local.link_count = {}
 
 	local.jenv = None
 	local.jloader =None
 	local.cache = {}
+	local.meta_cache = {}
 	local.form_dict = _dict()
 	local.session = _dict()
 
@@ -185,7 +188,7 @@ def get_site_config(sites_path=None, site_path=None):
 		if os.path.exists(site_config):
 			config.update(get_file_json(site_config))
 		elif local.site and not local.flags.new_site:
-			print "{0} does not exist".format(local.site)
+			print("{0} does not exist".format(local.site))
 			sys.exit(1)
 			#raise IncorrectSitePath, "{0} does not exist".format(site_config)
 
@@ -241,7 +244,7 @@ def errprint(msg):
 	:param msg: Message."""
 	msg = as_unicode(msg)
 	if not request or (not "cmd" in local.form_dict) or conf.developer_mode:
-		print msg.encode('utf-8')
+		print(msg.encode('utf-8'))
 
 	error_log.append(msg)
 
@@ -251,7 +254,7 @@ def log(msg):
 	:param msg: Message."""
 	if not request:
 		if conf.get("logging") or False:
-			print repr(msg)
+			print(repr(msg))
 
 	debug_log.append(as_unicode(msg))
 
@@ -276,9 +279,9 @@ def msgprint(msg, title=None, raise_exception=0, as_table=False, indicator=None,
 			import inspect
 
 			if inspect.isclass(raise_exception) and issubclass(raise_exception, Exception):
-				raise raise_exception, encode(msg)
+				raise raise_exception(encode(msg))
 			else:
-				raise ValidationError, encode(msg)
+				raise ValidationError(encode(msg))
 
 	if flags.mute_messages:
 		_raise_exception()
@@ -288,7 +291,7 @@ def msgprint(msg, title=None, raise_exception=0, as_table=False, indicator=None,
 		out.msg = '<table border="1px" style="border-collapse: collapse" cellpadding="2px">' + ''.join(['<tr>'+''.join(['<td>%s</td>' % c for c in r])+'</tr>' for r in msg]) + '</table>'
 
 	if flags.print_messages and out.msg:
-		print "Message: " + repr(out.msg).encode("utf-8")
+		print("Message: " + repr(out.msg).encode("utf-8"))
 
 	if title:
 		out.title = title
@@ -376,7 +379,8 @@ def sendmail(recipients=[], sender="", subject="No Subject", message="No Message
 		unsubscribe_method=None, unsubscribe_params=None, unsubscribe_message=None,
 		attachments=None, content=None, doctype=None, name=None, reply_to=None,
 		cc=[], message_id=None, in_reply_to=None, send_after=None, expose_recipients=None,
-		send_priority=1, communication=None, retry=1, now=None, read_receipt=None, is_notification=False):
+		send_priority=1, communication=None, retry=1, now=None, read_receipt=None, is_notification=False,
+		inline_images=None, template=None, args=None, header=None):
 	"""Send email using user's default **Email Account** or global default **Email Account**.
 
 
@@ -398,7 +402,16 @@ def sendmail(recipients=[], sender="", subject="No Subject", message="No Message
 	:param send_after: Send after the given datetime.
 	:param expose_recipients: Display all recipients in the footer message - "This email was sent to"
 	:param communication: Communication link to be set in Email Queue record
+	:param inline_images: List of inline images as {"filename", "filecontent"}. All src properties will be replaced with random Content-Id
+	:param template: Name of html template from templates/emails folder
+	:param args: Arguments for rendering the template
+	:param header: Append header in email
 	"""
+
+	text_content = None
+	if template:
+		message, text_content = get_email_from_template(template, args)
+
 	message = content or message
 
 	if as_markdown:
@@ -410,12 +423,13 @@ def sendmail(recipients=[], sender="", subject="No Subject", message="No Message
 
 	import email.queue
 	email.queue.send(recipients=recipients, sender=sender,
-		subject=subject, message=message,
+		subject=subject, message=message, text_content=text_content,
 		reference_doctype = doctype or reference_doctype, reference_name = name or reference_name,
 		unsubscribe_method=unsubscribe_method, unsubscribe_params=unsubscribe_params, unsubscribe_message=unsubscribe_message,
 		attachments=attachments, reply_to=reply_to, cc=cc, message_id=message_id, in_reply_to=in_reply_to,
 		send_after=send_after, expose_recipients=expose_recipients, send_priority=send_priority,
-		communication=communication, now=now, read_receipt=read_receipt, is_notification=is_notification)
+		communication=communication, now=now, read_receipt=read_receipt, is_notification=is_notification,
+		inline_images=inline_images, header=header)
 
 whitelisted = []
 guest_methods = []
@@ -478,6 +492,7 @@ def clear_cache(user=None, doctype=None):
 		frappe.sessions.clear_cache()
 		translate.clear_cache()
 		reset_metadata_version()
+		clear_domainification_cache()
 		local.cache = {}
 		local.new_doc_templates = {}
 
@@ -756,7 +771,7 @@ def get_doc_hooks():
 	if not hasattr(local, 'doc_events_hooks'):
 		hooks = get_hooks('doc_events', {})
 		out = {}
-		for key, value in hooks.iteritems():
+		for key, value in iteritems(hooks):
 			if isinstance(key, tuple):
 				for doctype in key:
 					append_hook(out, doctype, value)
@@ -784,7 +799,7 @@ def get_hooks(hook=None, default=None, app_name=None):
 					# if app is not installed while restoring
 					# ignore it
 					pass
-				print 'Could not find app "{0}"'.format(app_name)
+				print('Could not find app "{0}"'.format(app_name))
 				if not request:
 					sys.exit(1)
 				raise
@@ -865,7 +880,7 @@ def get_file_json(path):
 
 def read_file(path, raise_not_found=False):
 	"""Open a file and return its content as Unicode."""
-	if isinstance(path, unicode):
+	if isinstance(path, text_type):
 		path = path.encode("utf-8")
 
 	if os.path.exists(path):
@@ -940,6 +955,7 @@ def make_property_setter(args, ignore_validate=False, validate_fields_for_doctyp
 		})
 		ps.flags.ignore_validate = ignore_validate
 		ps.flags.validate_fields_for_doctype = validate_fields_for_doctype
+		ps.validate_fieldtype_change()
 		ps.insert()
 
 def import_doc(path, ignore_links=False, ignore_insert=False, insert=False):
@@ -1205,7 +1221,7 @@ def get_print(doctype=None, name=None, print_format=None, style=None, html=None,
 	local.form_dict.letterhead = letterhead
 
 	if not html:
-		html = build_page("print")
+		html = build_page("printview")
 
 	if as_pdf:
 		return get_pdf(html,options=options, output = output)
@@ -1325,6 +1341,13 @@ def bold(text):
 
 def safe_eval(code, eval_globals=None, eval_locals=None):
 	'''A safer `eval`'''
+	whitelisted_globals = {
+		"int": int,
+		"float": float,
+		"long": long,
+		"round": round
+	}
+
 	if '__' in code:
 		throw('Illegal rule {0}. Cannot use "__"'.format(bold(code)))
 
@@ -1332,4 +1355,45 @@ def safe_eval(code, eval_globals=None, eval_locals=None):
 		eval_globals = {}
 	eval_globals['__builtins__'] = {}
 
+<<<<<<< HEAD
 	return eval(code, eval_globals, eval_locals)
+=======
+	eval_globals.update(whitelisted_globals)
+
+	return eval(code, eval_globals, eval_locals)
+
+def get_active_domains():
+	""" get the domains set in the Domain Settings as active domain """
+
+	active_domains = cache().hget("domains", "active_domains") or None
+	if active_domains is None:
+		domains = get_all("Has Domain", filters={ "parent": "Domain Settings" },
+			fields=["domain"], distinct=True)
+
+		active_domains = [row.get("domain") for row in domains]
+		active_domains.append("")
+		cache().hset("domains", "active_domains", active_domains)
+
+	return active_domains
+
+def get_active_modules():
+	""" get the active modules from Module Def"""
+	active_modules = cache().hget("modules", "active_modules") or None
+	if active_modules is None:
+		domains = get_active_domains()
+		modules = get_all("Module Def", filters={"restrict_to_domain": ("in", domains)})
+		active_modules = [module.name for module in modules]
+		cache().hset("modules", "active_modules", active_modules)
+
+	return active_modules
+
+def clear_domainification_cache():
+	_cache = cache()
+	_cache.delete_key("domains", "active_domains")
+	_cache.delete_key("modules", "active_modules")
+
+def get_system_settings(key):
+	if not local.system_settings.has_key(key):
+		local.system_settings.update({key: db.get_single_value('System Settings', key)})
+	return local.system_settings.get(key)
+>>>>>>> 67e13e45f00ee4943c7904c381765dbb85e6f8a9

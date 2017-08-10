@@ -3,17 +3,18 @@
 
 # util __init__.py
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 from werkzeug.test import Client
-import os, re, urllib, sys, json, md5, requests, traceback
+import os, re, sys, json, hashlib, requests, traceback
 from markdown2 import markdown as _markdown
 from .html_utils import sanitize_html
-
 import frappe
 from frappe.utils.identicon import Identicon
-
+from email.utils import parseaddr, formataddr
 # utility functions like cint, int, flt, etc.
 from frappe.utils.data import *
+from six.moves.urllib.parse import quote
+from six import text_type
 
 default_fields = ['doctype', 'name', 'owner', 'creation', 'modified', 'modified_by',
 	'parent', 'parentfield', 'parenttype', 'idx', 'docstatus']
@@ -56,23 +57,19 @@ def get_formatted_email(user):
 	"""get Email Address of user formatted as: `John Doe <johndoe@example.com>`"""
 	if user == "Administrator":
 		return user
-	from email.utils import formataddr
 	fullname = get_fullname(user)
 	return formataddr((fullname, user))
 
 def extract_email_id(email):
 	"""fetch only the email part of the Email Address"""
-	from email.utils import parseaddr
-	fullname, email_id = parseaddr(email)
-	if isinstance(email_id, basestring) and not isinstance(email_id, unicode):
+	email_id = parse_addr(email)[1]
+	if email_id and isinstance(email_id, basestring) and not isinstance(email_id, text_type):
 		email_id = email_id.decode("utf-8", "ignore")
 	return email_id
 
 def validate_email_add(email_str, throw=False):
 	"""Validates the email string"""
 	email = email_str = (email_str or "").strip()
-
-	valid = True
 
 	def _check(e):
 		_valid = True
@@ -88,13 +85,12 @@ def validate_email_add(email_str, throw=False):
 
 		else:
 			e = extract_email_id(e)
-			match = re.match("[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?", e.lower())
+			match = re.match("[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?", e.lower()) if e else None
 
 			if not match:
 				_valid = False
 			else:
 				matched = match.group(0)
-
 				if match:
 					match = matched==e.lower()
 
@@ -142,7 +138,7 @@ def has_gravatar(email):
 		# since querying gravatar for every item will be slow
 		return ''
 
-	hexdigest = md5.md5(frappe.as_unicode(email).encode('utf-8')).hexdigest()
+	hexdigest = hashlib.md5(frappe.as_unicode(email).encode('utf-8')).hexdigest()
 
 	gravatar_url = "https://secure.gravatar.com/avatar/{hash}?d=404&s=200".format(hash=hexdigest)
 	try:
@@ -155,7 +151,7 @@ def has_gravatar(email):
 		return ''
 
 def get_gravatar_url(email):
-	return "https://secure.gravatar.com/avatar/{hash}?d=mm&s=200".format(hash=md5.md5(email).hexdigest())
+	return "https://secure.gravatar.com/avatar/{hash}?d=mm&s=200".format(hash=hashlib.md5(email).hexdigest())
 
 def get_gravatar(email):
 	gravatar_url = has_gravatar(email)
@@ -183,7 +179,7 @@ def dict_to_str(args, sep='&'):
 	"""
 	t = []
 	for k in args.keys():
-		t.append(str(k)+'='+urllib.quote(str(args[k] or '')))
+		t.append(str(k)+'='+quote(str(args[k] or '')))
 	return sep.join(t)
 
 # Get Defaults
@@ -227,7 +223,7 @@ def get_file_timestamp(fn):
 
 	try:
 		return str(cint(os.stat(fn).st_mtime))
-	except OSError, e:
+	except OSError as e:
 		if e.args[0]!=2:
 			raise
 		else:
@@ -278,8 +274,8 @@ def execute_in_shell(cmd, verbose=0):
 			err = stderr.read()
 
 	if verbose:
-		if err: print err
-		if out: print out
+		if err: print(err)
+		if out: print(out)
 
 	return err, out
 
@@ -309,14 +305,14 @@ def get_request_site_address(full_address=False):
 
 def encode_dict(d, encoding="utf-8"):
 	for key in d:
-		if isinstance(d[key], basestring) and isinstance(d[key], unicode):
+		if isinstance(d[key], basestring) and isinstance(d[key], text_type):
 			d[key] = d[key].encode(encoding)
 
 	return d
 
 def decode_dict(d, encoding="utf-8"):
 	for key in d:
-		if isinstance(d[key], basestring) and not isinstance(d[key], unicode):
+		if isinstance(d[key], basestring) and not isinstance(d[key], text_type):
 			d[key] = d[key].decode(encoding, "ignore")
 
 	return d
@@ -390,7 +386,6 @@ def is_markdown(text):
 		return not re.search("<p[\s]*>|<br[\s]*>", text)
 
 def get_sites(sites_path=None):
-	import os
 	if not sites_path:
 		sites_path = getattr(frappe.local, 'sites_path', None) or '.'
 
@@ -421,10 +416,10 @@ def watch(path, handler=None, debug=True):
 	class Handler(FileSystemEventHandler):
 		def on_any_event(self, event):
 			if debug:
-				print "File {0}: {1}".format(event.event_type, event.src_path)
+				print("File {0}: {1}".format(event.event_type, event.src_path))
 
 			if not handler:
-				print "No handler specified"
+				print("No handler specified")
 				return
 
 			handler(event.src_path, event.event_type)
@@ -450,17 +445,54 @@ def markdown(text, sanitize=True, linkify=True):
 	return html
 
 def sanitize_email(emails):
-	from email.utils import parseaddr, formataddr
-
 	sanitized = []
 	for e in split_emails(emails):
 		if not validate_email_add(e):
 			continue
 
-		fullname, email_id = parseaddr(e)
-		sanitized.append(formataddr((fullname, email_id)))
+		full_name, email_id = parse_addr(e)
+		sanitized.append(formataddr((full_name, email_id)))
 
 	return ", ".join(sanitized)
+
+def parse_addr(email_string):
+	"""
+	Return email_id and user_name based on email string
+	Raise error if email string is not valid
+	"""
+	name, email = parseaddr(email_string)
+	if check_format(email):
+		name = get_name_from_email_string(email_string, email, name)
+		return (name, email)
+	else:
+		email_regex = re.compile(r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)")
+		email_list = re.findall(email_regex, email_string)
+		if len(email_list) > 0 and check_format(email_list[0]):
+			#take only first email address
+			email = email_list[0]
+			name = get_name_from_email_string(email_string, email, name)
+			return (name, email)
+	return (None, email)
+
+def check_format(email_id):
+	"""
+	Check if email_id is valid. valid email:text@example.com
+	String check ensures that email_id contains both '.' and
+	'@' and index of '@' is less than '.'
+	"""
+	is_valid = False
+	try:
+		pos = email_id.rindex("@")
+		is_valid = pos > 0 and (email_id.rindex(".") > pos) and (len(email_id) - pos > 4)
+	except Exception:
+		#print(e)
+		pass
+	return is_valid
+
+def get_name_from_email_string(email_string, email_id, name):
+	name = email_string.replace(email_id, '')
+	name = re.sub('[^A-Za-z0-9 ]+', '', name).strip()
+	return name
 
 def get_installed_apps_info():
 	out = []

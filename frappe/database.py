@@ -14,11 +14,15 @@ import frappe
 import frappe.defaults
 import frappe.async
 import re
+import redis
 import frappe.model.meta
 from frappe.utils import now, get_datetime, cstr
 from frappe import _
-from types import StringType, UnicodeType
+from six import text_type, binary_type
 from frappe.utils.global_search import sync_global_search
+from frappe.model.utils.link_count import flush_local_link_count
+from six import iteritems, text_type
+
 
 class Database:
 	"""
@@ -49,12 +53,24 @@ class Database:
 	def connect(self):
 		"""Connects to a database as set in `site_config.json`."""
 		warnings.filterwarnings('ignore', category=MySQLdb.Warning)
-		self._conn = MySQLdb.connect(user=self.user, host=self.host, passwd=self.password,
-			use_unicode=True, charset='utf8mb4')
+		usessl = 0
+		if frappe.conf.db_ssl_ca and frappe.conf.db_ssl_cert and frappe.conf.db_ssl_key:
+			usessl = 1
+			self.ssl = {
+				'ca':frappe.conf.db_ssl_ca,
+				'cert':frappe.conf.db_ssl_cert,
+				'key':frappe.conf.db_ssl_key
+			}
+		if usessl:
+			self._conn = MySQLdb.connect(user=self.user, host=self.host, passwd=self.password,
+				use_unicode=True, charset='utf8mb4', ssl=self.ssl)
+		else:
+			self._conn = MySQLdb.connect(user=self.user, host=self.host, passwd=self.password,
+				use_unicode=True, charset='utf8mb4')
 		self._conn.converter[246]=float
 		self._conn.converter[12]=get_datetime
-		self._conn.encoders[UnicodeWithAttrs] = self._conn.encoders[UnicodeType]
-		self._conn.encoders[DateTimeDeltaType] = self._conn.encoders[StringType]
+		self._conn.encoders[UnicodeWithAttrs] = self._conn.encoders[text_type]
+		self._conn.encoders[DateTimeDeltaType] = self._conn.encoders[binary_type]
 
 		MYSQL_OPTION_MULTI_STATEMENTS_OFF = 1
 		self._conn.set_server_option(MYSQL_OPTION_MULTI_STATEMENTS_OFF)
@@ -148,7 +164,7 @@ class Database:
 
 				self._cursor.execute(query)
 
-		except Exception, e:
+		except Exception as e:
 			# ignore data definition errors
 			if ignore_ddl and e.args[0] in (1146,1054,1091):
 				pass
@@ -217,7 +233,7 @@ class Database:
 		could cause the system to hang."""
 		if self.transaction_writes and \
 			query and query.strip().split()[0].lower() in ['start', 'alter', 'drop', 'create', "begin", "truncate"]:
-			raise Exception, 'This statement can cause implicit commit'
+			raise Exception('This statement can cause implicit commit')
 
 		if query and query.strip().lower() in ('commit', 'rollback'):
 			self.transaction_writes = 0
@@ -244,7 +260,7 @@ class Database:
 				else:
 					val = r[i]
 
-				if as_utf8 and type(val) is unicode:
+				if as_utf8 and type(val) is text_type:
 					val = val.encode('utf-8')
 				row_dict[self._cursor.description[i][0]] = val
 			ret.append(row_dict)
@@ -273,13 +289,13 @@ class Database:
 
 		if isinstance(v, (datetime.date, datetime.timedelta, datetime.datetime, long)):
 			if isinstance(v, datetime.date):
-				v = unicode(v)
+				v = text_type(v)
 				if formatted:
 					v = formatdate(v)
 
 			# time
 			elif isinstance(v, (datetime.timedelta, datetime.datetime)):
-				v = unicode(v)
+				v = text_type(v)
 
 			# long
 			elif isinstance(v, long):
@@ -290,7 +306,7 @@ class Database:
 			if isinstance(v, float):
 				v=fmt_money(v)
 			elif isinstance(v, int):
-				v = unicode(v)
+				v = text_type(v)
 
 		return v
 
@@ -305,7 +321,7 @@ class Database:
 					val = self.convert_to_simple_type(c, formatted)
 				else:
 					val = c
-				if as_utf8 and type(val) is unicode:
+				if as_utf8 and type(val) is text_type:
 					val = val.encode('utf-8')
 				nr.append(val)
 			nres.append(nr)
@@ -317,7 +333,7 @@ class Database:
 		for r in res:
 			nr = []
 			for c in r:
-				if type(c) is unicode:
+				if type(c) is text_type:
 					c = c.encode('utf-8')
 					nr.append(self.convert_to_simple_type(c, formatted))
 			nres.append(nr)
@@ -455,7 +471,7 @@ class Database:
 			if (filters is not None) and (filters!=doctype or doctype=="DocType"):
 				try:
 					out = self._get_values_from_table(fields, filters, doctype, as_dict, debug, order_by, update)
-				except Exception, e:
+				except Exception as e:
 					if ignore and e.args[0] in (1146, 1054):
 						# table or column not found, return None
 						out = None
@@ -584,8 +600,9 @@ class Database:
 
 		order_by = ("order by " + order_by) if order_by else ""
 
-		r = self.sql("select {0} from `tab{1}` where {2} {3}".format(fl, doctype,
-			conditions, order_by), values, as_dict=as_dict, debug=debug, update=update)
+		r = self.sql("select {0} from `tab{1}` {2} {3} {4}"
+			.format(fl, doctype, "where" if conditions else "", conditions, order_by), values, 
+			as_dict=as_dict, debug=debug, update=update)
 
 		return r
 
@@ -654,7 +671,7 @@ class Database:
 				where field in ({0}) and
 					doctype=%s'''.format(', '.join(['%s']*len(keys))),
 					keys + [dt], debug=debug)
-			for key, value in to_update.iteritems():
+			for key, value in iteritems(to_update):
 				self.sql('''insert into tabSingles(doctype, field, value) values (%s, %s, %s)''',
 					(dt, key, value), debug=debug)
 
@@ -723,8 +740,19 @@ class Database:
 		self.sql("commit")
 		frappe.local.rollback_observers = []
 		self.flush_realtime_log()
+		self.enqueue_global_search()
+		flush_local_link_count()
+
+	def enqueue_global_search(self):
 		if frappe.flags.update_global_search:
-			sync_global_search()
+			try:
+				frappe.enqueue('frappe.utils.global_search.sync_global_search',
+					now=frappe.flags.in_test or frappe.flags.in_install or frappe.flags.in_migrate,
+					flags=frappe.flags.update_global_search)
+			except redis.exceptions.ConnectionError:
+				sync_global_search()
+
+			frappe.flags.update_global_search = []
 
 	def flush_realtime_log(self):
 		for args in frappe.local.realtime_log:
@@ -853,10 +881,10 @@ class Database:
 
 	def escape(self, s, percent=True):
 		"""Excape quotes and percent in given string."""
-		if isinstance(s, unicode):
+		if isinstance(s, text_type):
 			s = (s or "").encode("utf-8")
 
-		s = unicode(MySQLdb.escape_string(s), "utf-8").replace("`", "\\`")
+		s = text_type(MySQLdb.escape_string(s), "utf-8").replace("`", "\\`")
 
 		# NOTE separating % escape, because % escape should only be done when using LIKE operator
 		# or when you use python format string to generate query that already has a %s

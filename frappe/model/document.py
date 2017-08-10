@@ -1,15 +1,15 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 import frappe
 import time
-import redis
 from frappe import _, msgprint
 from frappe.utils import flt, cstr, now, get_datetime_str, file_lock
 from frappe.utils.background_jobs import enqueue
 from frappe.model.base_document import BaseDocument, get_controller
 from frappe.model.naming import set_new_name
+from six import iteritems
 from werkzeug.exceptions import NotFound, Forbidden
 import hashlib, json
 from frappe.model import optional_fields
@@ -50,7 +50,7 @@ def get_doc(arg1, arg2=None):
 	if controller:
 		return controller(arg1, arg2)
 
-	raise ImportError, arg1
+	raise ImportError(arg1)
 
 class Document(BaseDocument):
 	"""All controllers inherit from `Document`."""
@@ -156,9 +156,8 @@ class Document(BaseDocument):
 
 	def raise_no_permission_to(self, perm_type):
 		"""Raise `frappe.PermissionError`."""
-		msg = _("No permission to {0} {1} {2}".format(perm_type, self.doctype, self.name or ""))
-		frappe.msgprint(msg)
-		raise frappe.PermissionError(msg)
+		frappe.flags.error_message = _('Insufficient Permission for {0}').format(self.doctype)
+		raise frappe.PermissionError
 
 	def insert(self, ignore_permissions=None, ignore_if_duplicate=False, ignore_mandatory=None):
 		"""Insert the document in the database (as a new document).
@@ -203,9 +202,9 @@ class Document(BaseDocument):
 		else:
 			try:
 				self.db_insert()
-			except frappe.DuplicateEntryError, e:
+			except frappe.DuplicateEntryError as e:
 				if not ignore_if_duplicate:
-					raise  e
+					raise e
 
 		# children
 		for d in self.get_all_children():
@@ -345,7 +344,7 @@ class Document(BaseDocument):
 		def get_values():
 			values = self.as_dict()
 			# format values
-			for key, value in values.iteritems():
+			for key, value in iteritems(values):
 				if value==None:
 					values[key] = ""
 			return values
@@ -362,7 +361,7 @@ class Document(BaseDocument):
 	def update_single(self, d):
 		"""Updates values for Single type Document in `tabSingles`."""
 		frappe.db.sql("""delete from tabSingles where doctype=%s""", self.doctype)
-		for field, value in d.iteritems():
+		for field, value in iteritems(d):
 			if field != "doctype":
 				frappe.db.sql("""insert into tabSingles(doctype, field, value)
 					values (%s, %s, %s)""", (self.doctype, field, value))
@@ -562,7 +561,7 @@ class Document(BaseDocument):
 				self._action = "submit"
 				self.check_permission("submit")
 			else:
-				raise frappe.DocstatusTransitionError, _("Cannot change docstatus from 0 to 2")
+				raise frappe.DocstatusTransitionError(_("Cannot change docstatus from 0 to 2"))
 
 		elif docstatus==1:
 			if self.docstatus==1:
@@ -572,10 +571,10 @@ class Document(BaseDocument):
 				self._action = "cancel"
 				self.check_permission("cancel")
 			else:
-				raise frappe.DocstatusTransitionError, _("Cannot change docstatus from 1 to 0")
+				raise frappe.DocstatusTransitionError(_("Cannot change docstatus from 1 to 0"))
 
 		elif docstatus==2:
-			raise frappe.ValidationError, _("Cannot edit cancelled document")
+			raise frappe.ValidationError(_("Cannot edit cancelled document"))
 
 	def set_parent_in_children(self):
 		"""Updates `parent` and `parenttype` property in all children."""
@@ -612,7 +611,7 @@ class Document(BaseDocument):
 			msgprint(msg)
 
 		if frappe.flags.print_messages:
-			print self.as_json().encode("utf-8")
+			print(self.as_json().encode("utf-8"))
 
 		raise frappe.MandatoryError('[{doctype}, {name}]: {fields}'.format(
 			fields=", ".join((each[0] for each in missing)),
@@ -710,6 +709,7 @@ class Document(BaseDocument):
 			# value change is not applicable in insert
 			event_map['validate'] = 'Value Change'
 			event_map['before_change'] = 'Value Change'
+			event_map['before_update_after_submit'] = 'Value Change'
 
 		for alert in self.flags.email_alerts:
 			event = event_map.get(method, None)
@@ -803,12 +803,7 @@ class Document(BaseDocument):
 		self.clear_cache()
 		self.notify_update()
 
-		try:
-			frappe.enqueue('frappe.utils.global_search.update_global_search',
-				now=frappe.flags.in_test or frappe.flags.in_install or frappe.flags.in_migrate,
-				doc=self)
-		except redis.exceptions.ConnectionError:
-			update_global_search(self)
+		update_global_search(self)
 
 		if self._doc_before_save and not self.flags.ignore_version:
 			self.save_version()

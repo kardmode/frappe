@@ -5,7 +5,7 @@ frappe.views.KanbanView = frappe.views.ListRenderer.extend({
 	render_view: function(values) {
 		var board_name = this.get_board_name();
 		if(this.kanban && board_name === this.kanban.board_name) {
-			this.kanban.update_cards(values);
+			this.kanban.update(values);
 			return;
 		}
 
@@ -71,7 +71,7 @@ frappe.views.KanbanView = frappe.views.ListRenderer.extend({
 		return frappe.render_template('list_item_row_head', { main: '', list: this });
 	},
 	required_libs: [
-		'assets/frappe/js/frappe/views/kanban/fluxify.min.js',
+		'assets/frappe/js/lib/fluxify.min.js',
 		'assets/frappe/js/frappe/views/kanban/kanban_board.js'
 	]
 });

@@ -10,7 +10,8 @@ from frappe.utils import get_hook_method, get_files_path, random_string, encode,
 from frappe import _
 from frappe import conf
 from copy import copy
-import urllib
+from six.moves.urllib.parse import unquote
+from six import text_type
 
 class MaxFileSizeReachedError(frappe.ValidationError): pass
 
@@ -66,7 +67,7 @@ def save_url(file_url, filename, dt, dn, folder, is_private):
 	# 	frappe.msgprint("URL must start with 'http://' or 'https://'")
 	# 	return None, None
 
-	file_url = urllib.unquote(file_url)
+	file_url = unquote(file_url)
 
 	f = frappe.get_doc({
 		"doctype": "File",
@@ -114,8 +115,8 @@ def extract_images_from_html(doc, content):
 			filename = headers.split("filename=")[-1]
 
 			# decode filename
-			if not isinstance(filename, unicode):
-				filename = unicode(filename, 'utf-8')
+			if not isinstance(filename, text_type):
+				filename = text_type(filename, 'utf-8')
 		else:
 			mtype = headers.split(";")[0]
 			filename = get_random_filename(content_type=mtype)
@@ -147,7 +148,7 @@ def get_random_filename(extn=None, content_type=None):
 
 def save_file(fname, content, dt, dn, folder=None, decode=False, is_private=0):
 	if decode:
-		if isinstance(content, unicode):
+		if isinstance(content, text_type):
 			content = content.encode("utf-8")
 
 		if "," in content:
@@ -236,7 +237,7 @@ def remove_all(dt, dn, from_delete=False):
 		for fid in frappe.db.sql_list("""select name from `tabFile` where
 			attached_to_doctype=%s and attached_to_name=%s""", (dt, dn)):
 			remove_file(fid, dt, dn, from_delete)
-	except Exception, e:
+	except Exception as e:
 		if e.args[0]!=1054: raise # (temp till for patched)
 
 def remove_file_by_url(file_url, doctype=None, name=None):
@@ -350,3 +351,22 @@ def get_file_name(fname, optional_suffix):
 			partial, extn = f[0], "." + f[1]
 		return '{partial}{suffix}{extn}'.format(partial=partial, extn=extn, suffix=optional_suffix)
 	return fname
+
+@frappe.whitelist()
+def download_file(file_url):
+	"""
+	Download file using token and REST API. Valid session or
+	token is required to download private files.
+
+	Method : GET
+	Endpoint : frappe.utils.file_manager.download_file
+	URL Params : file_name = /path/to/file relative to site path
+	"""
+	file_doc = frappe.get_doc("File", {"file_url":file_url})
+	file_doc.check_permission("read")
+
+	with open(getattr(frappe.local, "site_path", None) + file_url, "rb") as fileobj:
+		filedata = fileobj.read()
+	frappe.local.response.filename = file_url[file_url.rfind("/")+1:]
+	frappe.local.response.filecontent = filedata
+	frappe.local.response.type = "download"

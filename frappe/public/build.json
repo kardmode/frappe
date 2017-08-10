@@ -6,6 +6,7 @@
 		"public/css/avatar.css"
 	],
 	"js/frappe-web.min.js": [
+		"public/js/frappe/class.js",
 		"public/js/lib/bootstrap.min.js",
 		"public/js/lib/md5.min.js",
 		"public/js/frappe/provide.js",
@@ -16,7 +17,6 @@
 		"public/js/frappe/misc/pretty_date.js",
 		"public/js/lib/moment/moment.min.js",
 		"public/js/lib/highlight.pack.js",
-		"public/js/frappe/class.js",
 		"public/js/lib/microtemplate.js",
 		"public/js/frappe/query_string.js",
 		"website/js/website.js",
@@ -30,6 +30,7 @@
 		"public/js/frappe/ui/field_group.js",
 		"public/js/frappe/form/control.js",
 		"public/js/frappe/form/link_selector.js",
+		"public/js/frappe/form/multi_select_dialog.js",
 		"public/js/frappe/ui/dialog.js"
 	],
 	"css/desk.min.css": [
@@ -51,7 +52,8 @@
 		"public/css/desktop.css",
 		"public/css/form.css",
 		"public/css/mobile.css",
-		"public/css/kanban.css"
+		"public/css/kanban.css",
+		"public/css/graphs.css"
 	],
 	"css/frappe-rtl.css": [
 		"public/css/bootstrap-rtl.css",
@@ -75,8 +77,8 @@
 		"public/js/lib/datepicker/locale-all.js"
 	],
 	"js/desk.min.js": [
-		"public/js/frappe/provide.js",
 		"public/js/frappe/class.js",
+		"public/js/frappe/provide.js",
 		"public/js/frappe/assets.js",
 		"public/js/frappe/format.js",
 		"public/js/frappe/form/formatters.js",
@@ -84,11 +86,13 @@
 		"public/js/frappe/dom.js",
 		"public/js/frappe/ui/messages.js",
 		"public/js/frappe/ui/keyboard.js",
+		"public/js/frappe/ui/emoji.js",
 
 		"public/js/frappe/request.js",
 		"public/js/frappe/socketio_client.js",
 		"public/js/frappe/router.js",
 		"public/js/frappe/defaults.js",
+		"public/js/frappe/checkbox_editor.js",
 		"public/js/frappe/roles_editor.js",
 		"public/js/lib/microtemplate.js",
 
@@ -99,11 +103,13 @@
 
 		"public/js/frappe/ui/page.html",
 		"public/js/frappe/ui/page.js",
+		"public/js/frappe/ui/find.js",
 		"public/js/frappe/ui/iconbar.js",
 		"public/js/frappe/form/layout.js",
 		"public/js/frappe/ui/field_group.js",
 		"public/js/frappe/form/control.js",
 		"public/js/frappe/form/link_selector.js",
+		"public/js/frappe/form/multi_select_dialog.js",
 		"public/js/frappe/ui/dialog.js",
 		"public/js/frappe/ui/app_icon.js",
 
@@ -121,15 +127,18 @@
 		"public/js/frappe/misc/common.js",
 		"public/js/frappe/misc/pretty_date.js",
 		"public/js/frappe/misc/utils.js",
+		"public/js/frappe/misc/test_utils.js",
 		"public/js/frappe/misc/tools.js",
 		"public/js/frappe/misc/datetime.js",
 		"public/js/frappe/misc/number_format.js",
 		"public/js/frappe/misc/help.js",
 		"public/js/frappe/misc/help_links.js",
 		"public/js/frappe/misc/address_and_contact.js",
+		"public/js/frappe/misc/preview_email.js",
 
 		"public/js/frappe/ui/upload.html",
 		"public/js/frappe/upload.js",
+		"public/js/integrations/gsuite.js",
 		"public/js/frappe/ui/tree.js",
 
 		"public/js/frappe/views/container.js",
@@ -156,6 +165,8 @@
 		"public/js/frappe/query_string.js",
 
 		"public/js/frappe/ui/charts.js",
+		"public/js/frappe/ui/graphs.js",
+		"public/js/frappe/ui/comment.js",
 		"public/js/frappe/misc/rating_icons.html",
 
 		"public/js/frappe/feedback.js"
@@ -190,6 +201,8 @@
 		"public/js/frappe/form/save.js",
 		"public/js/frappe/form/script_manager.js",
 		"public/js/frappe/form/grid.js",
+		"public/js/frappe/form/grid_row.js",
+		"public/js/frappe/form/grid_row_form.js",
 		"public/js/frappe/form/linked_with.js",
 		"public/js/frappe/form/workflow.js",
 		"public/js/frappe/form/print.js",
@@ -212,7 +225,7 @@
 		"public/css/list.css",
 		"public/css/calendar.css",
 		"public/css/role_editor.css",
-		"public/css/filter_dashboard.css"
+		"public/css/gantt.css"
 	],
 	"js/list.min.js": [
 		"public/js/frappe/ui/listing.html",
@@ -222,9 +235,6 @@
 		"public/js/frappe/model/indicator.js",
 		"public/js/frappe/ui/filters/filters.js",
 		"public/js/frappe/ui/filters/edit_filter.html",
-		"public/js/frappe/ui/filters/filter_dashboard.html",
-		"public/js/frappe/ui/filters/filter_dashboard_value.html",
-		"public/js/frappe/ui/filters/filter_dashboard_head.html",
 		"public/js/frappe/ui/tags.js",
 		"public/js/frappe/ui/like.js",
 		"public/js/frappe/ui/liked_by.html",

@@ -8,17 +8,16 @@ from frappe.utils import now_datetime, cint
 import re
 
 def set_new_name(doc):
-	"""Sets the `name`` property for the document based on various rules.
+	"""
+	Sets the `name` property for the document based on various rules.
 
-	1. If amened doc, set suffix.
-	3. If `autoname` method is declared, then call it.
-	4. If `autoname` property is set in the DocType (`meta`), then build it using the `autoname` property.
-	2. If `name` is already defined, use that name
-	5. If no rule defined, use hash.
+	1. If amended doc, set suffix.
+	2. If `autoname` method is declared, then call it.
+	3. If `autoname` property is set in the DocType (`meta`), then build it using the `autoname` property.
+	4. If no rule defined, use hash.
 
-	#### Note:
-
-	:param doc: Document to be named."""
+	:param doc: Document to be named.
+	"""
 
 	doc.run_method("before_naming")
 
@@ -43,7 +42,7 @@ def set_new_name(doc):
 			doc.name = (doc.get(fieldname) or "").strip()
 			if not doc.name:
 				frappe.throw(_("{0} is required").format(doc.meta.get_label(fieldname)))
-				raise Exception, 'Name is required'
+				raise Exception('Name is required')
 		if autoname.startswith("naming_series:"):
 			set_name_by_naming_series(doc)
 		elif "#" in autoname:
@@ -94,12 +93,18 @@ def make_autoname(key='', doctype='', doc=''):
 	elif not "." in key:
 		frappe.throw(_("Invalid naming series (. missing)") + (_(" for {0}").format(doctype) if doctype else ""))
 
+	parts = key.split('.')
+	n = parse_naming_series(parts, doctype, doc)
+	return n
+
+def parse_naming_series(parts, doctype= '', doc = ''):
 	n = ''
-	l = key.split('.')
+	if isinstance(parts, basestring):
+		parts = parts.split('.')
+
 	series_set = False
 	today = now_datetime()
-
-	for e in l:
+	for e in parts:
 		part = ''
 		if e.startswith('#'):
 			if not series_set:
@@ -120,6 +125,7 @@ def make_autoname(key='', doctype='', doc=''):
 
 		if isinstance(part, basestring):
 			n+=part
+
 	return n
 
 def getseries(key, digits, doctype=''):
@@ -139,6 +145,9 @@ def getseries(key, digits, doctype=''):
 def revert_series_if_last(key, name):
 	if ".#" in key:
 		prefix, hashes = key.rsplit(".", 1)
+		if '.' in prefix:
+			prefix = parse_naming_series(prefix.split('.'))
+
 		if "#" not in hashes:
 			return
 	else:

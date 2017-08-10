@@ -54,7 +54,7 @@
 }
 
 .filter-box {
-	border-top: 1px solid @border-color;
+	border-bottom: 1px solid @border-color;
 	// margin: 0px -15px;
 	padding: 10px 15px 3px;
 
@@ -273,25 +273,28 @@
 // tags
 
 .tag-row {
-	margin-top: 5px;
 	padding-left: 55px;
+	margin-bottom: 0px;
+	margin-top: -5px;
 }
 
 .taggle_placeholder {
 	top: 0;
-	left: 0;
+	left: 5px;
 	font-size: 11px;
+	color: @text-muted;
 }
 
 .taggle_list {
-	padding-left: 0;
-	margin-bottom: 0;
+	padding-left: 5px;
+	margin-bottom: 3px;
 
 	.taggle {
 		font-size: 11px;
 		padding: 2px 4px;
 		font-weight: normal;
 		background-color: @btn-bg;
+		white-space: normal;
 
 		&:hover {
 			padding: 2px 15px 2px 4px;
@@ -316,6 +319,12 @@
 		right: 5px;
 		color: @text-color;
 		font-size: 11px;
+	}
+}
+
+.page-form {
+	.awesomplete > ul {
+		min-width: 300px;
 	}
 }
 
@@ -544,6 +553,7 @@
 	&--activity {
 		justify-content: flex-end;
 		margin-right: 5px;
+		min-width: 110px;
 
 		.list-row-modified, .avatar-small {
 			margin-right: 10px;

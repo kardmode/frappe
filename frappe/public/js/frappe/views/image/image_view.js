@@ -68,8 +68,7 @@ frappe.views.ImageView = frappe.views.ListRenderer.extend({
 			gallery.show(name);
 			return false;
 		});
-	},
-	refresh: this.render_view
+	}
 });
 
 frappe.views.GalleryView = Class.extend({
@@ -167,10 +166,10 @@ frappe.views.GalleryView = Class.extend({
 				]
 			},
 			freeze: true,
-			freeze_message: "Fetching Images.."
+			freeze_message: __("Fetching Images..")
 		}).then(function(r) {
 			if (!r.message) {
-				msgprint("No Images found")
+				frappe.msgprint(__("No Images found"))
 			} else {
 				// filter image files from other
 				var images = r.message.filter(function(image) {

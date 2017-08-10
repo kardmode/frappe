@@ -15,7 +15,8 @@ Example:
 
 '''
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
+from six.moves import range
 import frappe, json, os
 from frappe.utils import cstr, cint
 from frappe.model import default_fields, no_value_fields, optional_fields
@@ -27,7 +28,10 @@ from frappe import _
 
 def get_meta(doctype, cached=True):
 	if cached:
-		return frappe.cache().hget("meta", doctype, lambda: Meta(doctype))
+		if not frappe.local.meta_cache.get(doctype):
+			frappe.local.meta_cache[doctype] = frappe.cache().hget("meta", doctype,
+				lambda: Meta(doctype))
+		return frappe.local.meta_cache[doctype]
 	else:
 		return Meta(doctype)
 
@@ -97,7 +101,7 @@ class Meta(Document):
 
 	def get_global_search_fields(self):
 		'''Returns list of fields with `in_global_search` set and `name` if set'''
-		fields = self.get("fields", {"in_global_search": 1 })
+		fields = self.get("fields", {"in_global_search": 1, "fieldtype": ["not in", no_value_fields]})
 		if getattr(self, 'show_name_in_global_search', None):
 			fields.append(frappe._dict(fieldtype='Data', fieldname='name', label='Name'))
 
@@ -230,7 +234,7 @@ class Meta(Document):
 			self.extend("fields", frappe.db.sql("""SELECT * FROM `tabCustom Field`
 				WHERE dt = %s AND docstatus < 2""", (self.name,), as_dict=1,
 				update={"is_custom_field": 1}))
-		except Exception, e:
+		except Exception as e:
 			if e.args[0]==1146:
 				return
 			else:
@@ -281,7 +285,7 @@ class Meta(Document):
 			newlist += [df for df in self.get('fields') if not df.get('is_custom_field')]
 
 			newlist_fieldnames = [df.fieldname for df in newlist]
-			for i in xrange(2):
+			for i in range(2):
 				for df in list(custom_fields):
 					if df.insert_after in newlist_fieldnames:
 						cf = custom_fields.pop(custom_fields.index(df))
@@ -304,7 +308,7 @@ class Meta(Document):
 
 	def set_custom_permissions(self):
 		'''Reset `permissions` with Custom DocPerm if exists'''
-		if frappe.flags.in_patch or frappe.flags.in_import:
+		if frappe.flags.in_patch or frappe.flags.in_import or frappe.flags.in_install:
 			return
 
 		if not self.istable and self.name not in ('DocType', 'DocField', 'DocPerm',
@@ -385,7 +389,7 @@ def is_single(doctype):
 	try:
 		return frappe.db.get_value("DocType", doctype, "issingle")
 	except IndexError:
-		raise Exception, 'Cannot determine whether %s is single' % doctype
+		raise Exception('Cannot determine whether %s is single' % doctype)
 
 def get_parent_dt(dt):
 	parent_dt = frappe.db.sql("""select parent from tabDocField
@@ -465,9 +469,13 @@ def get_default_df(fieldname):
 				fieldtype = "Data"
 			)
 
-def trim_tables():
+def trim_tables(doctype=None):
 	"""Use this to remove columns that don't exist in meta"""
 	ignore_fields = default_fields + optional_fields
+
+	filters={ "issingle": 0 }
+	if doctype:
+		filters["name"] = doctype
 
 	for doctype in frappe.db.get_all("DocType", filters={"issingle": 0}):
 		doctype = doctype.name
@@ -476,7 +484,7 @@ def trim_tables():
 		columns_to_remove = [f for f in list(set(columns) - set(fields)) if f not in ignore_fields
 			and not f.startswith("_")]
 		if columns_to_remove:
-			print doctype, "columns removed:", columns_to_remove
+			print(doctype, "columns removed:", columns_to_remove)
 			columns_to_remove = ", ".join(["drop `{0}`".format(c) for c in columns_to_remove])
 			query = """alter table `tab{doctype}` {columns}""".format(
 				doctype=doctype, columns=columns_to_remove)
@@ -484,6 +492,9 @@ def trim_tables():
 
 def clear_cache(doctype=None):
 	cache = frappe.cache()
+
+	if getattr(frappe.local, 'meta_cache') and (doctype in frappe.local.meta_cache):
+		del frappe.local.meta_cache[doctype]
 
 	for key in ('is_table', 'doctype_modules'):
 		cache.delete_value(key)

@@ -37,7 +37,8 @@
 }
 
 .form-message {
-	padding: 15px;
+	padding: 15px 30px;
+	border-bottom: 1px solid @border-color;
 }
 
 .document-flow-wrapper {
@@ -102,7 +103,10 @@
 
 .form-dashboard {
 	background-color: @light-bg;
-	border-bottom: 1px solid @border-color;
+}
+
+.form-dashboard-wrapper {
+	margin: -15px 0px;
 }
 
 .form-documents h6 {
@@ -110,8 +114,13 @@
 }
 
 .form-dashboard-section {
+	margin: 0px -15px;
 	padding: 15px 30px;
 	border-bottom: 1px solid @light-border-color;
+}
+
+.form-dashboard-section:first-child {
+	padding-top: 0px;
 }
 
 .form-dashboard-section:last-child {
@@ -119,7 +128,6 @@
 }
 
 .form-heatmap {
-	padding-top: 30px;
 
 	.heatmap-message {
 		margin-top: 10px;
@@ -249,7 +257,7 @@ h6.uppercase, .h6.uppercase {
 
 .form-section:not(:last-child),
 .form-inner-toolbar {
-	border-bottom: 1px solid @light-border-color;
+	border-bottom: 1px solid @border-color;
 }
 
 .empty-section {
@@ -291,6 +299,15 @@ h6.uppercase, .h6.uppercase {
 
 .badge-important {
 	background-color: #e74c3c;
+}
+
+.address-box {
+	background-color: @light-bg;
+	padding: 0px 15px;
+	margin: 15px 0px;
+	border: 1px solid @border-color;
+	border-radius: 3px;
+	font-size: 12px;
 }
 
 .timeline {
@@ -356,10 +373,11 @@ h6.uppercase, .h6.uppercase {
 
 	.media-body {
 		border: 1px solid @border-color;
-		border-radius: 2px;
+		border-radius: 3px;
 		margin-left: -7px;
 		position: relative;
-
+		max-width: calc(~"100% - 50px");
+		padding-right: 0px;
 		// to display the triangle beside the box
 		overflow: visible;
 	}
@@ -370,12 +388,24 @@ h6.uppercase, .h6.uppercase {
 		width: 45px;
 	}
 
+	.action-btns {
+	    position: absolute;
+	    right: 0;
+	    padding: 5px 15px 2px 5px;
+	}
+
 	.comment-header {
 		background-color: @light-bg;
 		padding: 10px 15px 10px 13px;
 		margin: 0px;
 		color: @text-muted;
 		border-bottom: 1px solid @light-border-color;
+		&.links-active {
+			padding-right: 60px;
+		}
+		.commented-on-small {
+			display: none;
+		}
 
 		.octicon-heart {
 			color: @heart-color;
@@ -385,6 +415,7 @@ h6.uppercase, .h6.uppercase {
 
 	.reply {
 		padding: 15px;
+		overflow: auto;
 
 		& > div > p:first-child {
 			margin-top: 0px;
@@ -400,11 +431,15 @@ h6.uppercase, .h6.uppercase {
 	}
 
 	.close-btn-container {
-		padding: 4px 10px 2px 5px;
+		.close {
+			color: inherit;
+			opacity: 1;
+			padding: 0 0 0 10px;
+		}
 	}
 
 	.edit-btn-container {
-		padding: 4px 5px;
+		padding: 0;
 
 		.edit {
 			color: inherit;
@@ -502,7 +537,7 @@ h6.uppercase, .h6.uppercase {
 	background-color: white;
 	// padding: 15px 30px;
 	border: 1px solid @border-color;
-	border-radius: 2px;
+	border-radius: 3px;
 	position: relative;
 	z-index: 1;
 
@@ -614,6 +649,7 @@ h6.uppercase, .h6.uppercase {
 
 .like-disabled-input.for-description {
 	font-weight: normal;
+	font-size: 12px;
 }
 
 .frappe-control& {
@@ -625,7 +661,21 @@ h6.uppercase, .h6.uppercase {
 
 	pre {
 		white-space: pre-wrap;
+		background-color: inherit;
+		border: none;
+		padding: 0px;
+		margin: 0px;
 	}
+}
+
+.flex-justify-center {
+	display: flex;
+    justify-content: center;
+}
+
+.flex-justify-end {
+	display: flex;
+    justify-content: flex-end;
 }
 
 .hide-control {
@@ -653,20 +703,19 @@ select.form-control {
 	background-color: @extra-light-yellow;
 }
 
-.form-headline {
-	padding: 0px 15px;
-	margin: 0px;
+.form-control[data-fieldtype="Password"] {
+	position: inherit;
 }
 
-.form-headline .alert {
-	font-size: @text-medium;
-	background-color: @light-yellow;
-	font-weight: normal !important;
-	border: 0px;
-	border-radius: 0px;
-	margin-bottom: 0px;
-	margin: 0px -15px;
-	padding: 10px 30px;
+.password-strength-indicator {
+	float: right;
+	padding: 15px;
+	margin-top: -41px;
+	margin-right: -7px;
+}
+
+.password-strength-message {
+	margin-top: -10px;
 }
 
 .delivery-status-indicator {
@@ -709,10 +758,17 @@ select.form-control {
 		.section-head {
 			padding: 15px 15px 15px 0px;
 		}
+		.section-body .form-column:first-child{
+			.radio, .checkbox{
+				margin-top: 0;
+			}
+		}
 	}
 
 	.form-column {
 		border-bottom: 1px solid @light-border-color;
+		padding-top: 15px;
+		padding-bottom: 15px;
 	}
 
 	.form-column:last-child {
@@ -777,6 +833,7 @@ select.form-control {
 
 		.form-control {
 			border: none;
+			border-bottom: 1px solid @border-color;
 			box-shadow: none;
 			background-color: inherit;
 			height: auto;
@@ -798,6 +855,22 @@ select.form-control {
 	}
 }
 
+/* goals */
+.goals-page-container {
+	background-color: #fafbfc;
+	padding-top: 1px;
+
+	.goal-container {
+		background-color: #fff;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+		border-radius: 2px;
+		padding: 10px;
+		margin: 10px;
+	}
+}
+
 body[data-route^="Form/Communication"] textarea[data-fieldname="subject"] {
 	height: 80px !important;
 }
+
+

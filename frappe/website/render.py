@@ -6,12 +6,16 @@ import frappe
 from frappe import _
 import frappe.sessions
 from frappe.utils import cstr
-import mimetypes, json
+import os, mimetypes, json
+
+from six import iteritems
 from werkzeug.wrappers import Response
 from werkzeug.routing import Map, Rule, NotFound
+from werkzeug.wsgi import wrap_file
 
 from frappe.website.context import get_context
-from frappe.website.utils import get_home_page, can_cache, delete_page_cache
+from frappe.website.utils import (get_home_page, can_cache, delete_page_cache,
+	get_toc, get_next_link)
 from frappe.website.router import clear_sitemap
 from frappe.translate import guess_language
 
@@ -19,21 +23,24 @@ class PageNotFoundError(Exception): pass
 
 def render(path=None, http_status_code=None):
 	"""render html page"""
-	path = resolve_path(path or frappe.local.request.path.strip('/ '))
+	if not path:
+		path = frappe.local.request.path
+	path = resolve_path(path.strip('/ '))
 	data = None
 
 	# if in list of already known 404s, send it
 	if can_cache() and frappe.cache().hget('website_404', frappe.request.url):
 		data = render_page('404')
 		http_status_code = 404
-
+	elif is_static_file(path):
+		return get_static_file_reponse()
 	else:
 		try:
 			data = render_page_by_language(path)
-		except frappe.DoesNotExistError, e:
+		except frappe.DoesNotExistError as e:
 			doctype, name = get_doctype_from_path(path)
 			if doctype and name:
-				path = "print"
+				path = "printview"
 				frappe.local.form_dict.doctype = doctype
 				frappe.local.form_dict.name = name
 			elif doctype:
@@ -48,13 +55,13 @@ def render(path=None, http_status_code=None):
 			if not data:
 				try:
 					data = render_page(path)
-				except frappe.PermissionError, e:
+				except frappe.PermissionError as e:
 					data, http_status_code = render_403(e, path)
 
-		except frappe.PermissionError, e:
+		except frappe.PermissionError as e:
 			data, http_status_code = render_403(e, path)
 
-		except frappe.Redirect, e:
+		except frappe.Redirect as e:
 			return build_response(path, "", 301, {
 				"Location": frappe.flags.redirect_location or (frappe.local.response or {}).get('location'),
 				"Cache-Control": "no-store, no-cache, must-revalidate"
@@ -69,6 +76,32 @@ def render(path=None, http_status_code=None):
 
 	return build_response(path, data, http_status_code or 200)
 
+def is_static_file(path):
+	if ('.' not in path):
+		return False
+	extn = path.rsplit('.', 1)[-1]
+	if extn in ('html', 'md', 'js', 'xml'):
+		return False
+
+	for app in frappe.get_installed_apps():
+		file_path = frappe.get_app_path(app, 'www') + '/' + path
+		if os.path.exists(file_path):
+			frappe.flags.file_path = file_path
+			return True
+
+	return False
+
+def get_static_file_reponse():
+	try:
+		f = open(frappe.flags.file_path, 'rb')
+	except IOError:
+		raise NotFound
+
+	response = Response(wrap_file(frappe.local.request.environ, f), direct_passthrough=True)
+	response.mimetype = mimetypes.guess_type(frappe.flags.file_path)[0] or b'application/octet-stream'
+	return response
+
+
 def build_response(path, data, http_status_code, headers=None):
 	# build response
 	response = Response()
@@ -78,7 +111,7 @@ def build_response(path, data, http_status_code, headers=None):
 	response.headers[b"X-From-Cache"] = frappe.local.response.from_cache or False
 
 	if headers:
-		for key, val in headers.iteritems():
+		for key, val in iteritems(headers):
 			response.headers[bytes(key)] = val.encode("utf-8")
 
 	return response
@@ -140,6 +173,12 @@ def build_page(path):
 		html = frappe.render_template(context.source, context)
 	elif context.template:
 		html = frappe.get_template(context.template).render(context)
+
+	if '{index}' in html:
+		html = html.replace('{index}', get_toc(context.route))
+
+	if '{next}' in html:
+		html = html.replace('{next}', get_next_link(context.route))
 
 	# html = frappe.get_template(context.base_template_path).render(context)
 
@@ -219,7 +258,9 @@ def clear_cache(path=None):
 	'''Clear website caches
 
 	:param path: (optional) for the given path'''
-	frappe.cache().delete_value("website_generator_routes")
+	for key in ('website_generator_routes', 'website_pages',
+		'website_full_index'):
+		frappe.cache().delete_value(key)
 	delete_page_cache(path)
 	frappe.cache().delete_value("website_404")
 	if not path:

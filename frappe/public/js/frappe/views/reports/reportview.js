@@ -12,7 +12,7 @@ frappe.views.ReportViewPage = Class.extend({
 		if(!frappe.model.can_get_report(doctype)) {
 			frappe.show_not_permitted(frappe.get_route_str());
 			return;
-		};
+		}
 
 		this.doctype = doctype;
 		this.docname = docname;
@@ -23,15 +23,14 @@ frappe.views.ReportViewPage = Class.extend({
 		frappe.model.with_doctype(this.doctype, function() {
 			me.make_report_view();
 			if(me.docname) {
-
 				frappe.model.with_doc('Report', me.docname, function(r) {
 					me.parent.reportview.set_columns_and_filters(
-						JSON.parse(frappe.get_doc("Report", me.docname).json));
+						JSON.parse(frappe.get_doc("Report", me.docname).json || '{}'));
 					me.parent.reportview.set_route_filters();
 					me.parent.reportview.run();
 				});
 			} else {
-				me.parent.reportview.set_route_filters(true);
+				me.parent.reportview.set_route_filters();
 				me.parent.reportview.run();
 			}
 		});
@@ -45,8 +44,9 @@ frappe.views.ReportViewPage = Class.extend({
 		frappe.container.change_to(this.page_name);
 
 		$(this.parent).on('show', function(){
-			if(me.parent.reportview.set_route_filters())
+			if(me.parent.reportview.set_route_filters()) {
 				me.parent.reportview.run();
+			}
 		});
 	},
 	make_report_view: function() {
@@ -76,8 +76,10 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 
 		this.add_totals_row = 0;
 		this.page = this.parent.page;
+		this.meta = frappe.get_meta(this.doctype);
 		this._body = $('<div>').appendTo(this.page.main);
-		this.page_title = __('Report')+ ': ' + __(this.docname ? (this.doctype + ' - ' + this.docname) : this.doctype);
+		this.page_title = __('Report')+ ': ' + (this.docname ?
+			__(this.doctype) + ' - ' + __(this.docname) : __(this.doctype));
 		this.page.set_title(this.page_title);
 		this.init_user_settings();
 		this.make({
@@ -107,7 +109,7 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 
 		// add to desktop
 		this.page.add_menu_item(__("Add to Desktop"), function() {
-			frappe.add_to_desktop(me.docname || __('{0} Report', [me.doctype]), me.doctype);
+			frappe.add_to_desktop(me.docname || __('{0} Report', [me.doctype]), me.doctype, me.docname);
 		}, true);
 
 	},
@@ -146,7 +148,7 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 					columns.push(coldef);
 				}
 			});
-		};
+		}
 		if(!columns.length) {
 			var columns = [['name', this.doctype],];
 			$.each(frappe.meta.docfield_list[this.doctype], function(i, df) {
@@ -225,10 +227,10 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 		this.add_totals_row = cint(opts.add_totals_row);
 	},
 
-	set_route_filters: function(first_load) {
+	set_route_filters: function() {
 		var me = this;
-		if(frappe.route_options && !this.user_settings.filters) {
-			this.set_filters_from_route_options();
+		if(frappe.route_options) {
+			this.set_filters_from_route_options({clear_filters: this.docname ? false : true});
 			return true;
 		} else if(this.user_settings
 			&& this.user_settings.filters
@@ -257,13 +259,15 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 
 	// build args for query
 	get_args: function() {
-		var me = this;
+		let me = this;
+		let filters = this.filter_list? this.filter_list.get_filters(): [];
+
 		return {
 			doctype: this.doctype,
-			fields: $.map(this.columns, function(v) { return me.get_full_column_name(v) }),
+			fields: $.map(this.columns || [], function(v) { return me.get_full_column_name(v); }),
 			order_by: this.get_order_by(),
 			add_total_row: this.add_total_row,
-			filters: this.filter_list.get_filters(),
+			filters: filters,
 			save_user_settings_fields: 1,
 			with_childnames: 1,
 			file_format_type: this.file_format_type
@@ -280,7 +284,7 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 		}
 
 		// second
-		if(this.sort_by_next_select.val()) {
+		if(this.sort_by_next_select && this.sort_by_next_select.val()) {
 			order_by.push(this.get_selected_table_and_column(this.sort_by_next_select)
 				+ ' ' + this.sort_order_next_select.val());
 		}
@@ -289,6 +293,10 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 	},
 
 	get_selected_table_and_column: function(select) {
+		if(!select) {
+			return
+		}
+
 		return select.selected_doctype ?
 			this.get_full_column_name([select.selected_fieldname, select.selected_doctype]) : "";
 	},
@@ -324,7 +332,7 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 			}
 			if(!docfield) return;
 
-			coldef = {
+			let coldef = {
 				id: c[0],
 				field: c[0],
 				docfield: docfield,
@@ -480,6 +488,10 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 				columns.forEach(function(c) {
 					if(!c.docfield || c.docfield.parent!==me.doctype) {
 						var val = d[c.field];
+						// add child table row name for update
+						if(c.docfield && c.docfield.parent!==me.doctype) {
+							new_row[c.docfield.parent+":name"] = d[c.docfield.parent+":name"];
+						}
 					} else {
 						var val = '';
 					}
@@ -495,9 +507,9 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 	},
 
 	edit_cell: function(row, docfield) {
-		if(!docfield || docfield.fieldname !== "idx" &&
-			frappe.model.std_fields_list.indexOf(docfield.fieldname)!==-1) {
-				return;
+		if(!docfield || docfield.fieldname !== "idx"
+			&& frappe.model.std_fields_list.indexOf(docfield.fieldname)!==-1) {
+			return;
 		} else if(frappe.boot.user.can_write.indexOf(this.doctype)===-1) {
 			frappe.throw({message:__("No permission to edit"), title:__('Not Permitted')});
 		}
@@ -544,9 +556,12 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 							$.each(frappe.model.get_all_docs(doc), function(i, d) {
 								// find the document of the current updated record
 								// from locals (which is synced in the response)
-								if(item[d.doctype + ":name"]===d.name) {
-									for(k in d) {
-										v = d[k];
+								var name = item[d.doctype + ":name"];
+								if(!name) name = item.name;
+
+								if(name===d.name) {
+									for(var k in d) {
+										var v = d[k];
 										if(frappe.model.std_fields_list.indexOf(k)===-1
 											&& item[k]!==undefined) {
 											new_item[k] = v;
@@ -573,13 +588,13 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 		if(this.can_delete) {
 			std_columns = std_columns.concat([{
 				id:'_check', field:'_check', name: "", width: 30, maxWidth: 30,
-					formatter: function(row, cell, value, columnDef, dataContext) {
-						return repl("<input type='checkbox' \
-							data-row='%(row)s' %(checked)s>", {
-								row: row,
-								checked: (dataContext.selected ? "checked=\"checked\"" : "")
-							});
-					}
+				formatter: function(row, cell, value, columnDef, dataContext) {
+					return repl("<input type='checkbox' \
+						data-row='%(row)s' %(checked)s>", {
+							row: row,
+							checked: (dataContext.selected ? "checked=\"checked\"" : "")
+						});
+				}
 			}]);
 		}
 		return std_columns.concat(this.build_columns());
@@ -642,8 +657,8 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 	// setup sorter
 	make_sorter: function() {
 		var me = this;
-		this.sort_dialog = new frappe.ui.Dialog({title:'Sorting Preferences'});
-		$(this.sort_dialog.body).html('<p class="help">Sort By</p>\
+		this.sort_dialog = new frappe.ui.Dialog({title:__('Sorting Preferences')});
+		$(this.sort_dialog.body).html('<p class="help">'+__('Sort By')+'</p>\
 			<div class="sort-column"></div>\
 			<div><select class="sort-order form-control" style="margin-top: 10px; width: 60%;">\
 				<option value="asc">'+__('Ascending')+'</option>\
@@ -682,7 +697,7 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 		this.sort_order_next_select.val('desc');
 
 		// button actions
-		this.page.add_inner_button(__('Set Sort'), function() {
+		this.page.add_inner_button(__('Sort Order'), function() {
 			me.sort_dialog.show();
 		});
 
@@ -700,7 +715,7 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 		}
 		var export_btn = this.page.add_menu_item(__('Export'), function() {
 			var args = me.get_args();
-			selected_items = me.get_checked_items()
+			var selected_items = me.get_checked_items()
 			frappe.prompt({fieldtype:"Select", label: __("Select File Type"), fieldname:"file_format_type",
 				options:"Excel\nCSV", default:"Excel", reqd: 1},
 				function(data) {
@@ -716,7 +731,7 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 					}
 					open_url_post(frappe.request.url, args);
 
-				}, __("Export Report: " + me.doctype), __("Download"));
+				}, __("Export Report: {0}",[__(me.doctype)]), __("Download"));
 
 		}, true);
 	},
@@ -753,7 +768,7 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 				},
 				callback: function(r) {
 					if(r.exc) {
-						msgprint(__("Report was not saved (there were errors)"));
+						frappe.msgprint(__("Report was not saved (there were errors)"));
 						return;
 					}
 					if(r.message != me.docname)
@@ -782,7 +797,7 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 			});
 
 			this.page.add_menu_item(__("Delete"), function() {
-				delete_list = $.map(me.get_checked_items(), function(d) { return d.name; });
+				var delete_list = $.map(me.get_checked_items(), function(d) { return d.name; });
 				if(!delete_list.length)
 					return;
 				if(frappe.confirm(__("This is PERMANENT action and you cannot undo. Continue?"),
@@ -806,12 +821,12 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 	make_user_permissions: function() {
 		var me = this;
 		if(this.docname && frappe.model.can_set_user_permissions("Report")) {
-			this.page.add_menu_item(__("User Permissions Manager"), function() {
+			this.page.add_menu_item(__("User Permissions"), function() {
 				frappe.route_options = {
 					doctype: "Report",
 					name: me.docname
 				};
-				frappe.set_route("user-permissions");
+				frappe.set_route('List', 'User Permission');
 			}, true);
 		}
 	},

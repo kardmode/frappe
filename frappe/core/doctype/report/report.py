@@ -12,6 +12,8 @@ from frappe.modules.export_file import export_to_files
 from frappe.modules import make_boilerplate
 from frappe.core.doctype.page.page import delete_custom_role
 from frappe.core.doctype.custom_role.custom_role import get_custom_allowed_roles
+from six import iteritems
+
 
 class Report(Document):
 	def validate(self):
@@ -36,10 +38,9 @@ class Report(Document):
 
 		if self.report_type == "Report Builder":
 			self.update_report_json()
-			
-		# if not self.letter_head or self.letter_head == "Al Maarifa Letterhead":
-			# letter_head = frappe.db.get_value("Letter Head", {"is_default": 1}, ["content", "footer"], as_dict=True) or {}
-			# frappe.errprint(letter_head)
+
+
+	def before_insert(self):
 		self.set_doctype_roles()
 
 	def on_update(self):
@@ -49,11 +50,10 @@ class Report(Document):
 		delete_custom_role('report', self.name)
 
 	def set_doctype_roles(self):
-		if self.get('roles'): return
-
-		doc = frappe.get_meta(self.ref_doctype)
-		roles = [{'role': d.role} for d in doc.permissions if d.permlevel==0]
-		self.set('roles', roles)
+		if not self.get('roles') and self.is_standard == 'No':
+			meta = frappe.get_meta(self.ref_doctype)
+			roles = [{'role': d.role} for d in meta.permissions if d.permlevel==0]
+			self.set('roles', roles)
 
 	def is_permitted(self):
 		"""Returns true if Has Role is not set or the user is allowed."""
@@ -103,12 +103,18 @@ class Report(Document):
 			data = frappe.desk.query_report.run(self.name, filters=filters, user=user)
 			for d in data.get('columns'):
 				if isinstance(d, dict):
-					columns.append(frappe._dict(d))
+					col = frappe._dict(d)
+					if not col.fieldname:
+						col.fieldname = col.label
+					columns.append(col)
 				else:
+					fieldtype, options = "Data", None
 					parts = d.split(':')
-					fieldtype, options = parts[1], None
-					if fieldtype and '/' in fieldtype:
-						fieldtype, options = fieldtype.split('/')
+					if len(parts) > 1:
+						if parts[1]:
+							fieldtype, options = parts[1], None
+							if fieldtype and '/' in fieldtype:
+								fieldtype, options = fieldtype.split('/')
 
 					columns.append(frappe._dict(label=parts[0], fieldtype=fieldtype, fieldname=parts[0]))
 
@@ -120,7 +126,7 @@ class Report(Document):
 			_filters = params.get('filters') or []
 
 			if filters:
-				for key, value in filters.iteritems():
+				for key, value in iteritems(filters):
 					condition, _value = '=', value
 					if isinstance(value, (list, tuple)):
 						condition, _value = value
@@ -134,8 +140,13 @@ class Report(Document):
 			if params.get('sort_by_next'):
 				order_by += ', ' + _format(params.get('sort_by_next').split('.')) + ' ' + params.get('sort_order_next')
 
-			result = frappe.get_list(self.ref_doctype, fields = [_format([c[1], c[0]]) for c in columns],
-				filters=_filters, order_by = order_by, as_list=True, limit=limit, user=user)
+			result = frappe.get_list(self.ref_doctype,
+				fields = [_format([c[1], c[0]]) for c in columns],
+				filters=_filters,
+				order_by = order_by,
+				as_list=True,
+				limit=limit,
+				user=user)
 
 			meta = frappe.get_meta(self.ref_doctype)
 
@@ -153,7 +164,6 @@ class Report(Document):
 					_row[columns[i].get('fieldname')] = val
 		else:
 			data = out
-
 		return columns, data
 
 

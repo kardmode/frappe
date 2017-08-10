@@ -23,6 +23,7 @@ frappe.views.ListRenderer = Class.extend({
 		this.page_title = __(this.doctype);
 
 		this.set_wrapper();
+		this.setup_filterable();
 		this.prepare_render_view();
 
 		// flag to enable/disable realtime updates in list_view
@@ -71,7 +72,7 @@ frappe.views.ListRenderer = Class.extend({
 		return this.list_view.current_view !== this.list_view.last_view;
 	},
 	set_wrapper: function () {
-		this.wrapper = this.list_view.wrapper.find('.result-list');
+		this.wrapper = this.list_view.wrapper && this.list_view.wrapper.find('.result-list');
 	},
 	set_fields: function () {
 		var me = this;
@@ -108,8 +109,8 @@ frappe.views.ListRenderer = Class.extend({
 		}
 
 		// enabled / disabled
-		if (frappe.meta.has_field(this.doctype, 'enabled')) { add_field('enabled'); };
-		if (frappe.meta.has_field(this.doctype, 'disabled')) { add_field('disabled'); };
+		if (frappe.meta.has_field(this.doctype, 'enabled')) { add_field('enabled'); }
+		if (frappe.meta.has_field(this.doctype, 'disabled')) { add_field('disabled'); }
 
 		// add workflow field (as priority)
 		this.workflow_state_fieldname = frappe.workflow.get_state_fieldname(this.doctype);
@@ -133,7 +134,7 @@ frappe.views.ListRenderer = Class.extend({
 						add_field(df.options.split(':')[1]);
 					} else {
 						add_field(df.options);
-					};
+					}
 				}
 			}
 		});
@@ -144,7 +145,7 @@ frappe.views.ListRenderer = Class.extend({
 		}
 		// kanban column fields
 		if (me.meta.__kanban_column_fields) {
-			me.fields = me.fields.concat(me.meta.__kanban_column_fields);
+			me.meta.__kanban_column_fields.map(add_field);
 		}
 	},
 	set_columns: function () {
@@ -270,7 +271,10 @@ frappe.views.ListRenderer = Class.extend({
 
 	setup_filterable: function () {
 		var me = this;
-		this.wrapper.on('click', '.filterable', function (e) {
+
+		this.list_view.wrapper &&
+		this.list_view.wrapper.on('click', '.result-list .filterable', function (e) {
+			e.stopPropagation();
 			var filters = $(this).attr('data-filter').split('|');
 			var added = false;
 
@@ -293,7 +297,9 @@ frappe.views.ListRenderer = Class.extend({
 				me.list_view.refresh(true);
 			}
 		});
-		this.wrapper.on('click', '.list-item', function (e) {
+
+		this.list_view.wrapper &&
+		this.list_view.wrapper.on('click', '.list-item', function (e) {
 			// don't open in case of checkbox, like, filterable
 			if ($(e.target).hasClass('filterable')
 				|| $(e.target).hasClass('octicon-heart')
@@ -309,26 +315,29 @@ frappe.views.ListRenderer = Class.extend({
 
 	render_view: function (values) {
 		var me = this;
-		var $list_items = $(`
-			<div class="list-items">
-			</div>
-		`);
-		me.wrapper.append($list_items);
+		var $list_items = me.wrapper.find('.list-items');
+
+		if($list_items.length === 0) {
+			$list_items = $(`
+				<div class="list-items">
+				</div>
+			`);
+			me.wrapper.append($list_items);
+		}
 
 		values.map(value => {
 			const $item = $(this.get_item_html(value));
 			const $item_container = $('<div class="list-item-container">').append($item);
 
 			$list_items.append($item_container);
-			
+
 			if (this.settings.post_render_item) {
 				this.settings.post_render_item(this, $item_container, value);
 			}
-			
+
 			this.render_tags($item_container, value);
 		});
 
-		this.setup_filterable();
 	},
 
 	// returns html for a data item,
@@ -401,7 +410,7 @@ frappe.views.ListRenderer = Class.extend({
 	},
 
 	get_indicator_html: function (doc) {
-		var indicator = frappe.get_indicator(doc, this.doctype);
+		var indicator = this.get_indicator_from_doc(doc);
 		if (indicator) {
 			return `<span class='indicator ${indicator[1]} filterable'
 				data-filter='${indicator[2]}'>
@@ -410,21 +419,24 @@ frappe.views.ListRenderer = Class.extend({
 		}
 		return '';
 	},
-
 	get_indicator_dot: function (doc) {
-		var indicator = frappe.get_indicator(doc, this.doctype);
+		var indicator = this.get_indicator_from_doc(doc);
 		if (!indicator) {
 			return '';
 		}
 		return `<span class='indicator ${indicator[1]}' title='${__(indicator[0])}'></span>`;
 	},
-
+	get_indicator_from_doc: function (doc) {
+		var workflow = frappe.workflow.workflows[this.doctype];
+		var override = workflow ? workflow['override_status'] : true;
+		return frappe.get_indicator(doc, this.doctype, override);
+	},
 	prepare_data: function (data) {
 		if (data.modified)
 			this.prepare_when(data, data.modified);
 
 		// nulls as strings
-		for (key in data) {
+		for (var key in data) {
 			if (data[key] == null) {
 				data[key] = '';
 			}
@@ -439,7 +451,7 @@ frappe.views.ListRenderer = Class.extend({
 		data._name_encoded = encodeURIComponent(data.name);
 		data._submittable = frappe.model.is_submittable(this.doctype);
 
-		var title_field = frappe.get_meta(this.doctype).title_field || 'name';
+		var title_field = this.meta.title_field || 'name';
 		data._title = strip_html(data[title_field] || data.name);
 		data._full_title = data._title;
 
@@ -455,6 +467,8 @@ frappe.views.ListRenderer = Class.extend({
 
 		data._user = frappe.session.user;
 
+		if(!data._user_tags) data._user_tags = "";
+
 		data._tags = data._user_tags.split(',').filter(function (v) {
 			// filter falsy values
 			return v;
@@ -468,6 +482,9 @@ frappe.views.ListRenderer = Class.extend({
 			}
 		}
 
+		// whether to hide likes/comments/assignees
+		data._hide_activity = 0;
+
 		data._assign_list = JSON.parse(data._assign || '[]');
 
 		// prepare data in settings
@@ -480,8 +497,8 @@ frappe.views.ListRenderer = Class.extend({
 	prepare_when: function (data, date_str) {
 		if (!date_str) date_str = data.modified;
 		// when
-		data.when = (dateutil.str_to_user(date_str)).split(' ')[0];
-		var diff = dateutil.get_diff(dateutil.get_today(), date_str.split(' ')[0]);
+		data.when = (frappe.datetime.str_to_user(date_str)).split(' ')[0];
+		var diff = frappe.datetime.get_diff(frappe.datetime.get_today(), date_str.split(' ')[0]);
 		if (diff === 0) {
 			data.when = comment_when(date_str);
 		}
@@ -541,7 +558,7 @@ frappe.views.ListRenderer = Class.extend({
 		var new_button = frappe.boot.user.can_create.includes(this.doctype)
 			? (`<p><button class='btn btn-primary btn-sm'
 				list_view_doc='${this.doctype}'>
-					${__('Make a new ' + __(this.doctype))}
+					${__('Make a new {0}', [__(this.doctype)])}
 				</button></p>`)
 			: '';
 		var no_result_message =

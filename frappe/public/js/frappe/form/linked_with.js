@@ -51,11 +51,23 @@ frappe.ui.form.LinkedWith = class LinkedWith {
 			html = __("Not Linked to any record");
 		} else {
 			html = Object.keys(linked_docs).map(dt => {
+				const list_renderer = new frappe.views.ListRenderer({
+					doctype: dt,
+					list_view: this
+				});
 				return `<div class="list-item-table" style="margin-bottom: 15px">
 					${this.make_doc_head(dt)}
 					${linked_docs[dt]
-						.map(doc => this.make_doc_row(doc, dt))
-						.join("")}
+						.map(value => {
+							// prepare data
+							value = list_renderer.prepare_data(value);
+							value._checkbox = 0;
+							value._hide_activity = 1;
+
+							const $item = $(list_renderer.get_item_html(value));
+							const $item_container = $('<div class="list-item-container">').append($item);
+							return $item_container[0].outerHTML;
+						}).join("")}
 				</div>`;
 			});
 		}
@@ -91,9 +103,11 @@ frappe.ui.form.LinkedWith = class LinkedWith {
 		var me = this;
 		let links = null;
 
-		links =
-			Object.keys(this.frm.__linked_doctypes)
-			.filter(frappe.model.can_get_report);
+		if (this.frm.__linked_doctypes) {
+			links =
+				Object.keys(this.frm.__linked_doctypes)
+				.filter(frappe.model.can_get_report);
+		}
 
 		let flag;
 		if(!links) {

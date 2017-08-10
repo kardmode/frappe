@@ -11,11 +11,16 @@ from frappe import _dict
 from frappe.limits import update_limits, clear_limit
 from frappe.utils import get_url
 from frappe.core.doctype.user.user import get_total_users
-from frappe.core.doctype.user.user import MaxUsersReachedError
+from frappe.core.doctype.user.user import MaxUsersReachedError, test_password_strength
 
 test_records = frappe.get_test_records('User')
 
 class TestUser(unittest.TestCase):
+	def tearDown(self):
+		# disable password strength test
+		frappe.db.set_value("System Settings", "System Settings", "enable_password_policy", 0)
+		frappe.db.set_value("System Settings", "System Settings", "minimum_password_score", "")
+
 	def test_user_type(self):
 		new_user = frappe.get_doc(dict(doctype='User', email='test-for-type@example.com',
 			first_name='Tester')).insert()
@@ -147,7 +152,7 @@ class TestUser(unittest.TestCase):
 	# 	# allow one session
 	# 	user = frappe.get_doc('User', 'test@example.com')
 	# 	user.simultaneous_sessions = 1
-	# 	user.new_password = 'testpassword'
+	# 	user.new_password = 'Eastern_43A1W'
 	# 	user.save()
 	#
 	# 	def test_request(conn):
@@ -158,18 +163,18 @@ class TestUser(unittest.TestCase):
 	# 	update_site_config('deny_multiple_sessions', 0)
 	#
 	# 	print 'conn1'
-	# 	conn1 = FrappeClient(get_url(), "test@example.com", "testpassword", verify=False)
+	# 	conn1 = FrappeClient(get_url(), "test@example.com", "Eastern_43A1W", verify=False)
 	# 	test_request(conn1)
 	#
 	# 	print 'conn2'
-	# 	conn2 = FrappeClient(get_url(), "test@example.com", "testpassword", verify=False)
+	# 	conn2 = FrappeClient(get_url(), "test@example.com", "Eastern_43A1W", verify=False)
 	# 	test_request(conn2)
 	#
 	# 	update_site_config('deny_multiple_sessions', 1)
 	#
 	# 	print 'conn3'
 	#
-	# 	conn3 = FrappeClient(get_url(), "test@example.com", "testpassword", verify=False)
+	# 	conn3 = FrappeClient(get_url(), "test@example.com", "Eastern_43A1W", verify=False)
 	# 	test_request(conn3)
 	#
 	# 	# first connection should fail
@@ -178,7 +183,7 @@ class TestUser(unittest.TestCase):
 	def test_site_expiry(self):
 		user = frappe.get_doc('User', 'test@example.com')
 		user.enabled = 1
-		user.new_password = 'testpassword'
+		user.new_password = 'Eastern_43A1W'
 		user.save()
 
 		update_limits({'expiry': add_to_date(today(), days=-1), 'support_email': 'support@example.com'})
@@ -187,13 +192,35 @@ class TestUser(unittest.TestCase):
 		frappe.db.commit()
 
 		res = requests.post(get_url(), params={'cmd': 'login', 'usr':
-			'test@example.com', 'pwd': 'testpassword', 'device': 'desktop'})
+			'test@example.com', 'pwd': 'Eastern_43A1W', 'device': 'desktop'})
 
 		# While site is expired status code returned is 417 Failed Expectation
 		self.assertEqual(res.status_code, 417)
 
 		clear_limit("expiry")
 		frappe.local.conf = _dict(frappe.get_site_config())
+
+	def test_delete_user(self):
+		new_user = frappe.get_doc(dict(doctype='User', email='test-for-delete@example.com',
+			first_name='Tester Delete User')).insert()
+		self.assertEquals(new_user.user_type, 'Website User')
+
+		# role with desk access
+		new_user.add_roles('_Test Role 2')
+		new_user.save()
+		self.assertEquals(new_user.user_type, 'System User')
+
+		comm = frappe.get_doc({
+			"doctype":"Communication",
+			"subject": "To check user able to delete even if linked with communication",
+			"content": "To check user able to delete even if linked with communication",
+			"sent_or_received": "Sent",
+			"user": new_user.name
+		})
+		comm.insert(ignore_permissions=True)
+
+		frappe.delete_doc('User', new_user.name)
+		self.assertFalse(frappe.db.exists('User', new_user.name))
 
 	def test_deactivate_additional_users(self):
 		update_limits({'users': get_total_users()+1})
@@ -214,3 +241,22 @@ class TestUser(unittest.TestCase):
 		# Clear the user limit
 		clear_limit('users')
 
+	def test_password_strength(self):
+		# Test Password without Password Strenth Policy
+		frappe.db.set_value("System Settings", "System Settings", "enable_password_policy", 0)
+
+		# password policy is disabled, test_password_strength should be ignored
+		result = test_password_strength("test_password")
+		self.assertFalse(result.get("feedback", None))
+
+		# Test Password with Password Strenth Policy Set
+		frappe.db.set_value("System Settings", "System Settings", "enable_password_policy", 1)
+		frappe.db.set_value("System Settings", "System Settings", "minimum_password_score", 2)
+
+		# Score 1; should now fail
+		result = test_password_strength("bee2ve")
+		self.assertEqual(result['feedback']['password_policy_validation_passed'], False)
+
+		# Score 4; should pass
+		result = test_password_strength("Eastern_43A1W")
+		self.assertEqual(result['feedback']['password_policy_validation_passed'], True)

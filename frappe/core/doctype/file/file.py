@@ -10,12 +10,10 @@ naming for same name files: file.gif, file-1.gif, file-2.gif etc
 
 import frappe
 import json
-import urllib
 import os
 import shutil
 import requests
 import requests.exceptions
-import StringIO
 import mimetypes, imghdr
 
 from frappe.utils.file_manager import delete_file_data_content, get_content_hash, get_random_filename
@@ -23,6 +21,8 @@ from frappe import _
 from frappe.utils.nestedset import NestedSet
 from frappe.utils import strip, get_files_path
 from PIL import Image, ImageOps
+from six import StringIO
+from six.moves.urllib.parse import unquote
 import zipfile
 
 class FolderNotEmpty(frappe.ValidationError): pass
@@ -184,21 +184,18 @@ class File(NestedSet):
 				except (requests.exceptions.HTTPError, requests.exceptions.SSLError, IOError):
 					return
 
-			thumbnail = ImageOps.fit(
-				image,
-				(300, 300),
-				Image.ANTIALIAS
-			)
+			size = 300, 300
+			image.thumbnail(size)
 
 			thumbnail_url = filename + "_small." + extn
 
 			path = os.path.abspath(frappe.get_site_path("public", thumbnail_url.lstrip("/")))
 
 			try:
-				thumbnail.save(path)
+				image.save(path)
 				self.db_set("thumbnail_url", thumbnail_url)
 			except IOError:
-				frappe.msgprint("Unable to write file format for {0}".format(path))
+				frappe.msgprint(_("Unable to write file format for {0}").format(path))
 				return
 
 			return thumbnail_url
@@ -343,7 +340,7 @@ def get_local_image(file_url):
 	try:
 		image = Image.open(file_path)
 	except IOError:
-		frappe.msgprint("Unable to read file format for {0}".format(file_url))
+		frappe.msgprint(_("Unable to read file format for {0}").format(file_url))
 		raise
 
 	content = None
@@ -363,19 +360,19 @@ def get_local_image(file_url):
 	return image, filename, extn
 
 def get_web_image(file_url):
-	# downlaod
+	# download
 	file_url = frappe.utils.get_url(file_url)
 	r = requests.get(file_url, stream=True)
 	try:
 		r.raise_for_status()
-	except requests.exceptions.HTTPError, e:
+	except requests.exceptions.HTTPError as e:
 		if "404" in e.args[0]:
 			frappe.msgprint(_("File '{0}' not found").format(file_url))
 		else:
-			frappe.msgprint("Unable to read file format for {0}".format(file_url))
+			frappe.msgprint(_("Unable to read file format for {0}").format(file_url))
 		raise
 
-	image = Image.open(StringIO.StringIO(r.content))
+	image = Image.open(StringIO(r.content))
 
 	try:
 		filename, extn = file_url.rsplit("/", 1)[1].rsplit(".", 1)
@@ -386,7 +383,7 @@ def get_web_image(file_url):
 		extn = None
 
 	extn = get_extension(filename, extn, r.content)
-	filename = "/files/" + strip(urllib.unquote(filename))
+	filename = "/files/" + strip(unquote(filename))
 
 	return image, filename, extn
 

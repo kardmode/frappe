@@ -8,7 +8,6 @@ frappe.ui.keys.setup = function() {
 			for(var i=0, l = frappe.ui.keys.handlers[key].length; i<l; i++) {
 				var handler = frappe.ui.keys.handlers[key][i];
 				var _out = handler.apply(this, [e]);
-
 				if(_out===false) {
 					out = _out;
 				}
@@ -19,17 +18,9 @@ frappe.ui.keys.setup = function() {
 }
 
 frappe.ui.keys.get_key = function(e) {
-	var key = e.key;
-	//safari doesn't have key property
-	if(!key) {
-		var keycode = e.keyCode || e.which;
-		key = frappe.ui.keys.key_map[keycode] ||
-			String.fromCharCode(keycode);
-	}
-	if(key.substr(0, 5)==='Arrow') {
-		// ArrowDown -> down
-		key = key.substr(5).toLowerCase();
-	}
+	var keycode = e.keyCode || e.which;
+	var key = frappe.ui.keys.key_map[keycode] || String.fromCharCode(keycode);
+
 	if(e.ctrlKey || e.metaKey) {
 		// add ctrl+ the key
 		key = 'ctrl+' + key;
@@ -69,22 +60,13 @@ frappe.ui.keys.on('ctrl+b', function(e) {
 	}
 });
 
-frappe.ui.keys.on('Escape', function(e) {
-	// close open grid row
-	var open_row = $(".grid-row-open");
-	if(open_row.length) {
-		var grid_row = open_row.data("grid_row");
-		grid_row.toggle_view(false);
-		return false;
-	}
-
-	// close open dialog
-	if(cur_dialog && !cur_dialog.no_cancel_flag) {
-		cur_dialog.cancel();
-		return false;
-	}
+frappe.ui.keys.on('escape', function(e) {
+	close_grid_and_dialog();
 });
 
+frappe.ui.keys.on('esc', function(e) {
+	close_grid_and_dialog();
+});
 
 frappe.ui.keys.on('Enter', function(e) {
 	if(cur_dialog && cur_dialog.confirm_dialog) {
@@ -114,7 +96,12 @@ frappe.ui.keys.key_map = {
 	17: 'ctrl',
 	91: 'meta',
 	18: 'alt',
-	27: 'escape'
+	27: 'escape',
+	37: 'left',
+	39: 'right',
+	38: 'up',
+	40: 'down',
+	32: 'space'
 }
 
 // keyCode map
@@ -127,4 +114,20 @@ frappe.ui.keyCode = {
 	ENTER: 13,
 	TAB: 9,
 	SPACE: 32
+}
+
+function close_grid_and_dialog() {
+	// close open grid row
+	var open_row = $(".grid-row-open");
+	if (open_row.length) {
+		var grid_row = open_row.data("grid_row");
+		grid_row.toggle_view(false);
+		return false;
+	}
+
+	// close open dialog
+	if (cur_dialog && !cur_dialog.no_cancel_flag) {
+		cur_dialog.cancel();
+		return false;
+	}
 }

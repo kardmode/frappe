@@ -17,7 +17,7 @@ from frappe.translate import get_lang_code
 from frappe.utils.password import check_password
 from frappe.core.doctype.authentication_log.authentication_log import add_authentication_log
 
-from urllib import quote
+from six.moves.urllib.parse import quote
 
 class HTTPRequest:
 	def __init__(self):
@@ -185,6 +185,9 @@ class LoginManager:
 			user, pwd = frappe.form_dict.get('usr'), frappe.form_dict.get('pwd')
 		if not (user and pwd):
 			self.fail('Incomplete login details', user=user)
+
+		if cint(frappe.db.get_value("System Settings", "System Settings", "allow_login_using_mobile_number")):
+			user = frappe.db.get_value("User", filters={"mobile_no": user}, fieldname="name") or user
 
 		self.check_if_enabled(user)
 		self.user = self.check_password(user, pwd)

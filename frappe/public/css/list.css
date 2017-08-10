@@ -41,7 +41,7 @@
   color: #8D99A6;
 }
 .filter-box {
-  border-top: 1px solid #d1d8dd;
+  border-bottom: 1px solid #d1d8dd;
   padding: 10px 15px 3px;
 }
 .filter-box .remove-filter {
@@ -215,23 +215,26 @@
   text-align: left;
 }
 .tag-row {
-  margin-top: 5px;
   padding-left: 55px;
+  margin-bottom: 0px;
+  margin-top: -5px;
 }
 .taggle_placeholder {
   top: 0;
-  left: 0;
+  left: 5px;
   font-size: 11px;
+  color: #8D99A6;
 }
 .taggle_list {
-  padding-left: 0;
-  margin-bottom: 0;
+  padding-left: 5px;
+  margin-bottom: 3px;
 }
 .taggle_list .taggle {
   font-size: 11px;
   padding: 2px 4px;
   font-weight: normal;
   background-color: #F0F4F7;
+  white-space: normal;
 }
 .taggle_list .taggle:hover {
   padding: 2px 15px 2px 4px;
@@ -252,6 +255,9 @@
   right: 5px;
   color: #36414C;
   font-size: 11px;
+}
+.page-form .awesomplete > ul {
+  min-width: 300px;
 }
 .taggle_input {
   padding: 0;
@@ -445,6 +451,7 @@
 .list-item__content--activity {
   justify-content: flex-end;
   margin-right: 5px;
+  min-width: 110px;
 }
 .list-item__content--activity .list-row-modified,
 .list-item__content--activity .avatar-small {

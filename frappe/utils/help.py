@@ -1,7 +1,7 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 import frappe
 import hashlib
@@ -13,10 +13,11 @@ import os
 from markdown2 import markdown
 from bs4 import BeautifulSoup
 import jinja2.exceptions
+from six import text_type
 
 def sync():
 	# make table
-	print 'Syncing help database...'
+	print('Syncing help database...')
 	help_db = HelpDatabase()
 	help_db.make_database()
 	help_db.connect()
@@ -51,7 +52,7 @@ class HelpDatabase(object):
 		if not self.help_db_name in dbman.get_database_list():
 			try:
 				dbman.create_user(self.help_db_name, self.help_db_name)
-			except Exception, e:
+			except Exception as e:
 				# user already exists
 				if e.args[0] != 1396: raise
 			dbman.create_database(self.help_db_name)
@@ -119,7 +120,7 @@ class HelpDatabase(object):
 							fpath = os.path.join(basepath, fname)
 							with open(fpath, 'r') as f:
 								try:
-									content = frappe.render_template(unicode(f.read(), 'utf-8'),
+									content = frappe.render_template(text_type(f.read(), 'utf-8'),
 										{'docs_base_url': '/assets/{app}_docs'.format(app=app)})
 
 									relpath = self.get_out_path(fpath)
@@ -131,7 +132,7 @@ class HelpDatabase(object):
 									self.db.sql('''insert into help(path, content, title, intro, full_path)
 										values (%s, %s, %s, %s, %s)''', (relpath, content, title, intro, fpath))
 								except jinja2.exceptions.TemplateSyntaxError:
-									print "Invalid Jinja Template for {0}. Skipping".format(fpath)
+									print("Invalid Jinja Template for {0}. Skipping".format(fpath))
 
 		doc_contents += "</ol>"
 		self.db.sql('''insert into help(path, content, title, intro, full_path) values (%s, %s, %s, %s, %s)''',

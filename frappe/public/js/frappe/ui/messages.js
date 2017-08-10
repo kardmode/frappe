@@ -18,7 +18,7 @@ frappe.throw = function(msg) {
 		msg = {message: msg, title: __('Error')};
 	}
 	if(!msg.indicator) msg.indicator = 'red';
-	msgprint(msg);
+	frappe.msgprint(msg);
 	throw new Error(msg.message);
 }
 
@@ -137,16 +137,21 @@ frappe.msgprint = function(msg, title) {
 		data.message = '';
 	}
 
-	if(data.message.search(/<br>|<p>|<li>/)==-1)
+	if(data.message.search(/<br>|<p>|<li>/)==-1) {
 		msg = replace_newlines(data.message);
+	}
 
-
-	var msg_exists = msg_dialog.msg_area.html();
+	var msg_exists = false;
+	if(data.clear) {
+		msg_dialog.msg_area.empty();
+	} else {
+		msg_exists = msg_dialog.msg_area.html();
+	}
 
 	if(data.title || !msg_exists) {
 		// set title only if it is explicitly given
 		// and no existing title exists
-		msg_dialog.set_title(data.title || __('Message'))
+		msg_dialog.set_title(data.title || __('Message'));
 	}
 
 	// show / hide indicator
@@ -174,6 +179,14 @@ frappe.msgprint = function(msg, title) {
 
 	return msg_dialog;
 }
+
+// Proxy for frappe.msgprint
+Object.defineProperty(window, 'msgprint', {
+	get: function() {
+		console.warn('Please use `frappe.msgprint` instead of `msgprint`. It will be deprecated soon.');
+		return frappe.msgprint;
+	}
+});
 
 frappe.hide_msgprint = function(instant) {
 	// clear msgprint
@@ -221,8 +234,6 @@ frappe.verify_password = function(callback) {
 	}, __("Verify Password"), __("Verify"))
 }
 
-var msgprint = frappe.msgprint;
-
 frappe.show_progress = function(title, count, total) {
 	if(frappe.cur_progress && frappe.cur_progress.title === title
 			&& frappe.cur_progress.$wrapper.is(":visible")) {
@@ -233,8 +244,8 @@ frappe.show_progress = function(title, count, total) {
 		});
 		dialog.progress = $('<div class="progress"><div class="progress-bar"></div></div>')
 			.appendTo(dialog.body);
-			dialog.progress_bar = dialog.progress.css({"margin-top": "10px"})
-				.find(".progress-bar");
+		dialog.progress_bar = dialog.progress.css({"margin-top": "10px"})
+			.find(".progress-bar");
 		dialog.$wrapper.removeClass("fade");
 		dialog.show();
 		frappe.cur_progress = dialog;
@@ -250,7 +261,7 @@ frappe.hide_progress = function() {
 }
 
 // Floating Message
-frappe.show_alert = function(message, seconds) {
+frappe.show_alert = function(message, seconds=7) {
 	if(typeof message==='string') {
 		message = {
 			message: message
@@ -260,15 +271,21 @@ frappe.show_alert = function(message, seconds) {
 		$('<div id="dialog-container"><div id="alert-container"></div></div>').appendTo('body');
 	}
 
+	var message_html;
 	if(message.indicator) {
-		message_html = '<span class="indicator ' + message.indicator + '">' + message.message + '</span>';
+		message_html = $('<span class="indicator ' + message.indicator + '"></span>').append(message.message);
 	} else {
 		message_html = message.message;
 	}
 
-	var div = $(repl('<div class="alert desk-alert" style="display: none;">'
-			+ '<span class="alert-message">%(txt)s</span><a class="close">&times;</a>'
-		+ '</div>', {txt: message_html}))
+	var div = $(`
+		<div class="alert desk-alert">
+			<span class="alert-message"></span><a class="close">&times;</a>
+		</div>`);
+
+	div.find('.alert-message').append(message_html);
+
+	div.hide()
 		.appendTo("#alert-container")
 		.fadeIn(300);
 
@@ -277,9 +294,14 @@ frappe.show_alert = function(message, seconds) {
 		return false;
 	});
 
-	div.delay(seconds ? seconds * 1000 : 7000).fadeOut(300);
+	div.delay(seconds * 1000).fadeOut(300);
 	return div;
 }
 
-// for backward compatibility
-var show_alert = frappe.show_alert;
+// Proxy for frappe.show_alert
+Object.defineProperty(window, 'show_alert', {
+	get: function() {
+		console.warn('Please use `frappe.show_alert` instead of `show_alert`. It will be deprecated soon.');
+		return frappe.show_alert;
+	}
+});

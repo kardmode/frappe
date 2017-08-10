@@ -10,6 +10,9 @@ frappe.upload = {
 			opts.allow_multiple = 1
 		}
 
+		// whether to show public/private checkbox or not
+		opts.show_private = !("is_private" in opts);
+
 		var d = null;
 		// create new dialog if no parent given
 		if(!opts.parent) {
@@ -50,7 +53,7 @@ frappe.upload = {
 				$uploaded_files_wrapper.removeClass('hidden').empty();
 
 				file_array = file_array.map(
-					file => Object.assign(file, {is_private: 1})
+					file => Object.assign(file, {is_private: opts.is_private || 1})
 				)
 				$upload.data('attached_files', file_array);
 
@@ -60,22 +63,21 @@ frappe.upload = {
 						<div class="list-item__content list-item__content--flex-2">
 							${__('Filename')}
 						</div>
-						<div class="list-item__content" style="flex: 0 0 64px">
-							${__('Is Private')}
-						</div>
+						${opts.show_private
+						? `<div class="list-item__content file-public-column">
+							${__('Public')}
+							</div>`
+						: ''}
 						<div class="list-item__content list-item__content--activity" style="flex: 0 0 32px">
 						</div>
 					</div>
 				`);
 				var file_pills = file_array.map(
-					file => frappe.upload.make_file_row(file.name, !("is_private" in opts))
+					file => frappe.upload.make_file_row(file, opts)
 				);
 				$uploaded_files_wrapper.append(file_pills);
 			} else {
-				$upload.find(".uploaded-filename").addClass("hidden")
-				$upload.find(".web-link-wrapper").removeClass("hidden");
-				$upload.find(".private-file").addClass("hidden");
-				$upload.find(".btn-browse").removeClass("btn-default").addClass("btn-primary");
+				frappe.upload.show_empty_state($upload);
 			}
 		});
 
@@ -91,7 +93,7 @@ frappe.upload = {
 			var $target = $(e.target);
 
 			if ($target.is(':checkbox')) {
-				var is_private = $target.is(':checked');
+				var is_private = !$target.is(':checked');
 
 				attached_files = attached_files.map(file => {
 					if (file.name === filename) {
@@ -99,6 +101,10 @@ frappe.upload = {
 					}
 					return file;
 				});
+				$uploaded_files_wrapper
+					.find(`.list-item-container[data-filename="${filename}"] .fa.fa-fw`)
+					.toggleClass('fa-lock fa-unlock-alt');
+
 				$upload.data('attached_files', attached_files);
 			}
 			else if ($target.is('.uploaded-file-remove, .fa-remove')) {
@@ -110,6 +116,10 @@ frappe.upload = {
 				$uploaded_files_wrapper
 					.find(`.list-item-container[data-filename="${filename}"]`)
 					.remove();
+
+				if(attached_files.length === 0) {
+					frappe.upload.show_empty_state($upload);
+				}
 			}
 		});
 
@@ -134,8 +144,9 @@ frappe.upload = {
 			// Get file url if input is visible
 			var file_url = $upload.find('[name="file_url"]:visible');
 			file_url = file_url.length && file_url.get(0).value;
-
-			if(file_url) {
+			if(opts.args.gs_template) {
+				frappe.integration_service.gsuite.create_gsuite_file(opts.args,opts);
+			} else if(file_url) {
 				opts.args.file_url = file_url;
 				frappe.upload.upload_file(null, opts.args, opts);
 			} else {
@@ -144,20 +155,22 @@ frappe.upload = {
 			}
 		});
 	},
-	make_file_row: function(filename, show_private) {
+	make_file_row: function(file, { show_private } = {}) {
 		var template = `
-			<div class="list-item-container" data-filename="${filename}">
+			<div class="list-item-container" data-filename="${file.name}">
 				<div class="list-item">
 					<div class="list-item__content list-item__content--flex-2 ellipsis">
-						${filename}
+						<span>${file.name}</span>
+						<span style="margin-top: 1px; margin-left: 5px;"
+							class="fa fa-fw text-warning ${file.is_private ? 'fa-lock': 'fa-unlock-alt'}">
+						</span>
 					</div>
-					${show_private
-					? `<div class="list-item__content ellipsis" style="flex: 0 0 64px;">
-							<input type="checkbox" checked/>
-						</div>`
+					${show_private?
+						`<div class="list-item__content file-public-column ellipsis">
+							<input type="checkbox" ${!file.is_private ? 'checked' : ''}/></div>`
 					: ''}
 					<div class="list-item__content list-item__content--activity ellipsis" style="flex: 0 0 32px;">
-						<button class="btn btn-default btn-xs text-muted uploaded-file-remove">
+					<button class="btn btn-default btn-xs text-muted uploaded-file-remove">
 							<span class="fa fa-remove"></span>
 						</button>
 					</div>
@@ -165,6 +178,12 @@ frappe.upload = {
 			</div>`;
 
 		return $(template);
+	},
+	show_empty_state: function($upload) {
+		$upload.find(".uploaded-filename").addClass("hidden");
+		$upload.find(".web-link-wrapper").removeClass("hidden");
+		$upload.find(".private-file").addClass("hidden");
+		$upload.find(".btn-browse").removeClass("btn-default").addClass("btn-primary");
 	},
 	upload_multiple_files: function(files /*FileData array*/, args, opts) {
 		var i = -1;
@@ -176,15 +195,19 @@ frappe.upload = {
 		$(document).on('upload_complete', on_upload);
 
 		function upload_next() {
-			i += 1;
-			var file = files[i];
-			args.is_private = file.is_private;
+			if(files) {
+				i += 1;
+				var file = files[i];
+				args.is_private = file.is_private;
+				if(!opts.progress) {
+					frappe.show_progress(__('Uploading'), i+1, files.length);
+				}
+			}
 			frappe.upload.upload_file(file, args, opts);
-			frappe.show_progress(__('Uploading'), i+1, files.length);
 		}
 
 		function on_upload(e, attachment) {
-			if (i === files.length - 1) {
+			if (!files || i === files.length - 1) {
 				$(document).off('upload_complete', on_upload);
 				frappe.hide_progress();
 				return;
@@ -197,7 +220,7 @@ frappe.upload = {
 			if(opts.on_no_attach) {
 				opts.on_no_attach();
 			} else {
-				msgprint(__("Please attach a file or set a URL"));
+				frappe.msgprint(__("Please attach a file or set a URL"));
 			}
 			return;
 		}
@@ -242,24 +265,24 @@ frappe.upload = {
 		var freader = new FileReader();
 
 		freader.onload = function() {
-			args.filename = fileobj.name;
+			args.filename = fileobj.name.split(' ').join('_');
 			if(opts.options && opts.options.toLowerCase()=="image") {
 				if(!frappe.utils.is_image_file(args.filename)) {
-					msgprint(__("Only image extensions (.gif, .jpg, .jpeg, .tiff, .png, .svg) allowed"));
+					frappe.msgprint(__("Only image extensions (.gif, .jpg, .jpeg, .tiff, .png, .svg) allowed"));
 					return;
 				}
 			}
 
 			if((opts.max_width || opts.max_height) && frappe.utils.is_image_file(args.filename)) {
 				frappe.utils.resize_image(freader, function(_dataurl) {
-					dataurl = _dataurl;
+					var dataurl = _dataurl;
 					args.filedata = _dataurl.split(",")[1];
 					args.file_size = Math.round(args.filedata.length * 3 / 4);
 					console.log("resized!")
 					frappe.upload._upload_file(fileobj, args, opts, dataurl);
 				})
 			} else {
-				dataurl = freader.result;
+				var dataurl = freader.result;
 				args.filedata = freader.result.split(",")[1];
 				args.file_size = fileobj.size;
 				frappe.upload._upload_file(fileobj, args, opts, dataurl);
@@ -270,11 +293,11 @@ frappe.upload = {
 	},
 
 	upload_to_server: function(fileobj, args, opts, dataurl) {
-		// var msgbox = msgprint(__("Uploading..."));
+		// var msgbox =	frappe.msgprint(__("Uploading..."));
 		if(opts.start) {
 			opts.start();
 		}
-		ajax_args = {
+		var ajax_args = {
 			"method": "uploadfile",
 			args: args,
 			callback: function(r) {
@@ -329,35 +352,43 @@ frappe.upload = {
 		}
 	},
 	multifile_upload:function(fileobjs, args, opts) {
-
 		//loop through filenames and checkboxes then append to list
 		var fields = [];
 		for (var i =0,j = fileobjs.length;i<j;i++) {
 			var filename = fileobjs[i].name;
 			fields.push({'fieldname': 'label1', 'fieldtype': 'Heading', 'label': filename});
 			fields.push({'fieldname':  filename+'_is_private', 'fieldtype': 'Check', 'label': 'Private', 'default': 1});
-			}
+		}
 
-			var d = new frappe.ui.Dialog({
-				'title': __('Make file(s) private or public?'),
-				'fields': fields,
-				primary_action: function(){
-					var i =0,j = fileobjs.length;
-					d.hide();
+		var d = new frappe.ui.Dialog({
+			'title': __('Make file(s) private or public?'),
+			'fields': fields,
+			primary_action: function(){
+				var i =0,j = fileobjs.length;
+				d.hide();
 				opts.loopcallback = function (){
-				   if (i < j) {
-				   	   args.is_private = d.fields_dict[fileobjs[i].name + "_is_private"].get_value()
-					   frappe.upload.upload_file(fileobjs[i], args, opts);
-					   i++;
-				   }
-				}
+					if (i < j) {
+						args.is_private = d.fields_dict[fileobjs[i].name + "_is_private"].get_value()
+						frappe.upload.upload_file(fileobjs[i], args, opts);
+						i++;
+					}
+				};
 
 				opts.loopcallback();
-
-				}
-			});
-			d.show();
-			opts.confirm_is_private =  0;
+			}
+		});
+		d.show();
+		opts.confirm_is_private =  0;
+	},
+	create_gsuite_file: function(args, opts) {
+		return frappe.call({
+			type:'POST',
+			method: 'frappe.integrations.doctype.gsuite_templates.gsuite_templates.create_gsuite_doc',
+			args: args,
+			callback: function(r) {
+				var attachment = r.message;
+				opts.callback && opts.callback(attachment, r);
+			}
+		});
 	}
-
 }

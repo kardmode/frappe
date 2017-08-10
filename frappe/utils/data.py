@@ -11,8 +11,10 @@ import babel.dates
 from babel.core import UnknownLocaleError
 from dateutil import parser
 from num2words import num2words
-import HTMLParser
+from six.moves import html_parser as HTMLParser
+from six.moves.urllib.parse import quote
 from html2text import html2text
+from six import iteritems, text_type
 
 DATE_FORMAT = "%Y-%m-%d"
 TIME_FORMAT = "%H:%M:%S.%f"
@@ -55,7 +57,10 @@ def get_datetime(datetime_str=None):
 	if not datetime_str or (datetime_str or "").startswith("0000-00-00"):
 		return None
 
-	return parser.parse(datetime_str)
+	try:
+		return datetime.datetime.strptime(datetime_str, DATETIME_FORMAT)
+	except ValueError:
+		return parser.parse(datetime_str)
 
 def to_timedelta(time_str):
 	if isinstance(time_str, basestring):
@@ -245,9 +250,10 @@ def format_datetime(datetime_string, format_string=None):
 	return formatted_datetime
 
 def global_date_format(date):
-	"""returns date as 1 January 2012"""
-	formatted_date = getdate(date).strftime("%d %B %Y")
-	return formatted_date.startswith("0") and formatted_date[1:] or formatted_date
+	"""returns localized date in the form of January 1, 2012"""
+	date = getdate(date)
+	formatted_date = babel.dates.format_date(date, locale=(frappe.local.lang or "en").replace("-", "_"), format="long")
+	return formatted_date
 
 def has_common(l1, l2):
 	"""Returns truthy value if there are common elements in lists l1 and l2"""
@@ -324,12 +330,12 @@ def encode(obj, encoding="utf-8"):
 	if isinstance(obj, list):
 		out = []
 		for o in obj:
-			if isinstance(o, unicode):
+			if isinstance(o, text_type):
 				out.append(o.encode(encoding))
 			else:
 				out.append(o)
 		return out
-	elif isinstance(obj, unicode):
+	elif isinstance(obj, text_type):
 		return obj.encode(encoding)
 	else:
 		return obj
@@ -337,9 +343,9 @@ def encode(obj, encoding="utf-8"):
 def parse_val(v):
 	"""Converts to simple datatypes from SQL query results"""
 	if isinstance(v, (datetime.date, datetime.datetime)):
-		v = unicode(v)
+		v = text_type(v)
 	elif isinstance(v, datetime.timedelta):
-		v = ":".join(unicode(v).split(":")[:2])
+		v = ":".join(text_type(v).split(":")[:2])
 	elif isinstance(v, long):
 		v = int(v)
 	return v
@@ -419,7 +425,14 @@ def money_in_words(number, main_currency = None, fraction_currency=None):
 	from frappe.utils import get_defaults
 	_ = frappe._
 
-	if not number or flt(number) < 0:
+	try:
+		# note: `flt` returns 0 for invalid input and we don't want that
+		number = float(number)
+	except ValueError:
+		return ""
+
+	number = flt(number)
+	if number < 0:
 		return ""
 
 	d = get_defaults()
@@ -428,20 +441,33 @@ def money_in_words(number, main_currency = None, fraction_currency=None):
 	if not fraction_currency:
 		fraction_currency = frappe.db.get_value("Currency", main_currency, "fraction") or _("Cent")
 
-	n = "%.2f" % flt(number)
-	main, fraction = n.split('.')
-	if len(fraction)==1: fraction += '0'
-
-
 	number_format = frappe.db.get_value("Currency", main_currency, "number_format", cache=True) or \
 		frappe.db.get_default("number_format") or "#,###.##"
+
+	fraction_length = get_number_format_info(number_format)[2]
+
+	n = "%.{0}f".format(fraction_length) % number
+
+	numbers = n.split('.')
+	main, fraction =  numbers if len(numbers) > 1 else [n, '00']
+
+	if len(fraction) < fraction_length:
+		zeros = '0' * (fraction_length - len(fraction))
+		fraction += zeros
 
 	in_million = True
 	if number_format == "#,##,###.##": in_million = False
 
-	out = main_currency + ' ' + in_words(main, in_million).title()
-	if cint(fraction):
-		out = out + ' ' + _('and') + ' ' + in_words(fraction, in_million).title() + ' ' + fraction_currency
+	# 0.00
+	if main == '0' and fraction in ['00', '000']:
+		out = "{0} {1}".format(main_currency, _('Zero'))
+	# 0.XX
+	elif main == '0':
+		out = _(in_words(fraction, in_million).title()) + ' ' + fraction_currency
+	else:
+		out = main_currency + ' ' + _(in_words(main, in_million).title())
+		if cint(fraction):
+			out = out + ' ' + _('and') + ' ' + _(in_words(fraction, in_million).title()) + ' ' + fraction_currency
 
 	return out + ' ' + _('only.')
 
@@ -545,7 +571,7 @@ def comma_and(some_list):
 def comma_sep(some_list, pattern):
 	if isinstance(some_list, (list, tuple)):
 		# list(some_list) is done to preserve the existing list
-		some_list = [unicode(s) for s in list(some_list)]
+		some_list = [text_type(s) for s in list(some_list)]
 		if not some_list:
 			return ""
 		elif len(some_list) == 1:
@@ -559,7 +585,7 @@ def comma_sep(some_list, pattern):
 def new_line_sep(some_list):
 	if isinstance(some_list, (list, tuple)):
 		# list(some_list) is done to preserve the existing list
-		some_list = [unicode(s) for s in list(some_list)]
+		some_list = [text_type(s) for s in list(some_list)]
 		if not some_list:
 			return ""
 		elif len(some_list) == 1:
@@ -613,6 +639,9 @@ def get_url(uri=None, full_address=False):
 	if not uri and full_address:
 		uri = frappe.get_request_header("REQUEST_URI", "")
 
+	if frappe.conf.http_port:
+		host_name = host_name + ':' + str(frappe.conf.http_port)
+
 	url = urllib.basejoin(host_name, uri) if uri else host_name
 
 	return url
@@ -639,27 +668,27 @@ def get_url_to_report(name, report_type = None, doctype = None):
 
 operator_map = {
 	# startswith
-	"^": lambda (a, b): (a or "").startswith(b),
+	"^": lambda a, b: (a or "").startswith(b),
 
 	# in or not in a list
-	"in": lambda (a, b): operator.contains(b, a),
-	"not in": lambda (a, b): not operator.contains(b, a),
+	"in": lambda a, b: operator.contains(b, a),
+	"not in": lambda a, b: not operator.contains(b, a),
 
 	# comparison operators
-	"=": lambda (a, b): operator.eq(a, b),
-	"!=": lambda (a, b): operator.ne(a, b),
-	">": lambda (a, b): operator.gt(a, b),
-	"<": lambda (a, b): operator.lt(a, b),
-	">=": lambda (a, b): operator.ge(a, b),
-	"<=": lambda (a, b): operator.le(a, b),
-	"not None": lambda (a, b): a and True or False,
-	"None": lambda (a, b): (not a) and True or False
+	"=": lambda a, b: operator.eq(a, b),
+	"!=": lambda a, b: operator.ne(a, b),
+	">": lambda a, b: operator.gt(a, b),
+	"<": lambda a, b: operator.lt(a, b),
+	">=": lambda a, b: operator.ge(a, b),
+	"<=": lambda a, b: operator.le(a, b),
+	"not None": lambda a, b: a and True or False,
+	"None": lambda a, b: (not a) and True or False
 }
 
 def evaluate_filters(doc, filters):
 	'''Returns true if doc matches filters'''
 	if isinstance(filters, dict):
-		for key, value in filters.iteritems():
+		for key, value in iteritems(filters):
 			f = get_filter(None, {key:value})
 			if not compare(doc.get(f.fieldname), f.operator, f.value):
 				return False
@@ -676,7 +705,7 @@ def evaluate_filters(doc, filters):
 def compare(val1, condition, val2):
 	ret = False
 	if condition in operator_map:
-		ret = operator_map[condition]((val1, val2))
+		ret = operator_map[condition](val1, val2)
 
 	return ret
 
@@ -697,13 +726,13 @@ def get_filter(doctype, f):
 		f = make_filter_tuple(doctype, key, value)
 
 	if not isinstance(f, (list, tuple)):
-		frappe.throw("Filter must be a tuple or list (in a list)")
+		frappe.throw(frappe._("Filter must be a tuple or list (in a list)"))
 
 	if len(f) == 3:
 		f = (doctype, f[0], f[1], f[2])
 
 	elif len(f) != 4:
-		frappe.throw("Filter must have 4 values (doctype, fieldname, operator, value): {0}".format(str(f)))
+		frappe.throw(frappe._("Filter must have 4 values (doctype, fieldname, operator, value): {0}").format(str(f)))
 
 	f = frappe._dict(doctype=f[0], fieldname=f[1], operator=f[2], value=f[3])
 
@@ -713,7 +742,7 @@ def get_filter(doctype, f):
 
 	valid_operators = ("=", "!=", ">", "<", ">=", "<=", "like", "not like", "in", "not in", "between")
 	if f.operator.lower() not in valid_operators:
-		frappe.throw("Operator must be one of {0}".format(", ".join(valid_operators)))
+		frappe.throw(frappe._("Operator must be one of {0}").format(", ".join(valid_operators)))
 
 
 	if f.doctype and (f.fieldname not in default_fields + optional_fields):
@@ -767,7 +796,7 @@ def expand_relative_urls(html):
 	return html
 
 def quoted(url):
-	return cstr(urllib.quote(encode(url), safe=b"~@#$&()*!+=:;,.?/'"))
+	return cstr(quote(encode(url), safe=b"~@#$&()*!+=:;,.?/'"))
 
 def quote_urls(html):
 	def _quote_url(match):

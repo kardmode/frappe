@@ -1,7 +1,7 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 """
 	Utilities for using modules
 """
@@ -43,7 +43,7 @@ def export_customizations(module, doctype, sync_on_migrate=0, with_permissions=0
 	"""Export Custom Field and Property Setter for the current document to the app folder.
 		This will be synced with bench migrate"""
 	if not frappe.get_conf().developer_mode:
-		raise 'Not developer mode'
+		raise Exception('Not developer mode')
 
 	custom = {'custom_fields': [], 'property_setters': [], 'custom_perms': [],
 		'doctype': doctype, 'sync_on_migrate': 1}
@@ -72,7 +72,7 @@ def export_customizations(module, doctype, sync_on_migrate=0, with_permissions=0
 	with open(path, 'w') as f:
 		f.write(frappe.as_json(custom))
 
-	frappe.msgprint('Customizations exported to {0}'.format(path))
+	frappe.msgprint(_('Customizations exported to {0}').format(path))
 
 def sync_customizations(app=None):
 	'''Sync custom fields and property setters from custom folder in each app module'''
@@ -121,7 +121,7 @@ def sync_customizations_for_doctype(data):
 	if data.get('custom_perms'):
 		sync('custom_perms', 'Custom DocPerm', 'parent')
 
-	print 'Updating customizations for {0}'.format(doctype)
+	print('Updating customizations for {0}'.format(doctype))
 	validate_fields_for_doctype(doctype)
 
 	if update_schema and not frappe.db.get_value('DocType', doctype, 'issingle'):
@@ -154,7 +154,7 @@ def reload_doc(module, dt=None, dn=None, force=False, reset_permissions=False):
 def export_doc(doctype, name, module=None):
 	"""Write a doc to standard path."""
 	from frappe.modules.export_file import write_document_file
-	print doctype, name
+	print(doctype, name)
 
 	if not module: module = frappe.db.get_value('DocType', name, 'module')
 	write_document_file(frappe.get_doc(doctype, name), module)
@@ -180,8 +180,8 @@ def load_doctype_module(doctype, module=None, prefix="", suffix=""):
 	try:
 		if key not in doctype_python_modules:
 			doctype_python_modules[key] = frappe.get_module(module_name)
-	except ImportError:
-		raise ImportError, 'Module import failed for {0} ({1})'.format(doctype, module_name)
+	except ImportError as e:
+		raise ImportError('Module import failed for {0} ({1})'.format(doctype, module_name + ' Error: ' + str(e)))
 
 	return doctype_python_modules[key]
 
@@ -206,6 +206,8 @@ def get_app_publisher(module):
 def make_boilerplate(template, doc, opts=None):
 	target_path = get_doc_path(doc.module, doc.doctype, doc.name)
 	template_name = template.replace("controller", scrub(doc.name))
+	if template_name.endswith('._py'):
+		template_name = template_name[:-4] + '.py'
 	target_file_path = os.path.join(target_path, template_name)
 
 	if not doc: doc = {}

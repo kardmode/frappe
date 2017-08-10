@@ -63,7 +63,7 @@ frappe.pages['modules'].on_page_load = function(wrapper) {
 					module: module_name
 				},
 				callback: function(r) {
-					m = frappe.get_module(module_name);
+					var m = frappe.get_module(module_name);
 					m.data = r.message.data;
 					process_data(module_name, m.data);
 					page.section_data[module_name] = m;
@@ -133,9 +133,9 @@ frappe.pages['modules'].on_page_load = function(wrapper) {
 						return encodeURIComponent(key) + "=" + encodeURIComponent(value) }).join('&')
 				}
 
-				if(item.type==="page" || item.type==="help" ||
-					(item.doctype && frappe.model.can_read(item.doctype))) {
-						item.shown = true;
+				if(item.type==="page" || item.type==="help" || item.type==="report" ||
+				(item.doctype && frappe.model.can_read(item.doctype))) {
+					item.shown = true;
 				}
 			});
 		});

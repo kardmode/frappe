@@ -41,6 +41,24 @@ frappe.ui.FieldGroup = frappe.ui.form.Layout.extend({
 			})
 		}
 	},
+	add_fields: function(fields) {
+		this.render(fields);
+		this.refresh_fields(fields);
+	},
+	refresh_fields: function(fields) {
+		let fieldnames = fields.map((field) => {
+			if(field.fieldname) return field.fieldname;
+		});
+
+		this.fields_list.map(fieldobj => {
+			if(fieldnames.includes(fieldobj.df.fieldname)) {
+				fieldobj.refresh();
+				if(fieldobj.df["default"]) {
+					fieldobj.set_input(fieldobj.df["default"]);
+				}
+			}
+		});
+	},
 	first_button: false,
 	catch_enter_as_submit: function() {
 		var me = this;
@@ -65,9 +83,8 @@ frappe.ui.FieldGroup = frappe.ui.form.Layout.extend({
 		var errors = [];
 		for(var key in this.fields_dict) {
 			var f = this.fields_dict[key];
-			if(f.get_parsed_value) {
-				var v = f.get_parsed_value();
-
+			if(f.get_value) {
+				var v = f.get_value();
 				if(f.df.reqd && is_null(v))
 					errors.push(__(f.df.label));
 
@@ -75,7 +92,7 @@ frappe.ui.FieldGroup = frappe.ui.form.Layout.extend({
 			}
 		}
 		if(errors.length && !ignore_errors) {
-			msgprint({
+			frappe.msgprint({
 				title: __('Missing Values Required'),
 				message: __('Following fields have missing values:') +
 					'<br><br><ul><li>' + errors.join('<li>') + '</ul>',
@@ -87,14 +104,21 @@ frappe.ui.FieldGroup = frappe.ui.form.Layout.extend({
 	},
 	get_value: function(key) {
 		var f = this.fields_dict[key];
-		return f && (f.get_parsed_value ? f.get_parsed_value() : null);
+		return f && (f.get_value ? f.get_value() : null);
 	},
 	set_value: function(key, val){
-		var f = this.fields_dict[key];
-		if(f) {
-			f.set_input(val);
-			this.refresh_dependency();
-		}
+		return new Promise(resolve => {
+			var f = this.fields_dict[key];
+			if(f) {
+				f.set_value(val).then(() => {
+					f.set_input(val);
+					this.refresh_dependency();
+					resolve();
+				});
+			} else {
+				resolve();
+			}
+		});
 	},
 	set_input: function(key, val) {
 		return this.set_value(key, val);
@@ -107,11 +131,11 @@ frappe.ui.FieldGroup = frappe.ui.form.Layout.extend({
 		}
 	},
 	clear: function() {
-		for(key in this.fields_dict) {
+		for(var key in this.fields_dict) {
 			var f = this.fields_dict[key];
 			if(f && f.set_input) {
 				f.set_input(f.df['default'] || '');
 			}
 		}
-	}
+	},
 });

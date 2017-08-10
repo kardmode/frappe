@@ -4,7 +4,8 @@
 
 from __future__ import unicode_literals
 import frappe
-import json, urlparse
+import json
+from six.moves.urllib.parse import parse_qs
 from frappe.utils import get_request_session
 from frappe import _
 
@@ -22,7 +23,7 @@ def make_get_request(url, auth=None, headers=None, data=None):
 		frappe.flags.integration_request.raise_for_status()
 		return frappe.flags.integration_request.json()
 
-	except Exception, exc:
+	except Exception as exc:
 		frappe.log_error(frappe.get_traceback())
 		raise exc
 
@@ -40,10 +41,10 @@ def make_post_request(url, auth=None, headers=None, data=None):
 		frappe.flags.integration_request.raise_for_status()
 
 		if frappe.flags.integration_request.headers.get("content-type") == "text/plain; charset=utf-8":
-			return urlparse.parse_qs(frappe.flags.integration_request.text)
+			return parse_qs(frappe.flags.integration_request.text)
 
 		return frappe.flags.integration_request.json()
-	except Exception, exc:
+	except Exception as exc:
 		frappe.log_error()
 		raise exc
 

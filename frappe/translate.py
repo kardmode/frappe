@@ -1,7 +1,9 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # MIT License. See license.txt
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
+
+from six import iteritems, text_type
 
 """
 	frappe.translate
@@ -28,8 +30,8 @@ def guess_language(lang_list=None):
 
 	for l in lang_codes:
 		code = l.strip()
-		if not isinstance(code, unicode):
-			code = unicode(code, 'utf-8')
+		if not isinstance(code, text_type):
+			code = text_type(code, 'utf-8')
 		if code in lang_list or code == "en":
 			guess = code
 			break
@@ -120,7 +122,7 @@ def get_dict(fortype, name=None):
 		message_dict.update(get_dict_from_hooks(fortype, name))
 
 		# remove untranslated
-		message_dict = {k:v for k, v in message_dict.iteritems() if k!=v}
+		message_dict = {k:v for k, v in iteritems(message_dict) if k!=v}
 
 		translation_assets[asset_key] = message_dict
 
@@ -542,7 +544,7 @@ def read_csv_file(path):
 		# for japanese! #wtf
 		data = data.replace(chr(28), "").replace(chr(29), "")
 		data = reader([r.encode('utf-8') for r in data.splitlines()])
-		newdata = [[unicode(val, 'utf-8') for val in row] for row in data]
+		newdata = [[text_type(val, 'utf-8') for val in row] for row in data]
 	return newdata
 
 def write_csv_file(path, app_messages, lang_dict):
@@ -584,7 +586,7 @@ def get_untranslated(lang, untranslated_file, get_all=False):
 				.replace("\n", "|||"))
 
 	if get_all:
-		print str(len(messages)) + " messages"
+		print(str(len(messages)) + " messages")
 		with open(untranslated_file, "w") as f:
 			for m in messages:
 				# replace \n with ||| so that internal linebreaks don't get split
@@ -597,13 +599,13 @@ def get_untranslated(lang, untranslated_file, get_all=False):
 				untranslated.append(m[1])
 
 		if untranslated:
-			print str(len(untranslated)) + " missing translations of " + str(len(messages))
+			print(str(len(untranslated)) + " missing translations of " + str(len(messages)))
 			with open(untranslated_file, "w") as f:
 				for m in untranslated:
 					# replace \n with ||| so that internal linebreaks don't get split
 					f.write((escape_newlines(m) + os.linesep).encode("utf-8"))
 		else:
-			print "all translated!"
+			print("all translated!")
 
 def update_translations(lang, untranslated_file, translated_file):
 	"""Update translations from a source and target file for a given language.

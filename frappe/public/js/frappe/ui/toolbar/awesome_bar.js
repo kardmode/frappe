@@ -18,7 +18,6 @@ frappe.search.AwesomeBar = Class.extend({
 			autoFirst: true,
 			list: [],
 			filter: function (text, term) {
-				this.get_item(text.value).boo = "foo";
 				return true;
 			},
 			data: function (item, input) {
@@ -29,8 +28,7 @@ frappe.search.AwesomeBar = Class.extend({
 			},
 			item: function(item, term) {
 				var d = this.get_item(item.value);
-				var name = d.prefix ? __(d.prefix + ' ' + (d.label || d.value)) :
-					__(d.label || d.value);
+				var name = __(d.label || d.value);
 				var html = '<span>' + name + '</span>';
 				if(d.description && d.value!==d.description) {
 					html += '<br><span class="text-muted ellipsis">' + __(d.description) + '</span>';
@@ -44,6 +42,9 @@ frappe.search.AwesomeBar = Class.extend({
 				return (b.label - a.label);
 			}
 		});
+
+		// Added to aid UI testing of global search
+		input.awesomplete = awesomplete;
 
 		$input.on("input", function(e) {
 			var value = e.target.value;
@@ -72,7 +73,7 @@ frappe.search.AwesomeBar = Class.extend({
 				}
 				me.add_help();
 
-				awesomplete.list = me.options;
+				awesomplete.list = me.deduplicate(me.options);
 			}, 100));
 
 		});
@@ -123,8 +124,7 @@ frappe.search.AwesomeBar = Class.extend({
 
 	add_help: function() {
 		this.options.push({
-			label: __("Help on Search"),
-			value: "Help on Search",
+			value: __("Help on Search"),
 			index: -10,
 			default: "Help",
 			onclick: function() {
@@ -140,7 +140,7 @@ frappe.search.AwesomeBar = Class.extend({
 					<tr><td>'+__("Calculate")+'</td><td>'+
 						__("e.g. (55 + 434) / 4 or =Math.sin(Math.PI/2)...")+'</td></tr>\
 				</table>'
-				msgprint(txt, "Search Help");
+				frappe.msgprint(txt, __("Search Help"));
 			}
 		});
 	},
@@ -190,12 +190,13 @@ frappe.search.AwesomeBar = Class.extend({
 					routes.push(str_route);
 				} else {
 					var old = routes.indexOf(str_route);
-					if(out[old].index > option.index) {
+					if(out[old].index < option.index) {
 						out[old] = option;
 					}
 				}
 			} else {
 				out.push(option);
+				routes.push("");
 			}
 		});
 		return out;
@@ -208,8 +209,8 @@ frappe.search.AwesomeBar = Class.extend({
 	make_global_search: function(txt) {
 		var me = this;
 		this.options.push({
-			label: __("Search for '" + txt.bold() + "'"),
-			value: __("Search for '" + txt + "'"),
+			label: __("Search for '{0}'", [txt.bold()]),
+			value: __("Search for '{0}'", [txt]),
 			match: txt,
 			index: 100,
 			default: "Search",
@@ -257,7 +258,7 @@ frappe.search.AwesomeBar = Class.extend({
 					index: 80,
 					default: "Calculator",
 					onclick: function() {
-						msgprint(formatted_value, "Result");
+						frappe.msgprint(formatted_value, "Result");
 					}
 				});
 			} catch(e) {

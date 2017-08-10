@@ -3,7 +3,7 @@
 
 """This module handles the On Demand Backup utility"""
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
 
 #Imports
 from frappe import _
@@ -100,7 +100,7 @@ class BackupGenerator:
 			cmd_string = """tar -cf %s %s""" % (backup_path, files_path)
 			err, out = frappe.utils.execute_in_shell(cmd_string)
 
-			print 'Backed up files', os.path.abspath(backup_path)
+			print('Backed up files', os.path.abspath(backup_path))
 
 	def take_dump(self):
 		import frappe.utils
@@ -196,13 +196,13 @@ def is_file_old(db_file_name, older_than=24):
 			file_datetime = datetime.fromtimestamp\
 						(os.stat(db_file_name).st_ctime)
 			if datetime.today() - file_datetime >= timedelta(hours = older_than):
-				if verbose: print "File is old"
+				if verbose: print("File is old")
 				return True
 			else:
-				if verbose: print "File is recent"
+				if verbose: print("File is recent")
 				return False
 		else:
-			if verbose: print "File does not exist"
+			if verbose: print("File does not exist")
 			return True
 
 def get_backup_path():
@@ -215,7 +215,8 @@ def backup(with_files=False, backup_path_db=None, backup_path_files=None, quiet=
 	odb = scheduled_backup(ignore_files=not with_files, backup_path_db=backup_path_db, backup_path_files=backup_path_files, force=True)
 	return {
 		"backup_path_db": odb.backup_path_db,
-		"backup_path_files": odb.backup_path_files
+		"backup_path_files": odb.backup_path_files,
+		"backup_path_private_files": odb.backup_path_private_files
 	}
 
 if __name__ == "__main__":

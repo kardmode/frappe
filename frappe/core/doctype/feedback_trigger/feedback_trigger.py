@@ -33,7 +33,7 @@ def trigger_feedback_request(doc, method):
 
 	def _get():
 		triggers = {}
-		if not frappe.flags.in_migrate:
+		if not (frappe.flags.in_migrate or frappe.flags.in_install):
 			for d in frappe.get_all('Feedback Trigger', dict(enabled=1), ['name', 'document_type']):
 				triggers[d.document_type] = d.name
 
@@ -66,12 +66,16 @@ def send_feedback_request(reference_doctype, reference_name, trigger="Manual", d
 	feedback_request, url = get_feedback_request_url(reference_doctype,
 		reference_name, details.get("recipients"), trigger)
 
-	feedback_url = frappe.render_template("templates/emails/feedback_request_url.html", { "url": url })
+	feedback_msg = frappe.render_template("templates/emails/feedback_request_url.html", { "url": url })
 
 	# appending feedback url to message body
-	details.update({ "message": "{message}{feedback_url}".format(
+	message = "{message}{feedback_msg}".format(
 		message=details.get("message"),
-		feedback_url=feedback_url)
+		feedback_msg=feedback_msg
+	)
+	details.update({
+		"message": message,
+		"header": [details.get('subject'), 'blue']
 	})
 
 	if details:
@@ -129,7 +133,7 @@ def get_feedback_request_details(reference_doctype, reference_name, trigger="Man
 			"message": feedback_request_message,
 		}
 	else:
-		frappe.msgprint("Feedback conditions do not match")
+		frappe.msgprint(_("Feedback conditions do not match"))
 		return None
 
 def get_feedback_request_url(reference_doctype, reference_name, recipients, trigger="Manual"):

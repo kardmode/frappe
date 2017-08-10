@@ -195,7 +195,7 @@ frappe.views.ListSidebar = Class.extend({
 
 					var custom_column = values.custom_column !== undefined ?
 						values.custom_column : 1;
-					
+
 					if(custom_column) {
 						var field_name = 'kanban_column';
 					} else {
@@ -212,7 +212,7 @@ frappe.views.ListSidebar = Class.extend({
 						.then(function() {
 							d.hide();
 						}, function(err) {
-							msgprint(err);
+							frappe.msgprint(err);
 						});
 				}
 			});
@@ -273,15 +273,15 @@ frappe.views.ListSidebar = Class.extend({
 		var $dropdown = this.page.sidebar.find('.email-account-dropdown');
 		var divider = false;
 
-		if(has_common(roles, ["System Manager", "Administrator"])) {
+		if(has_common(frappe.user_roles, ["System Manager", "Administrator"])) {
 			$('<li class="new-email-account"><a>'+ __("New Email Account") +'</a></li>')
 				.appendTo($dropdown)
 		}
 
-		accounts = frappe.boot.email_accounts;
+		var accounts = frappe.boot.email_accounts;
 
 		accounts.forEach(function(account) {
-			email_account = (account.email_id == "All Accounts")? "All Accounts": account.email_account;
+			var email_account = (account.email_id == "All Accounts")? "All Accounts": account.email_account;
 			var route = ["List", "Communication", "Inbox", email_account].join('/');
 			if(!divider) {
 				$('<li role="separator" class="divider"></li>').appendTo($dropdown);
@@ -318,9 +318,9 @@ frappe.views.ListSidebar = Class.extend({
 				me.defined_category = r.message;
 				if (r.message.defined_cat ){
 					me.defined_category = r.message.defined_cat
-					 me.cats = {};
+					me.cats = {};
 					//structure the tag categories
-					for (i in me.defined_category){
+					for (var i in me.defined_category){
 						if (me.cats[me.defined_category[i].category]===undefined){
 							me.cats[me.defined_category[i].category]=[me.defined_category[i].tag];
 						}else{
@@ -350,43 +350,35 @@ frappe.views.ListSidebar = Class.extend({
 		var stats = []
 		var label = frappe.meta.docfield_map[this.doctype][field] ?
 			frappe.meta.docfield_map[this.doctype][field].label : field;
-		var show_tags = '<a class="list-tag-preview hidden-xs" title="' + __("Show tags")
-			+ '"><i class="octicon octicon-pencil"></i></a>';
 
 		stat = (stat || []).sort(function(a, b) { return b[1] - a[1] });
 		$.each(stat, function(i,v) { sum = sum + v[1]; })
 
-		if(tags)
-		{
+		if(tags) {
 			for (var t in tags) {
 				var nfound = -1;
 				for (var i in stat) {
 					if (tags[t] ===stat[i][0]) {
 						stats.push(stat[i]);
 						nfound = i;
-						break
+						break;
 					}
 				}
-				if (nfound<0)
-				{
-					stats.push([tags[t],0])
-				}
-				else
-				{
+				if (nfound<0) {
+					stats.push([tags[t],0]);
+				} else {
 					me.tempstats["_user_tags"].splice(nfound,1);
 				}
 			}
-			field = "_user_tags"
-		}
-		else
-		{
-			stats = stat
+			field = "_user_tags";
+		} else {
+			stats = stat;
 		}
 		var context = {
 			field: field,
 			stat: stats,
 			sum: sum,
-			label: field==='_user_tags' ?  tags ? __(label)+ show_tags:(__("UnCategorised Tags") + show_tags): __(label),
+			label: field==='_user_tags' ?  (tags ? __(label) : __("Tags")) : __(label),
 		};
 		var sidebar_stat = $(frappe.render_template("list_sidebar_stat", context))
 			.on("click", ".stat-link", function() {

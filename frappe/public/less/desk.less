@@ -24,7 +24,7 @@ a[disabled="disabled"] {
 
 .link-btn {
 	position: absolute;
-	top: 2px;
+	top: 3px;
 	right: 4px;
 	border-radius: 2px;
 	padding: 3px;
@@ -66,8 +66,8 @@ a[disabled="disabled"] {
 
 #alert-container .desk-alert {
   -webkit-box-shadow: 0 0px 5px rgba(0, 0, 0, 0.1);
-     -moz-box-shadow: 0 0px 5px rgba(0, 0, 0, 0.1);
-          box-shadow: 0 0px 5px rgba(0, 0, 0, 0.1);
+	 -moz-box-shadow: 0 0px 5px rgba(0, 0, 0, 0.1);
+		  box-shadow: 0 0px 5px rgba(0, 0, 0, 0.1);
 
 	padding: 10px 40px 10px 20px;
 	max-width: 400px;
@@ -318,17 +318,33 @@ textarea.form-control {
 }
 
 .open-notification {
-    position:relative;
+	position:relative;
 	left: 2px;
-    display:inline-block;
-    background:#ff5858;
-    font-size: @text-medium;
-    line-height:20px;
-    padding:0 8px;
-    color:#fff;
-    border-radius:10px;
+	display:inline-block;
+	background:#ff5858;
+	font-size: @text-medium;
+	line-height:20px;
+	padding:0 8px;
+	color:#fff;
+	border-radius:10px;
 	cursor: pointer;
 	margin-right: 10px;
+}
+
+a.progress-small {
+	.progress-chart {
+		width: 60px;
+		margin-top: 4px;
+		float: right;
+	}
+
+	.progress {
+		margin-bottom: 0;
+	}
+
+	.progress-bar {
+		background-color: #98d85b;
+	}
 }
 
 /* on small screens, show only icons on top */
@@ -426,6 +442,17 @@ textarea.form-control {
 	.uploaded-filename-display {
 		max-width: 150px;
 	}
+
+	.file-public-column {
+		flex: 0 0 36px;
+		order: -1;
+		justify-content: flex-end;
+
+		input[type="checkbox"] {
+			margin-right: 0;
+		}
+	}
+
 }
 
 .frappe-rtl input ,.frappe-rtl textarea {
@@ -561,6 +588,24 @@ textarea.form-control {
 	[data-original-title="Video"],
 	[data-original-title="Table"] {
 		display: none;
+	}
+}
+
+.note-hint-popover {
+	border-radius: 3px;
+	border-color: @border-color;
+	padding: 0;
+
+	.popover-content {
+		padding: 0;
+	}
+
+	.note-hint-item {
+		color: @text-color !important;
+		padding: 5px 8.8px !important;
+	}
+	.note-hint-item.active {
+		background-color: @btn-bg !important;
 	}
 }
 
@@ -814,7 +859,7 @@ textarea.form-control {
 }
 
 .c3-line {
-    stroke-width: 3px;
+	stroke-width: 3px;
 }
 
 .c3-tooltip {
@@ -882,10 +927,81 @@ input[type="checkbox"] {
 		color: @checkbox-color;
 	}
 }
+
+// Will not be required after commonifying lists with empty state
+.multiselect-empty-state{
+	min-height: 300px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 100%;
+}
+
 // mozilla doesn't support
 // pseudo elements on checkbox
 @-moz-document url-prefix() {
 	input[type="checkbox"] {
 		visibility: visible;
+	}
+}
+
+// edge doesn't support pseudo elements on checkbox
+//Microsoft Edge Browser 12+ (All)
+@supports (-ms-ime-align:auto) {
+	input[type="checkbox"] {
+		 visibility: visible;
+	}
+}
+
+// color picker
+.color-picker {
+	position: relative;
+	z-index: 999;
+
+	.color-picker-pallete {
+		border-radius: 4px;
+		box-shadow: 0 4px 12px rgba(0,0,0,.15);
+		background: #fff;
+		border: 1px solid @border-color;
+		width: 290px;
+		height: 106px;
+		padding-top: 10px;
+		padding-left: 5px;
+		position: absolute;
+		top: 0;
+		left: 0;
+
+		&:after,
+		&:before {
+			border: solid transparent;
+			content: " ";
+			height: 0;
+			width: 0;
+			pointer-events: none;
+			position: absolute;
+			bottom: 100%;
+			left: 30px;
+		}
+		&:after {
+			border-color: rgba(255, 255, 255, 0);
+			border-bottom-color: #fff;
+			border-width: 8px;
+			margin-left: -8px;
+		}
+		&:before {
+			border-color: rgba(221, 221, 221, 0);
+			border-bottom-color: @border-color;
+			border-width: 9px;
+			margin-left: -9px;
+		}
+	}
+	.color-box {
+		cursor: pointer;
+		display: inline-block;
+		width: 20px;
+		height: 20px;
+		margin: -2px 0 0 3px;
+		border: 1px solid rgba(0,0,0, 0.25);
+
 	}
 }

@@ -11,9 +11,10 @@ from frappe import _
 no_cache = 1
 no_sitemap = 1
 
-def get_context(context):
+def get_context(context, **dict_params):
 	"""Returns context for a list standard list page.
 	Will also update `get_list_context` from the doctype module file"""
+	frappe.local.form_dict.update(dict_params)
 	doctype = frappe.local.form_dict.doctype
 	context.parents = [{"route":"me", "title":_("My Account")}]
 	context.update(get_list_context(context, doctype) or {})
@@ -123,15 +124,19 @@ def get_list_context(context, doctype):
 	from frappe.website.doctype.web_form.web_form import get_web_form_list
 
 	list_context = context or frappe._dict()
-	module = load_doctype_module(doctype)
-	if hasattr(module, "get_list_context"):
-		out = frappe._dict(module.get_list_context(list_context) or {})
-		if out:
-			list_context = out
+	meta = frappe.get_meta(doctype)
+
+	if not meta.custom:
+		# custom doctypes don't have modules
+		module = load_doctype_module(doctype)
+		if hasattr(module, "get_list_context"):
+			out = frappe._dict(module.get_list_context(list_context) or {})
+			if out:
+				list_context = out
 
 	# get path from '/templates/' folder of the doctype
 	if not list_context.row_template:
-		list_context.row_template = frappe.get_meta(doctype).get_row_template()
+		list_context.row_template = meta.get_row_template()
 
 	# is web form, show the default web form filters
 	# which is only the owner
