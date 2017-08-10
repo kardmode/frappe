@@ -1355,9 +1355,7 @@ def safe_eval(code, eval_globals=None, eval_locals=None):
 		eval_globals = {}
 	eval_globals['__builtins__'] = {}
 
-<<<<<<< HEAD
-	return eval(code, eval_globals, eval_locals)
-=======
+
 	eval_globals.update(whitelisted_globals)
 
 	return eval(code, eval_globals, eval_locals)
@@ -1396,4 +1394,3 @@ def get_system_settings(key):
 	if not local.system_settings.has_key(key):
 		local.system_settings.update({key: db.get_single_value('System Settings', key)})
 	return local.system_settings.get(key)
->>>>>>> 67e13e45f00ee4943c7904c381765dbb85e6f8a9
