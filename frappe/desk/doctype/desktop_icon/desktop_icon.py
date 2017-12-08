@@ -9,7 +9,7 @@ from frappe import _
 import json
 import random
 from frappe.model.document import Document
-from six import iteritems
+from six import iteritems, string_types
 
 
 class DesktopIcon(Document):
@@ -95,7 +95,7 @@ def get_desktop_icons(user=None):
 				icon.hidden = 1
 
 		# sort by idx
-		user_icons.sort(lambda a, b: 1 if a.idx > b.idx else -1)
+		user_icons.sort(key = lambda a: a.idx)
 
 		# translate
 		for d in user_icons:
@@ -171,7 +171,7 @@ def add_user_icon(_doctype, _report=None, label=None, link=None, type='link', st
 @frappe.whitelist()
 def set_order(new_order, user=None):
 	'''set new order by duplicating user icons (if user is set) or set global order'''
-	if isinstance(new_order, basestring):
+	if isinstance(new_order, string_types):
 		new_order = json.loads(new_order)
 	for i, module_name in enumerate(new_order):
 		if module_name not in ('Explore',):
@@ -228,7 +228,7 @@ def set_hidden_list(hidden_list, user=None):
 	'''Sets property `hidden`=1 in **Desktop Icon** for given user.
 	If user is None then it will set global values.
 	It will also set the rest of the icons as shown (`hidden` = 0)'''
-	if isinstance(hidden_list, basestring):
+	if isinstance(hidden_list, string_types):
 		hidden_list = json.loads(hidden_list)
 
 	# set as hidden
@@ -404,3 +404,16 @@ palette = (
 	('#4F8EA8', 1),
 	('#428B46', 1)
 )
+
+@frappe.whitelist()
+def hide(name, user = None):
+	if not user:
+		user = frappe.session.user
+
+	try:
+		set_hidden(name, user, hidden = 1)
+		clear_desktop_icons_cache()
+	except Exception:
+		return False
+
+	return True

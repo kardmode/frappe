@@ -15,6 +15,7 @@ import frappe.share
 import re
 from frappe.limits import get_limits
 from frappe.website.utils import is_signup_enabled
+from frappe.utils.background_jobs import enqueue
 
 STANDARD_USERS = ("Guest", "Administrator")
 
@@ -42,6 +43,7 @@ class User(Document):
 
 	def before_insert(self):
 		self.flags.in_insert = True
+		throttle_user_creation()
 
 	def validate(self):
 		self.check_demo()
@@ -113,7 +115,9 @@ class User(Document):
 				self.get("roles")]):
 			return
 
-		if self.name not in STANDARD_USERS and self.user_type == "System User" and not self.get_other_system_managers():
+		if (self.name not in STANDARD_USERS and self.user_type == "System User" and not self.get_other_system_managers()
+			and cint(frappe.db.get_single_value('System Settings', 'setup_complete'))):
+
 			msgprint(_("Adding System Manager to this User as there must be atleast one System Manager"))
 			self.append("roles", {
 				"doctype": "Has Role",
@@ -589,8 +593,8 @@ def get_email_awaiting(user):
 		return waiting
 	else:
 		frappe.db.sql("""update `tabUser Email`
-	    		set awaiting_password =0
-	    		where parent = %(user)s""",{"user":user})
+				set awaiting_password =0
+				where parent = %(user)s""",{"user":user})
 		return False
 
 @frappe.whitelist(allow_guest=False)
@@ -678,7 +682,7 @@ def ask_pass_update():
 	from frappe.utils import set_default
 
 	users = frappe.db.sql("""SELECT DISTINCT(parent) as user FROM `tabUser Email`
-        WHERE awaiting_password = 1""", as_dict=True)
+		WHERE awaiting_password = 1""", as_dict=True)
 
 	password_list = [ user.get("user") for user in users ]
 	set_default("email_user_password", u','.join(password_list))
@@ -747,6 +751,11 @@ def sign_up(email, full_name, redirect_to):
 		})
 		user.flags.ignore_permissions = True
 		user.insert()
+
+		# set default signup role as per Portal Settings
+		default_role = frappe.db.get_value("Portal Settings", None, "default_role")
+		if default_role:
+			user.add_roles(default_role)
 
 		if redirect_to:
 			frappe.cache().hset('redirect_after_login', user.name, redirect_to)
@@ -908,3 +917,91 @@ def update_gravatar(name):
 	gravatar = has_gravatar(name)
 	if gravatar:
 		frappe.db.set_value('User', name, 'user_image', gravatar)
+
+
+@frappe.whitelist(allow_guest=True)
+def send_token_via_sms(tmp_id,phone_no=None,user=None):
+	try:
+		from frappe.core.doctype.sms_settings.sms_settings import send_request
+	except:
+		return False
+
+	if not frappe.cache().ttl(tmp_id + '_token'):
+		return False
+	ss = frappe.get_doc('SMS Settings', 'SMS Settings')
+	if not ss.sms_gateway_url:
+		return False
+
+	token = frappe.cache().get(tmp_id + '_token')
+	args = {ss.message_parameter: 'verification code is {}'.format(token)}
+
+	for d in ss.get("parameters"):
+		args[d.parameter] = d.value
+
+	if user:
+		user_phone = frappe.db.get_value('User', user, ['phone','mobile_no'], as_dict=1)
+		usr_phone = user_phone.mobile_no or user_phone.phone
+		if not usr_phone:
+			return False
+	else:
+		if phone_no:
+			usr_phone = phone_no
+		else:
+			return False
+
+	args[ss.receiver_parameter] = usr_phone
+	status = send_request(ss.sms_gateway_url, args, use_post=ss.use_post)
+
+	if 200 <= status < 300:
+		frappe.cache().delete(tmp_id + '_token')
+		return True
+	else:
+		return False
+
+@frappe.whitelist(allow_guest=True)
+def send_token_via_email(tmp_id,token=None):
+	import pyotp
+
+	user = frappe.cache().get(tmp_id + '_user')
+	count = token or frappe.cache().get(tmp_id + '_token')
+
+	if ((not user) or (user == 'None') or (not count)):
+		return False
+	user_email = frappe.db.get_value('User',user, 'email')
+	if not user_email:
+		return False
+
+	otpsecret = frappe.cache().get(tmp_id + '_otp_secret')
+	hotp = pyotp.HOTP(otpsecret)
+
+	frappe.sendmail(
+		recipients=user_email, sender=None, subject='Verification Code',
+		message='<p>Your verification code is {0}</p>'.format(hotp.at(int(count))),
+		delayed=False, retry=3)
+
+	return True
+
+@frappe.whitelist(allow_guest=True)
+def reset_otp_secret(user):
+	otp_issuer = frappe.db.get_value('System Settings', 'System Settings', 'otp_issuer_name')
+	user_email = frappe.db.get_value('User',user, 'email')
+	if frappe.session.user in ["Administrator", user] :
+		frappe.defaults.clear_default(user + '_otplogin')
+		frappe.defaults.clear_default(user + '_otpsecret')
+		email_args = {
+			'recipients':user_email, 'sender':None, 'subject':'OTP Secret Reset - {}'.format(otp_issuer or "Frappe Framework"),
+			'message':'<p>Your OTP secret on {} has been reset. If you did not perform this reset and did not request it, please contact your System Administrator immediately.</p>'.format(otp_issuer or "Frappe Framework"),
+			'delayed':False,
+			'retry':3
+		}
+		enqueue(method=frappe.sendmail, queue='short', timeout=300, event=None, async=True, job_name=None, now=False, **email_args)
+		return frappe.msgprint(_("OTP Secret has been reset. Re-registration will be required on next login."))
+	else:
+		return frappe.throw(_("OTP secret can only be reset by the Administrator."))
+
+def throttle_user_creation():
+	if frappe.flags.in_import:
+		return
+
+	if frappe.db.get_creation_count('User', 60) > frappe.local.conf.get("throttle_user_limit", 60):
+		frappe.throw(_('Throttled'))

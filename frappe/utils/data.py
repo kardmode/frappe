@@ -12,9 +12,10 @@ from babel.core import UnknownLocaleError
 from dateutil import parser
 from num2words import num2words
 from six.moves import html_parser as HTMLParser
-from six.moves.urllib.parse import quote
+from six.moves.urllib.parse import quote, urljoin
 from html2text import html2text
-from six import iteritems, text_type
+from markdown2 import markdown, MarkdownError
+from six import iteritems, text_type, string_types, integer_types
 
 DATE_FORMAT = "%Y-%m-%d"
 TIME_FORMAT = "%H:%M:%S.%f"
@@ -63,7 +64,7 @@ def get_datetime(datetime_str=None):
 		return parser.parse(datetime_str)
 
 def to_timedelta(time_str):
-	if isinstance(time_str, basestring):
+	if isinstance(time_str, string_types):
 		t = parser.parse(time_str)
 		return datetime.timedelta(hours=t.hour, minutes=t.minute, seconds=t.second, microseconds=t.microsecond)
 
@@ -80,7 +81,7 @@ def add_to_date(date, years=0, months=0, days=0, hours=0, as_string=False, as_da
 	if hours:
 		as_datetime = True
 
-	if isinstance(date, basestring):
+	if isinstance(date, string_types):
 		as_string = True
 		if " " in date:
 			as_datetime = True
@@ -196,7 +197,7 @@ def get_time(time_str):
 		return parser.parse(time_str).time()
 
 def get_datetime_str(datetime_obj):
-	if isinstance(datetime_obj, basestring):
+	if isinstance(datetime_obj, string_types):
 		datetime_obj = get_datetime(datetime_obj)
 
 	return datetime_obj.strftime(DATETIME_FORMAT)
@@ -218,7 +219,11 @@ def formatdate(string_date=None, format_string=None):
 		 * mm-dd-yyyy
 		 * dd/mm/yyyy
 	"""
-	date = getdate(string_date) if string_date else now_datetime().date()
+
+	if not string_date:
+		return ''
+
+	date = getdate(string_date)
 	if not format_string:
 		format_string = get_user_format().replace("mm", "MM")
 
@@ -261,7 +266,7 @@ def has_common(l1, l2):
 
 def flt(s, precision=None):
 	"""Convert to float (ignore commas)"""
-	if isinstance(s, basestring):
+	if isinstance(s, string_types):
 		s = s.replace(',','')
 
 	try:
@@ -346,7 +351,7 @@ def parse_val(v):
 		v = text_type(v)
 	elif isinstance(v, datetime.timedelta):
 		v = ":".join(text_type(v).split(":")[:2])
-	elif isinstance(v, long):
+	elif isinstance(v, integer_types):
 		v = int(v)
 	return v
 
@@ -362,6 +367,18 @@ def fmt_money(amount, precision=None, currency=None):
 
 	if precision is None:
 		precision = number_format_precision
+
+	# 40,000 -> 40,000.00
+	# 40,000.00000 -> 40,000.00
+	# 40,000.23000 -> 40,000.23
+	if decimal_str:
+		parts = str(amount).split(decimal_str)
+		decimals = parts[1] if len(parts) > 1 else ''
+		if precision > 2:
+			if len(decimals) < 3:
+				precision = 2
+			elif len(decimals) < precision:
+				precision = len(decimals)
 
 	amount = '%.*f' % (precision, flt(amount))
 	if amount.find('.') == -1:
@@ -525,7 +542,7 @@ def pretty_date(iso_datetime):
 	if not iso_datetime: return ''
 	import math
 
-	if isinstance(iso_datetime, basestring):
+	if isinstance(iso_datetime, string_types):
 		iso_datetime = datetime.datetime.strptime(iso_datetime, DATETIME_FORMAT)
 	now_dt = datetime.datetime.strptime(now(), DATETIME_FORMAT)
 	dt_diff = now_dt - iso_datetime
@@ -645,7 +662,7 @@ def get_url(uri=None, full_address=False):
 	if frappe.conf.http_port:
 		host_name = host_name + ':' + str(frappe.conf.http_port)
 
-	url = urllib.basejoin(host_name, uri) if uri else host_name
+	url = urljoin(host_name, uri) if uri else host_name
 
 	return url
 
@@ -725,7 +742,7 @@ def get_filter(doctype, f):
 	from frappe.model import default_fields, optional_fields
 
 	if isinstance(f, dict):
-		key, value = f.items()[0]
+		key, value = next(iter(f.items()))
 		f = make_filter_tuple(doctype, key, value)
 
 	if not isinstance(f, (list, tuple)):
@@ -781,9 +798,11 @@ def expand_relative_urls(html):
 
 	def _expand_relative_urls(match):
 		to_expand = list(match.groups())
-		if not to_expand[2].startswith("/"):
-			to_expand[2] = "/" + to_expand[2]
-		to_expand.insert(2, url)
+
+		if not to_expand[2].startswith('mailto') and not to_expand[2].startswith('data:'):
+			if not to_expand[2].startswith("/"):
+				to_expand[2] = "/" + to_expand[2]
+			to_expand.insert(2, url)
 
 		if 'url' in to_expand[0] and to_expand[1].startswith('(') and to_expand[-1].endswith(')'):
 			# background-image: url('/assets/...') - workaround for wkhtmltopdf print-media-type
@@ -829,3 +848,19 @@ def to_markdown(html):
 		pass
 
 	return text
+
+def to_html(markdown_text):
+	html = None
+	try:
+		html = markdown(markdown_text)
+	except MarkdownError:
+		pass
+
+	return html
+
+def get_source_value(source, key):
+	'''Get value from source (object or dict) based on key'''
+	if isinstance(source, dict):
+		return source.get(key)
+	else:
+		return getattr(source, key)

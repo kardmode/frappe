@@ -18,7 +18,7 @@ frappe.ui.form.on("Contact", {
 
 		if(!frm.doc.user && !frm.is_new() && frm.perm[0].write) {
 			frm.add_custom_button(__("Invite as User"), function() {
-				frappe.call({
+				return frappe.call({
 					method: "frappe.contacts.doctype.contact.contact.invite_user",
 					args: {
 						contact: frm.doc.name
@@ -38,6 +38,7 @@ frappe.ui.form.on("Contact", {
 				}
 			}
 		});
+		frm.refresh_field("links");
 	},
 	validate: function(frm) {
 		// clear linked customer / supplier / sales partner on saving...

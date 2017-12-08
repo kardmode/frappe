@@ -3,6 +3,7 @@
 
 from __future__ import unicode_literals, print_function
 from six.moves import range
+from six import string_types
 import frappe, copy, json
 from frappe import _, msgprint
 from frappe.utils import cint
@@ -51,7 +52,7 @@ def has_permission(doctype, ptype="read", doc=None, verbose=False, user=None):
 				["read" if ptype in ("email", "print") else ptype])
 
 			if doc:
-				doc_name = doc if isinstance(doc, basestring) else doc.name
+				doc_name = doc if isinstance(doc, string_types) else doc.name
 				if doc_name in shared:
 					if verbose: print("Shared")
 					if ptype in ("read", "write", "share") or meta.permissions[0].get(ptype):
@@ -75,7 +76,7 @@ def has_permission(doctype, ptype="read", doc=None, verbose=False, user=None):
 	perm = True
 
 	if doc:
-		if isinstance(doc, basestring):
+		if isinstance(doc, string_types):
 			doc = frappe.get_doc(meta.name, doc)
 
 		owner_perm = user_perm = controller_perm = None
@@ -244,7 +245,7 @@ def get_role_permissions(meta, user=None, verbose=False):
 					perms["apply_user_permissions"][ptype] = 1
 
 		# delete 0 values
-		for key, value in perms.get("apply_user_permissions").items():
+		for key, value in list(perms.get("apply_user_permissions").items()):
 			if not value:
 				del perms["apply_user_permissions"][key]
 

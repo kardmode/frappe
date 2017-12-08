@@ -8,9 +8,10 @@ QUnit.test("test: Contact Us Settings", function (assert) {
 	// number of asserts
 	assert.expect(1);
 
-	frappe.run_serially('Contact Us Settings', [
+
+	frappe.run_serially([
 		// insert a new Contact Us Settings
-		() => frappe.tests.make([
+		() => frappe.tests.make('Contact Us Settings', [
 			// values to be set
 			{key: 'value'}
 		]),

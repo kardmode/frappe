@@ -10,6 +10,7 @@ import re, csv, os
 from frappe.utils.csvutils import UnicodeWriter
 from frappe.utils import cstr, formatdate, format_datetime
 from  frappe.core.page.data_import_tool.data_import_tool import get_data_keys
+from six import string_types
 
 reflags = {
 	"I":re.I,
@@ -29,7 +30,7 @@ def get_template(doctype=None, parent_doctype=None, all_doctypes="No", with_data
 		select_columns = json.loads(select_columns);
 	docs_to_export = {}
 	if doctype:
-		if isinstance(doctype, basestring):
+		if isinstance(doctype, string_types):
 			doctype = [doctype];
 		if len(doctype) > 1:
 			docs_to_export = doctype[1]
@@ -80,7 +81,7 @@ def get_template(doctype=None, parent_doctype=None, all_doctypes="No", with_data
 			if field and ((select_columns and f[0] in select_columns[dt]) or not select_columns):
 				tablecolumns.append(field)
 
-		tablecolumns.sort(lambda a, b: int(a.idx - b.idx))
+		tablecolumns.sort(key = lambda a: int(a.idx))
 
 		_column_start_end = frappe._dict(start=0)
 

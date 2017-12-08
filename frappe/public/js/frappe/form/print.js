@@ -48,7 +48,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 		this.print_sel = this.wrapper
 			.find(".print-preview-select")
 			.on("change", function () {
-				me.multilingual_preview()
+				me.multilingual_preview();
 			});
 			
 		
@@ -115,7 +115,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 		});
 
 		this.wrapper.find(".btn-print-edit").on("click", function () {
-			var print_format = me.get_print_format();
+			let print_format = me.get_print_format();
 			if (print_format && print_format.name) {
 				if (print_format.print_format_builder) {
 					frappe.set_route("print-format-builder", print_format.name);
@@ -142,7 +142,8 @@ frappe.ui.form.PrintPreview = Class.extend({
 		this.lang_code = this.frm.doc.language;
 		// Load all languages in the field
 		this.language_sel.empty()
-			.add_options(frappe.get_languages())
+			.add_options([{value:'', label:__("Select Language...")}]
+				.concat(frappe.get_languages()))
 			.val(this.lang_code);
 		this.preview();
 	},
@@ -168,11 +169,14 @@ frappe.ui.form.PrintPreview = Class.extend({
 	show_footer: function() {
 		// footer is hidden by default as reqd by pdf generation
 		// simple hack to show it in print preview
-		this.wrapper.find('.print-format').css('position', 'relative');
+		this.wrapper.find('.page-break').css({
+			'display': 'flex',
+			'flex-direction': 'column'
+		});
 		this.wrapper.find('#footer-html').attr('style', `
 			display: block !important;
-			position: absolute;
-			bottom: 0.75in;
+			order: 1;
+			margin-top: 20px;
 		`);
 	},
 	printit: function () {
@@ -243,6 +247,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 		
 		return this.print_sel
 			.empty().add_options(this.print_formats);
+
 	},
 	with_old_style: function (opts) {
 		frappe.require("/assets/js/print_format_v3.min.js", function () {

@@ -2,10 +2,10 @@ frappe.ui.form.GridRow = Class.extend({
 	init: function(opts) {
 		this.on_grid_fields_dict = {};
 		this.on_grid_fields = [];
-		this.row_check_html = '<input type="checkbox" class="grid-row-check pull-left">';
 		this.columns = {};
 		this.columns_list = [];
 		$.extend(this, opts);
+		this.row_check_html = '<input type="checkbox" class="grid-row-check pull-left">';
 		this.make();
 	},
 	make: function() {
@@ -79,7 +79,8 @@ frappe.ui.form.GridRow = Class.extend({
 						this.frm.script_manager.trigger(this.grid.df.fieldname + "_remove",
 							this.doc.doctype, this.doc.name);
 						this.frm.dirty();
-					}
+						this.grid.refresh();
+					},
 				]).catch((e) => {
 					// aborted
 					console.trace(e); // eslint-disable-line
@@ -92,8 +93,9 @@ frappe.ui.form.GridRow = Class.extend({
 				this.grid.df.data.forEach(function(d, i) {
 					d.idx = i+1;
 				});
+
+				this.grid.refresh();
 			}
-			this.grid.refresh();
 		}
 	},
 	insert: function(show, below) {
@@ -119,6 +121,8 @@ frappe.ui.form.GridRow = Class.extend({
 		if(this.grid_form) {
 			this.grid_form.layout && this.grid_form.layout.refresh(this.doc);
 		}
+
+		this.toggle_check();
 	},
 	render_template: function() {
 		this.set_row_index();
@@ -284,7 +288,7 @@ frappe.ui.form.GridRow = Class.extend({
 		// whether grid is editable
 		if(this.grid.allow_on_grid_editing() && this.grid.is_editable() && this.doc && show !== false) {
 
-			// disable other editale row
+			// disable other editable row
 			if(frappe.ui.form.editable_row
 				&& frappe.ui.form.editable_row !== this) {
 				frappe.ui.form.editable_row.toggle_editable_row(false);
@@ -304,7 +308,10 @@ frappe.ui.form.GridRow = Class.extend({
 		} else {
 			this.row.toggleClass('editable-row', false);
 			this.columns_list.forEach(function(column) {
-				column.static_area.toggle(true);
+				if (!column.df.hidden) {
+					column.static_area.toggle(true);
+				}
+
 				column.field_area && column.field_area.toggle(false);
 			});
 			frappe.ui.form.editable_row = null;
@@ -590,4 +597,10 @@ frappe.ui.form.GridRow = Class.extend({
 	toggle_editable: function(fieldname, editable) {
 		this.set_field_property(fieldname, 'read_only', editable ? 0 : 1);
 	},
+	toggle_check: function() {
+		// to hide checkbox if grid is not editable
+		this.wrapper
+			.find('.grid-row-check')
+			.css("display", this.grid.is_editable()? 'block':'none');
+	}
 });

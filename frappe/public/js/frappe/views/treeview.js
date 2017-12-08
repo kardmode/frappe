@@ -43,6 +43,7 @@ frappe.views.TreeView = Class.extend({
 			this.get_root();
 		}
 
+		this.onload();
 		this.set_menu_item();
 		this.set_primary_action();
 	},
@@ -79,6 +80,10 @@ frappe.views.TreeView = Class.extend({
 		} else {
 			this.body = this.page.main;
 		}
+	},
+	onload: function() {
+		var me = this;
+		this.opts.onload && this.opts.onload(me);
 	},
 	make_filters: function(){
 		var me = this;
@@ -281,6 +286,18 @@ frappe.views.TreeView = Class.extend({
 			}
 		})
 	},
+	print_tree: function() {
+		if(!frappe.model.can_print(this.doctype)) {
+			frappe.msgprint(__("You are not allowed to print this report"));
+			return false;
+		}
+		var tree = $(".tree:visible").html();
+		var me = this;
+		frappe.ui.get_print_settings(false, function(print_settings) {
+			var title =  __(me.docname || me.doctype);
+			frappe.render_tree({title: title, tree: tree, print_settings:print_settings});
+		});
+	},
 	set_primary_action: function(){
 		var me = this;
 		if (!this.opts.disable_add_node && this.can_create) {
@@ -300,12 +317,19 @@ frappe.views.TreeView = Class.extend({
 				}
 			},
 			{
+				label: __('Print'),
+				action: function() {
+					me.print_tree();
+				}
+
+			},
+			{
 				label: __('Refresh'),
 				action: function() {
 					me.make_tree();
 				}
 			},
-		]
+		];
 
 		if (me.opts.menu_items) {
 			me.menu_items.push.apply(me.menu_items, me.opts.menu_items)
@@ -320,7 +344,15 @@ frappe.views.TreeView = Class.extend({
 			if (has_perm) {
 				me.page.add_menu_item(menu_item["label"], menu_item["action"]);
 			}
-		})
+		});
+
+		// last menu item
+		me.page.add_menu_item(__('Add to Desktop'), () => {
+			const label = me.doctype === 'Account' ?
+				__('Chart of Accounts') :
+				__(me.doctype);
+			frappe.add_to_desktop(label, me.doctype);
+		});
 	}
 });
 

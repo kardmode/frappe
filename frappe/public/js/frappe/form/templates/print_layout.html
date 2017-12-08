@@ -2,11 +2,12 @@
 	<div class="print-toolbar row">
 		<div class="col-xs-2">
 			<select class="print-preview-select input-sm form-control"></select></div>
-		<div style="display:none;" class="col-xs-2">
-			<select class="languages input-sm form-control"></select></div>
 		<div class="col-xs-1">
 			<select class="orientation input-sm form-control"><option value="Portrait" selected>Portrait</option> 
 			<option value="Landscape">Landscape</option></select></div>
+		<!-- <div class="col-xs-2"> -->
+			<!-- <select class="languages input-sm form-control" -->
+				<!-- placeholder="{{ __("Language") }}"></select></div> -->
 		<div class="col-xs-2">
 			<select class="print-letterhead-select input-sm form-control">
 			</select></div>
@@ -27,8 +28,10 @@
             <div class="btn-group">
                 <a class="btn-print-print btn-sm btn btn-default">
                     <strong>{%= __("Print") %}</strong></a>
+    			<a class="btn-sm btn btn-default" href="#Form/Print Settings">
+                    {%= __("Settings...") %}</a>
     			<a class="btn-print-edit btn-sm btn btn-default">
-                    {%= __("Customize") %}</a>
+                    {%= __("Customize...") %}</a>
     			<a class="btn-print-preview btn-sm btn btn-default">
                     {%= __("Full Page") %}</a>
     			<a class="btn-download-pdf btn-sm btn btn-default">

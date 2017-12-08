@@ -14,15 +14,13 @@ import frappe
 import frappe.defaults
 import frappe.async
 import re
-import redis
 import frappe.model.meta
 from frappe.utils import now, get_datetime, cstr
 from frappe import _
-from six import text_type, binary_type
-from frappe.utils.global_search import sync_global_search
+from six import text_type, binary_type, string_types, integer_types
 from frappe.model.utils.link_count import flush_local_link_count
 from six import iteritems, text_type
-
+from frappe.utils.background_jobs import execute_job, get_queue
 
 class Database:
 	"""
@@ -62,10 +60,10 @@ class Database:
 				'key':frappe.conf.db_ssl_key
 			}
 		if usessl:
-			self._conn = MySQLdb.connect(user=self.user, host=self.host, passwd=self.password,
+			self._conn = MySQLdb.connect(self.host, self.user or '', self.password or '',
 				use_unicode=True, charset='utf8mb4', ssl=self.ssl)
 		else:
-			self._conn = MySQLdb.connect(user=self.user, host=self.host, passwd=self.password,
+			self._conn = MySQLdb.connect(self.host, self.user or '', self.password or '',
 				use_unicode=True, charset='utf8mb4')
 		self._conn.converter[246]=float
 		self._conn.converter[12]=get_datetime
@@ -270,7 +268,7 @@ class Database:
 		"""Returns true if the first row in the result has a Date, Datetime, Long Int."""
 		if result and result[0]:
 			for v in result[0]:
-				if isinstance(v, (datetime.date, datetime.timedelta, datetime.datetime, long)):
+				if isinstance(v, (datetime.date, datetime.timedelta, datetime.datetime, integer_types)):
 					return True
 				if formatted and isinstance(v, (int, float)):
 					return True
@@ -287,7 +285,7 @@ class Database:
 
 		from frappe.utils import formatdate, fmt_money
 
-		if isinstance(v, (datetime.date, datetime.timedelta, datetime.datetime, long)):
+		if isinstance(v, (datetime.date, datetime.timedelta, datetime.datetime, integer_types)):
 			if isinstance(v, datetime.date):
 				v = text_type(v)
 				if formatted:
@@ -298,7 +296,7 @@ class Database:
 				v = text_type(v)
 
 			# long
-			elif isinstance(v, long):
+			elif isinstance(v, integer_types):
 				v=int(v)
 
 		# convert to strings... (if formatted)
@@ -386,7 +384,7 @@ class Database:
 
 			conditions.append(condition)
 
-		if isinstance(filters, basestring):
+		if isinstance(filters, string_types):
 			filters = { "name": filters }
 
 		for f in filters:
@@ -451,7 +449,7 @@ class Database:
 			user = frappe.db.get_values("User", "test@example.com", "*")[0]
 		"""
 		out = None
-		if cache and isinstance(filters, basestring) and \
+		if cache and isinstance(filters, string_types) and \
 			(doctype, filters, fieldname) in self.value_cache:
 			return self.value_cache[(doctype, filters, fieldname)]
 
@@ -463,7 +461,7 @@ class Database:
 		else:
 			fields = fieldname
 			if fieldname!="*":
-				if isinstance(fieldname, basestring):
+				if isinstance(fieldname, string_types):
 					fields = [fieldname]
 				else:
 					fields = fieldname
@@ -483,7 +481,7 @@ class Database:
 			else:
 				out = self.get_values_from_single(fields, filters, doctype, as_dict, debug, update)
 
-		if cache and isinstance(filters, basestring):
+		if cache and isinstance(filters, string_types):
 			self.value_cache[(doctype, filters, fieldname)] = out
 
 		return out
@@ -607,7 +605,7 @@ class Database:
 		return r
 
 	def _get_value_for_many_names(self, doctype, names, field, debug=False):
-		names = filter(None, names)
+		names = list(filter(None, names))
 
 		if names:
 			return dict(self.sql("select name, `%s` from `tab%s` where name in (%s)" \
@@ -670,7 +668,7 @@ class Database:
 				delete from tabSingles
 				where field in ({0}) and
 					doctype=%s'''.format(', '.join(['%s']*len(keys))),
-					keys + [dt], debug=debug)
+					list(keys) + [dt], debug=debug)
 			for key, value in iteritems(to_update):
 				self.sql('''insert into tabSingles(doctype, field, value) values (%s, %s, %s)''',
 					(dt, key, value), debug=debug)
@@ -740,19 +738,8 @@ class Database:
 		self.sql("commit")
 		frappe.local.rollback_observers = []
 		self.flush_realtime_log()
-		self.enqueue_global_search()
+		enqueue_jobs_after_commit()
 		flush_local_link_count()
-
-	def enqueue_global_search(self):
-		if frappe.flags.update_global_search:
-			try:
-				frappe.enqueue('frappe.utils.global_search.sync_global_search',
-					now=frappe.flags.in_test or frappe.flags.in_install or frappe.flags.in_migrate,
-					flags=frappe.flags.update_global_search)
-			except redis.exceptions.ConnectionError:
-				sync_global_search()
-
-			frappe.flags.update_global_search = []
 
 	def flush_realtime_log(self):
 		for args in frappe.local.realtime_log:
@@ -789,7 +776,7 @@ class Database:
 
 		:param dt: DocType name.
 		:param dn: Document name or filter dict."""
-		if isinstance(dt, basestring):
+		if isinstance(dt, string_types):
 			if dt!="DocType" and dt==dn:
 				return True # single always exists (!)
 			try:
@@ -854,7 +841,7 @@ class Database:
 				add index `%s`(%s)""" % (doctype, index_name, ", ".join(fields)))
 
 	def add_unique(self, doctype, fields, constraint_name=None):
-		if isinstance(fields, basestring):
+		if isinstance(fields, string_types):
 			fields = [fields]
 		if not constraint_name:
 			constraint_name = "unique_" + "_".join(fields)
@@ -895,3 +882,11 @@ class Database:
 			s = s.replace("%", "%%")
 
 		return s
+
+def enqueue_jobs_after_commit():
+	if frappe.flags.enqueue_after_commit and len(frappe.flags.enqueue_after_commit) > 0:
+		for job in frappe.flags.enqueue_after_commit:
+			q = get_queue(job.get("queue"), async=job.get("async"))
+			q.enqueue_call(execute_job, timeout=job.get("timeout"),
+							kwargs=job.get("queue_args"))
+		frappe.flags.enqueue_after_commit = []

@@ -23,6 +23,7 @@ frappe.ui.form.on('Test Runner', {
 
 	},
 	run_tests: function(frm, files) {
+		frappe.flags.in_test = true;
 		let require_list = [
 			"assets/frappe/js/lib/jquery/qunit.js",
 			"assets/frappe/js/lib/jquery/qunit.css"
@@ -32,6 +33,13 @@ frappe.ui.form.on('Test Runner', {
 			files.forEach((f) => {
 				frappe.dom.eval(f.script);
 			});
+
+			QUnit.config.notrycatch = true;
+
+			window.onerror = function(msg, url, lineNo, columnNo, error) {
+				console.log(error.stack); // eslint-disable-line
+				$('<div id="frappe-qunit-done"></div>').appendTo($('body'));
+			};
 
 			QUnit.testDone(function(details) {
 				// var result = {

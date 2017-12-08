@@ -8,9 +8,10 @@ QUnit.test("test: Web Page", function (assert) {
 	// number of asserts
 	assert.expect(1);
 
-	frappe.run_serially('Web Page', [
+
+	frappe.run_serially([
 		// insert a new Web Page
-		() => frappe.tests.make([
+		() => frappe.tests.make('Web Page', [
 			// values to be set
 			{key: 'value'}
 		]),

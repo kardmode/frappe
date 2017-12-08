@@ -22,11 +22,11 @@ frappe.ui.form.on('User', {
 			if(!frm.roles_editor) {
 				var role_area = $('<div style="min-height: 300px">')
 					.appendTo(frm.fields_dict.roles_html.wrapper);
-				frm.roles_editor = new frappe.RoleEditor(role_area, frm);
+				frm.roles_editor = new frappe.RoleEditor(role_area, frm, frm.doc.role_profile_name ? 1 : 0);
 
 				var module_area = $('<div style="min-height: 300px">')
 					.appendTo(frm.fields_dict.modules_html.wrapper);
-				frm.module_editor = new frappe.ModuleEditor(frm, module_area)
+				frm.module_editor = new frappe.ModuleEditor(frm, module_area);
 			} else {
 				frm.roles_editor.show();
 			}
@@ -63,11 +63,11 @@ frappe.ui.form.on('User', {
 						"user": doc.name
 					};
 					frappe.set_route('List', 'User Permission');
-				}, null, "btn-default")
+				}, __("Permissions"))
 
 				frm.add_custom_button(__('View Permitted Documents'),
 					() => frappe.set_route('query-report', 'Permitted Documents For User',
-						{user: frm.doc.name}));
+						{user: frm.doc.name}), __("Permissions"));
 
 				frm.toggle_display(['sb1', 'sb3', 'modules_access'], true);
 			}
@@ -79,11 +79,24 @@ frappe.ui.form.on('User', {
 						"user": frm.doc.name
 					}
 				})
-			})
+			}, __("Password"));
+
+			frm.add_custom_button(__("Reset OTP Secret"), function() {
+				frappe.call({
+					method: "frappe.core.doctype.user.user.reset_otp_secret",
+					args: {
+						"user": frm.doc.name
+					}
+				})
+			}, __("Password"));
 
 			frm.trigger('enabled');
 
-			frm.roles_editor && frm.roles_editor.show();
+			if (frm.roles_editor) {
+				frm.roles_editor.disabled = frm.doc.role_profile_name ? 1 : 0;
+				frm.roles_editor.show();
+			}
+
 			frm.module_editor && frm.module_editor.refresh();
 
 			if(frappe.session.user==doc.name) {
@@ -114,6 +127,7 @@ frappe.ui.form.on('User', {
 			}
 			cur_frm.dirty();
 		}
+
 	},
 	/* disable_tfa: function(frm) {
 		html = "<div id='qrcode'></div>";

@@ -322,7 +322,7 @@ class DocType(Document):
 	def export_doc(self):
 		"""Export to standard folder `[module]/doctype/[name]/[name].json`."""
 		from frappe.modules.export_file import export_to_files
-		export_to_files(record_list=[['DocType', self.name]])
+		export_to_files(record_list=[['DocType', self.name]], create_init=True)
 
 	def import_doc(self):
 		"""Import from standard folder `[module]/doctype/[name]/[name].json`."""
@@ -333,7 +333,7 @@ class DocType(Document):
 		"""Make boilerplate controller template."""
 		make_boilerplate("controller._py", self)
 
-		if not (self.istable or self.issingle):
+		if not self.istable:
 			make_boilerplate("test_controller._py", self.as_dict())
 
 		if not self.istable:
@@ -409,7 +409,7 @@ def validate_fields(meta):
 		validate_column_name(fieldname)
 
 	def check_unique_fieldname(fieldname):
-		duplicates = filter(None, map(lambda df: df.fieldname==fieldname and str(df.idx) or None, fields))
+		duplicates = list(filter(None, map(lambda df: df.fieldname==fieldname and str(df.idx) or None, fields)))
 		if len(duplicates) > 1:
 			frappe.throw(_("Fieldname {0} appears multiple times in rows {1}").format(fieldname, ", ".join(duplicates)))
 
@@ -453,7 +453,7 @@ def validate_fields(meta):
 
 	def check_dynamic_link_options(d):
 		if d.fieldtype=="Dynamic Link":
-			doctype_pointer = filter(lambda df: df.fieldname==d.options, fields)
+			doctype_pointer = list(filter(lambda df: df.fieldname==d.options, fields))
 			if not doctype_pointer or (doctype_pointer[0].fieldtype not in ("Link", "Select")) \
 				or (doctype_pointer[0].fieldtype=="Link" and doctype_pointer[0].options!="DocType"):
 				frappe.throw(_("Options 'Dynamic Link' type of field must point to another Link Field with options as 'DocType'"))
@@ -514,14 +514,20 @@ def validate_fields(meta):
 				else:
 					frappe.throw(_("Fold can not be at the end of the form"))
 
-	def check_search_fields(meta):
+	def check_search_fields(meta, fields):
 		"""Throw exception if `search_fields` don't contain valid fields."""
 		if not meta.search_fields:
 			return
 
-		for fieldname in (meta.search_fields or "").split(","):
+		# No value fields should not be included in search field
+		search_fields = [field.strip() for field in (meta.search_fields or "").split(",")]
+		fieldtype_mapper = { field.fieldname: field.fieldtype \
+			for field in filter(lambda field: field.fieldname in search_fields, fields) }
+
+		for fieldname in search_fields:
 			fieldname = fieldname.strip()
-			if fieldname not in fieldname_list:
+			if (fieldtype_mapper.get(fieldname) in no_value_fields) or \
+				(fieldname not in fieldname_list):
 				frappe.throw(_("Search field {0} is not valid").format(fieldname))
 
 	def check_title_field(meta):
@@ -591,6 +597,15 @@ def validate_fields(meta):
 					frappe.throw(_("Sort field {0} must be a valid fieldname").format(fieldname),
 						InvalidFieldNameError)
 
+	def check_illegal_depends_on_conditions(docfield):
+		''' assignment operation should not be allowed in the depends on condition.'''
+		depends_on_fields = ["depends_on", "collapsible_depends_on"]
+		for field in depends_on_fields:
+			depends_on = docfield.get(field, None)
+			if depends_on and ("=" in depends_on) and \
+				re.match("""[\w\.:_]+\s*={1}\s*[\w\.@'"]+""", depends_on):
+				frappe.throw(_("Invalid {0} condition").format(frappe.unscrub(field)), frappe.ValidationError)
+
 	fields = meta.get("fields")
 	fieldname_list = [d.fieldname for d in fields]
 
@@ -618,13 +633,15 @@ def validate_fields(meta):
 		check_in_global_search(d)
 		check_illegal_default(d)
 		check_unique_and_text(d)
+		check_illegal_depends_on_conditions(d)
 
 	check_fold(fields)
-	check_search_fields(meta)
+	check_search_fields(meta, fields)
 	check_title_field(meta)
 	check_timeline_field(meta)
 	check_is_published_field(meta)
 	check_sort_field(meta)
+	check_image_field(meta)
 
 def validate_permissions_for_doctype(doctype, for_remove=False):
 	"""Validates if permissions are set correctly."""
@@ -751,6 +768,9 @@ def validate_permissions(doctype, for_remove=False):
 def make_module_and_roles(doc, perm_fieldname="permissions"):
 	"""Make `Module Def` and `Role` records if already not made. Called while installing."""
 	try:
+		if doc.restrict_to_domain and not frappe.db.exists('Domain', doc.restrict_to_domain):
+			frappe.get_doc(dict(doctype='Domain', domain=doc.restrict_to_domain)).insert()
+
 		if not frappe.db.exists("Module Def", doc.module):
 			m = frappe.get_doc({"doctype": "Module Def", "module_name": doc.module})
 			m.app_name = frappe.local.module_app[frappe.scrub(doc.module)]

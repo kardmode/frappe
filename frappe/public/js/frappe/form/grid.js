@@ -99,15 +99,21 @@ frappe.ui.form.Grid = Class.extend({
 		this.remove_rows_button.on('click', function() {
 			var dirty = false;
 
-			me.get_selected().forEach(function(docname) {
-				me.grid_rows_by_docname[docname].remove();
-				dirty = true;
+			let tasks = [];
+
+			me.get_selected().forEach((docname) => {
+				tasks.push(() => {
+					me.grid_rows_by_docname[docname].remove();
+					dirty = true;
+				});
+				tasks.push(() => frappe.timeout(0.1));
 			});
-			if(dirty) {
-				setTimeout(function() {
-					me.refresh();
-				}, 100);
-			}
+
+			tasks.push(() => {
+				if (dirty) me.refresh();
+			});
+
+			frappe.run_serially(tasks);
 		});
 	},
 	select_row: function(name) {
@@ -169,8 +175,9 @@ frappe.ui.form.Grid = Class.extend({
 		} else {
 			// redraw
 			var _scroll_y = $(document).scrollTop();
-
 			this.make_head();
+			// to hide checkbox if grid is not editable
+			this.header_row && this.header_row.toggle_check();
 
 			if(!this.grid_rows) {
 				this.grid_rows = [];
@@ -353,12 +360,52 @@ frappe.ui.form.Grid = Class.extend({
 			for(var i=0, l=fieldname.length; i<l; i++) {
 				var fname = fieldname[i];
 				me.get_docfield(fname).hidden = show ? 0 : 1;
+				this.set_editable_grid_column_disp(fname, show);
 			}
 		} else {
 			this.get_docfield(fieldname).hidden = show ? 0 : 1;
+			this.set_editable_grid_column_disp(fieldname, show);
 		}
 
 		this.refresh(true);
+	},
+	set_editable_grid_column_disp: function(fieldname, show) {
+		//Hide columns for editable grids
+		if (this.meta.editable_grid) {
+			this.grid_rows.forEach(function(row) {
+				row.columns_list.forEach(function(column) {
+					//Hide the column specified
+					if (column.df.fieldname == fieldname) {
+						if (show) {
+							column.df.hidden = false;
+
+							//Show the static area and hide field area if it is not the editable row
+							if  (row != frappe.ui.form.editable_row) {
+								column.static_area.show();
+								column.field_area && column.field_area.toggle(false);
+							}
+							//Hide the static area and show field area if it is the editable row
+							else {
+								column.static_area.hide();
+								column.field_area && column.field_area.toggle(true);
+
+								//Format the editable column appropriately if it is now visible
+								if (column.field) {
+									column.field.refresh();
+									if (column.field.$input) column.field.$input.toggleClass('input-sm', true);
+								}
+							}
+						}
+						else {
+							column.df.hidden = true;
+							column.static_area.hide();
+						}
+					}
+				});
+			});
+		}
+
+		this.refresh();
 	},
 	toggle_reqd: function(fieldname, reqd) {
 		this.get_docfield(fieldname).reqd = reqd;
@@ -589,6 +636,7 @@ frappe.ui.form.Grid = Class.extend({
 			me.setup_download();
 
 			// upload
+			frappe.flags.no_socketio = true;
 			$(this.wrapper).find(".grid-upload").removeClass("hide").on("click", function() {
 				frappe.prompt({fieldtype:"Attach", label:"Upload File"},
 					function(data) {
@@ -638,10 +686,11 @@ frappe.ui.form.Grid = Class.extend({
 	},
 	setup_download: function() {
 		var me = this;
+		let title = me.df.label || frappe.model.unscrub(me.df.fieldname);
 		$(this.wrapper).find(".grid-download").removeClass("hide").on("click", function() {
 			var data = [];
 			var docfields = [];
-			data.push([__("Bulk Edit {0}", [me.df.label])]);
+			data.push([__("Bulk Edit {0}", [title])]);
 			data.push([]);
 			data.push([]);
 			data.push([]);
@@ -671,7 +720,7 @@ frappe.ui.form.Grid = Class.extend({
 				data.push(row);
 			});
 
-			frappe.tools.downloadify(data, null, me.df.label);
+			frappe.tools.downloadify(data, null, title);
 			return false;
 		});
 	},
@@ -680,7 +729,7 @@ frappe.ui.form.Grid = Class.extend({
 		var btn = this.custom_buttons[label];
 		if(!btn) {
 			btn = $('<button class="btn btn-default btn-xs btn-custom">' + label + '</button>')
-				.css('margin-right', '10px')
+				.css('margin-right', '4px')
 				.prependTo(this.grid_buttons)
 				.on('click', click);
 			this.custom_buttons[label] = btn;
@@ -692,5 +741,4 @@ frappe.ui.form.Grid = Class.extend({
 		// hide all custom buttons
 		this.grid_buttons.find('.btn-custom').addClass('hidden');
 	}
-
 });

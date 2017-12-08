@@ -21,6 +21,7 @@ install:
   - sudo apt-get purge -y mysql-common mysql-server mysql-client
   - nvm install v7.10.0
   - wget https://raw.githubusercontent.com/frappe/bench/master/playbooks/install.py
+    
   - sudo python install.py --develop --user travis --without-bench-setup
   - sudo pip install -e ~/bench
 
@@ -42,6 +43,7 @@ before_script:
   - echo "USE mysql;\nCREATE USER 'test_frappe'@'localhost' IDENTIFIED BY 'test_frappe';\nFLUSH PRIVILEGES;\n" | mysql -u root -ptravis
   - echo "USE mysql;\nGRANT ALL PRIVILEGES ON \`test_frappe\`.* TO 'test_frappe'@'localhost';\n" | mysql -u root -ptravis
 
+
   - cd ~/frappe-bench
   - bench use test_site
   - bench reinstall --yes
@@ -52,6 +54,6 @@ before_script:
 
 script:
   - set -e
-  - bench --verbose run-tests
+  - bench run-tests
   - sleep 5
-  - bench --verbose run-ui-tests --app frappe
+  - bench run-ui-tests --app frappe

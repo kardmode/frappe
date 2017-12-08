@@ -6,7 +6,7 @@ import pdfkit, os, frappe
 from frappe.utils import scrub_urls
 from frappe import _
 from bs4 import BeautifulSoup
-from pyPdf import PdfFileWriter, PdfFileReader
+from PyPDF2 import PdfFileWriter, PdfFileReader
 
 def get_pdf(html, options=None, output = None):
 	html = scrub_urls(html)
@@ -65,6 +65,7 @@ def prepare_options(html, options):
 		# defaults
 		'margin-right': '13mm',
 		'margin-left': '13mm',
+
 	})
 
 	html, html_options = read_options_from_html(html)
@@ -84,6 +85,10 @@ def read_options_from_html(html):
 	options = {}
 	soup = BeautifulSoup(html, "html5lib")
 
+	options.update(prepare_header_footer(soup))
+
+	toggle_visible_pdf(soup)
+
 	# extract pdfkit options from html
 	for html_id in ("margin-top", "margin-bottom", "margin-left", "margin-right", "page-size"):
 		try:
@@ -92,10 +97,6 @@ def read_options_from_html(html):
 				options[html_id] = tag.contents
 		except:
 			pass
-
-	options.update(prepare_header_footer(soup))
-
-	toggle_visible_pdf(soup)
 
 	return soup.prettify(), options
 
@@ -133,11 +134,9 @@ def prepare_header_footer(soup):
 
 			# {"header-html": "/tmp/frappe-pdf-random.html"}
 			options[html_id] = fname
-
 		else:
 			if html_id == "header-html":
 				options["margin-top"] = "15mm"
-
 			elif html_id == "footer-html":
 				options["margin-bottom"] = "15mm"
 
