@@ -313,7 +313,7 @@ frappe.PrintFormatBuilder = Class.extend({
 
 				// column names set as fieldname|width
 				f.visible_columns.push({fieldname: _f.fieldname,
-					print_width: (_f.width || ""), print_hide:0});
+					print_width: (_f.width || ""), print_hide:0,print_label: _f.label });
 			}
 		});
 	},
@@ -590,11 +590,10 @@ frappe.PrintFormatBuilder = Class.extend({
 				columns = parent.attr("data-columns").split(","),
 				column_names = $.map(columns, function(v) { return v.split("|")[0]; }),
 				widths = {};
+				
+			var labels = {};	
 
-			$.each(columns, function(i, v) {
-				var parts = v.split("|");
-				widths[parts[0]] = parts[1] || "";
-			});
+			
 
 			var d = new frappe.ui.Dialog({
 				title: __("Select Table Columns for {0}", [label]),
@@ -618,6 +617,15 @@ frappe.PrintFormatBuilder = Class.extend({
 					fields.push(docfields_by_name[v]);
 				}
 			})
+			
+			
+			
+			$.each(columns, function(i, v) {
+				var parts = v.split("|");
+				widths[parts[0]] = parts[1] || "";
+				labels[parts[0]] = parts[2] || docfields_by_name[parts[0]].label;
+			});
+			
 			// add remaining fields
 			$.each(doc_fields, function(j, f) {
 				if (f && !in_list(column_names, f.fieldname)
@@ -629,7 +637,8 @@ frappe.PrintFormatBuilder = Class.extend({
 			$(frappe.render_template("print_format_builder_column_selector", {
 				fields: fields,
 				column_names: column_names,
-				widths: widths
+				widths: widths,
+				labels:labels
 			})).appendTo(d.body);
 
 			Sortable.create($body.find(".column-selector-list").get(0));
@@ -637,14 +646,19 @@ frappe.PrintFormatBuilder = Class.extend({
 			var get_width_input = function(fieldname) {
 				return $body.find(".column-width[data-fieldname='"+ fieldname +"']")
 			}
+			
+			var get_label_input = function(fieldname) {
+				return $body.find(".column-label[data-fieldname='"+ fieldname +"']")
+			}
 
 			// update data-columns property on update
 			d.set_primary_action(__("Update"), function() {
 				var visible_columns = [];
 				$body.find("input:checked").each(function() {
 					var fieldname = $(this).attr("data-fieldname"),
-						width = get_width_input(fieldname).val() || "";
-					visible_columns.push(fieldname + "|" + width);
+						width = get_width_input(fieldname).val() || "",
+						label = get_label_input(fieldname).val() || "";
+					visible_columns.push(fieldname + "|" + width + "|" + label);
 				});
 				parent.attr("data-columns", visible_columns.join(","));
 				d.hide();
@@ -653,9 +667,11 @@ frappe.PrintFormatBuilder = Class.extend({
 			// enable / disable input based on selection
 			$body.on("click", "input[type='checkbox']", function() {
 				var disabled = !$(this).prop("checked"),
-					input = get_width_input($(this).attr("data-fieldname"));
+					input = get_width_input($(this).attr("data-fieldname")),
+					label_input = get_label_input($(this).attr("data-fieldname"));
 
 				input.prop("disabled", disabled);
+				label_input.prop("disabled", disabled);
 				if(disabled) input.val("");
 			});
 
@@ -668,7 +684,7 @@ frappe.PrintFormatBuilder = Class.extend({
 		if(!f.visible_columns) {
 			this.init_visible_columns(f);
 		}
-		return $.map(f.visible_columns, function(v) { return v.fieldname + "|" + (v.print_width || "") }).join(",");
+		return $.map(f.visible_columns, function(v) { return v.fieldname + "|" + (v.print_width || "") + "|" + (v.print_label || "") }).join(",");
 	},
 	get_no_content: function() {
 		return __("Edit to add content")
@@ -762,7 +778,8 @@ frappe.PrintFormatBuilder = Class.extend({
 							df.visible_columns.push({
 								fieldname:parts[0],
 								print_width:parts[1],
-								print_hide:0
+								print_hide:0,
+								print_label:parts[2]
 							});
 						});
 					}

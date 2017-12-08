@@ -121,6 +121,7 @@ def get_website_settings():
 	if settings.favicon and settings.favicon != "attach_files:":
 		context["favicon"] = settings.favicon
 
+	context.add_breadcrumbs = settings.add_breadcrumbs
 	return context
 
 def get_items(parentfield):

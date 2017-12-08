@@ -561,7 +561,6 @@ frappe.ui.form.Grid = Class.extend({
 		if(this.is_editable()) {
 			var me = this;
 			var dl = this.get_checked_items();
-			console.log(dl);
 			if(!dl.length)
 				return;
 			frappe.confirm(__('Delete rows?'),

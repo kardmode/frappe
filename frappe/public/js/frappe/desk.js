@@ -591,11 +591,14 @@ frappe.get_desktop_icons = function(show_hidden, show_global) {
 		if(m.blocked && !show_global) {
 			out = false;
 		}
+		
+		
 		return out;
 	}
 
 	for (var i=0, l=frappe.boot.desktop_icons.length; i < l; i++) {
 		var m = frappe.boot.desktop_icons[i];
+		
 		if ((['Setup', 'Core'].indexOf(m.module_name) === -1) && show_module(m)) {
 			add_to_out(m);
 		}

@@ -16,7 +16,7 @@ base_template_path = "templates/www/printview.html"
 standard_format = "templates/print_formats/standard.html"
 
 @frappe.whitelist()
-def download_multi_pdf(doctype, name, format=None,orientation="Portrait",letterhead=None):
+def download_multi_pdf(doctype, name, format=None,orientation="Portrait",letterhead=None,sign_type=None):
 	# name can include names of many docs of the same doctype.
 
 	import json
@@ -25,7 +25,7 @@ def download_multi_pdf(doctype, name, format=None,orientation="Portrait",letterh
 	# Concatenating pdf files
 	output = PdfFileWriter()
 	for i, ss in enumerate(result):
-		output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output,options = {"orientation": orientation},letterhead=letterhead)
+		output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output,options = {"orientation": orientation},letterhead=letterhead,sign_type=sign_type)
 		
 	frappe.local.response.filename = "{doctype}.pdf".format(doctype=doctype.replace(" ", "-").replace("/", "-"))
 	frappe.local.response.filecontent = read_multi_pdf(output)
@@ -87,8 +87,8 @@ def read_multi_pdf(output):
 	return filedata
 
 @frappe.whitelist()
-def download_pdf(doctype, name, format=None,doc=None,letterhead = None,orientation="Portrait"):
-	html = frappe.get_print(doctype, name, format, doc=doc,letterhead=letterhead)
+def download_pdf(doctype, name, format=None,doc=None,letterhead = None,orientation="Portrait",sign_type = None):
+	html = frappe.get_print(doctype, name, format, doc=doc,letterhead=letterhead,sign_type = sign_type)
 	frappe.local.response.filename = "{name}.pdf".format(name=name.replace(" ", "-").replace("/", "-"))
 	frappe.local.response.filecontent = get_pdf(html, {"orientation": orientation})
 	frappe.local.response.type = "download"

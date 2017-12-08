@@ -155,15 +155,15 @@ def get_backup():
 	recipient_list = odb.send_email()
 	frappe.msgprint(_("Download link for your backup will be emailed on the following email address: {0}").format(', '.join(recipient_list)))
 
-def scheduled_backup(older_than=6, ignore_files=False, backup_path_db=None, backup_path_files=None, backup_path_private_files=None, force=False):
+def scheduled_backup(older_than=72, ignore_files=False, backup_path_db=None, backup_path_files=None, backup_path_private_files=None, force=False):
 	"""this function is called from scheduler
 		deletes backups older than 7 days
 		takes backup"""
 	odb = new_backup(older_than, ignore_files, backup_path_db=backup_path_db, backup_path_files=backup_path_files, force=force)
 	return odb
 
-def new_backup(older_than=6, ignore_files=False, backup_path_db=None, backup_path_files=None, backup_path_private_files=None, force=False):
-	older_than = cint(frappe.db.get_value('System Settings', None, 'keep_backups_for'))
+def new_backup(older_than=72, ignore_files=False, backup_path_db=None, backup_path_files=None, backup_path_private_files=None, force=False):
+	older_than = cint(frappe.db.get_value('Backup Manager', None, 'older_than')) or frappe.conf.keep_backups_for_hours or 24
 	delete_temp_backups(older_than)
 	odb = BackupGenerator(frappe.conf.db_name, frappe.conf.db_name,\
 						  frappe.conf.db_password,

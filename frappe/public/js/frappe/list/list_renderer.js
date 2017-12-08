@@ -229,21 +229,21 @@ frappe.views.ListRenderer = Class.extend({
 		// Remove TextEditor field columns
 		this.columns = this.columns.filter(col => col.fieldtype !== 'Text Editor')
 
-		// Limit number of columns to 4
+		// Limit number of columns to 4 - changed to 5
 		this.columns = this.columns.slice(0, 4);
 	},
 	add_column: function (df) {
 		// field width
-		var colspan = 3;
+		var colspan = 2;
 		if (in_list(['Int', 'Percent'], df.fieldtype)) {
 			colspan = 2;
 		} else if (in_list(['Check', 'Image'], df.fieldtype)) {
 			colspan = 1;
 		} else if (in_list(['name', 'subject', 'title'], df.fieldname)) {
 			// subjects are longer
-			colspan = 4;
+			colspan = 3;
 		} else if (df.fieldtype == 'Text Editor' || df.fieldtype == 'Text') {
-			colspan = 4;
+			colspan = 3;
 		}
 
 		if (df.columns && df.columns > 0) {

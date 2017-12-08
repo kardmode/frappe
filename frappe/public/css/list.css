@@ -12,9 +12,10 @@
   position: relative;
 }
 .list-filters .sort-selector {
-  position: absolute;
-  top: 15px;
-  right: 15px;
+  /* position: absolute; */
+  /* top: 15px; */
+  /* right: 15px; */
+  padding:15px 15px 0px;
 }
 .show_filters {
   padding: 15px 15px 0px;
@@ -22,11 +23,11 @@
 }
 .set-filters {
   padding-bottom: 4px;
-  padding-right: 120px;
+  /* padding-right: 120px; */
 }
 @media (max-width: 767px) {
   .set-filters {
-    padding-right: 80px;
+    /* padding-right: 80px; */
   }
 }
 .set-filters .btn {

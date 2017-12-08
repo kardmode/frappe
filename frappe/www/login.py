@@ -16,8 +16,12 @@ def get_context(context):
 	if frappe.session.user != "Guest" and frappe.session.data.user_type=="System User":
 		frappe.local.flags.redirect_location = "/desk"
 		raise frappe.Redirect
-		
+	elif frappe.session.user != "Guest":
+		frappe.local.flags.redirect_location = "/desk"
+		raise frappe.Redirect
 
+		
+		
 	# get settings from site config
 	context.no_header = True
 	context.for_test = 'login.html'
@@ -31,6 +35,8 @@ def get_context(context):
 
 	ldap_settings = get_ldap_settings()
 	context["ldap_settings"] = ldap_settings
+	
+
 
 	return context
 

@@ -1,15 +1,24 @@
 <div class="module-body">
 {% for (var i=0; i < data.length; i++) { var section = data[i]; %}
-{% if ((i % 2)===0) { %}<div class="row module-section">{% } %}
-	<div class="col-sm-6 module-section-column">
+{% if ((i % 3)===0) { %}<div class="row module-section">{% } %}
+	<div class="col-sm-4 module-section-column">
 		<div class="h4 section-head">
+		
+		 <span class="moduleview-icon" <!-- style="color:{{item.color}}" -->>
+		 <i class="{{section.icon}}"></i>
+		 </span>
 			{{ section.label }}
 		</div>
 		<div class="section-body">
 		{% for (var j=0; j < section.items.length; j++) {
 			var item = section.items[j];
 			if(item.shown) { %}
-				<div style="min-height: 22px; margin-top: 8px;">
+				<div style="<!-- margin-left:35px; -->min-height: 22px; margin-top: 8px;">
+				
+					<span class="moduleview-icon">
+		 <i class="{{item.icon}}"></i>
+		 </span>
+		 
 					<a class="module-section-link small" data-type="{{ item.type }}"
 						{% if(item.type==="help") { %}
 							data-youtube-id="{{ item.youtube_id }}"{% } %}
@@ -25,6 +34,6 @@
 		{% } %}
 		</div>
 	</div>
-{% if ((i % 2)===1 || i===data.length-1) { %}</div>{% } %}
+{% if ((i % 3)===2 || i===data.length-1) { %}</div>{% } %}
 {% } %}
 </div>

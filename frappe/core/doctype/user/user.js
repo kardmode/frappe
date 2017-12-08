@@ -46,17 +46,7 @@ frappe.ui.form.on('User', {
 		frm.toggle_display(['sb1', 'sb3', 'modules_access'], false);
 
 		if(!doc.__islocal){
-			if (doc.tfa_enabled)
-			{
-				frm.add_custom_button(__("Disable TFA"), function() {
-					frm.trigger("disable_tfa");
-				});
-				
-			}else{
-				frm.add_custom_button(__("Enable TFA"), function() {
-					frm.trigger("update_tfa");
-				});
-			}
+			
 				
 			
 			frm.add_custom_button(__("Set Desktop Icons"), function() {
@@ -125,7 +115,7 @@ frappe.ui.form.on('User', {
 			cur_frm.dirty();
 		}
 	},
-	disable_tfa: function(frm) {
+	/* disable_tfa: function(frm) {
 		html = "<div id='qrcode'></div>";
 		dialog = new frappe.ui.Dialog({
 				title: __('Use the authenticator app to disable two factor authentication.'),
@@ -250,7 +240,7 @@ frappe.ui.form.on('User', {
 					
 			}
 		})
-	},
+	}, */
 	validate: function(frm) {
 		if(frm.roles_editor) {
 			frm.roles_editor.set_roles_in_table()

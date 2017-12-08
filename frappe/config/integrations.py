@@ -26,6 +26,7 @@ def get_data():
 		},
 		{
 			"label": _("Backup"),
+			"icon": "fa fa-cog",
 			"items": [
 				{
 					"type": "doctype",
@@ -36,6 +37,7 @@ def get_data():
 		},
 		{
 			"label": _("Authentication"),
+			"icon": "fa fa-cog",
 			"items": [
 				{
 					"type": "doctype",
@@ -61,6 +63,7 @@ def get_data():
 		},
 		{
 			"label": _("External Documents"),
+			"icon": "fa fa-list",
 			"items": [
 				{
 					"type": "doctype",

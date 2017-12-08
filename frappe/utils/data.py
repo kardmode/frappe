@@ -374,7 +374,10 @@ def fmt_money(amount, precision=None, currency=None):
 	if flt(amount) < 0:
 		minus = '-'
 
-	amount = cstr(abs(flt(amount))).split('.')[0]
+	from decimal import Decimal
+
+	amount = cstr(abs(Decimal(amount))).split('.')[0]
+	# amount = cstr(abs(flt(amount))).split('.')[0]
 
 	if len(amount) > 3:
 		parts.append(amount[-3:])

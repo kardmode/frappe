@@ -32,10 +32,9 @@ def get_data(module):
 	if not data:
 		data = build_standard_config(module, doctype_info)
 	else:
-		add_custom_doctypes(data, doctype_info)
+		add_custom_doctypes(data, doctype_info,module)
 
-	add_section(data, _("Custom Reports"), "fa fa-list-alt",
-		get_report_list(module))
+	
 
 	data = combine_common_sections(data)
 	data = apply_permissions(data)
@@ -84,15 +83,49 @@ def build_standard_config(module, doctype_info):
 		frappe.throw(_("Module Not Found"))
 
 	data = []
+	
+	Documents = ["Document", "Transaction"]
+	Setup = ["Master", "Setup"]
+	Other = ["Other",""]
+	Tools = ["Tool"]
+	
+	add_section(data, _("Documents"), "fa fa-file-text",
+		[d for d in doctype_info if (d.custom == False and d.document_type in Documents)])
 
-	add_section(data, _("Documents"), "fa fa-star",
-		[d for d in doctype_info if d.document_type in ("Document", "Transaction")])
+	add_section(data, _("Starred Reports"), "fa fa-star",
+		[d for d in get_report_list(module, is_standard="Yes") if (d["favorite"])])
 
+	add_section(data, _("Starred Reports"), "fa fa-star",
+		[d for d in get_report_list(module) if (d["favorite"])])
+		
 	add_section(data, _("Setup"), "fa fa-cog",
-		[d for d in doctype_info if d.document_type in ("Master", "Setup", "")])
+		[d for d in doctype_info if (d.custom == False and d.document_type in Setup)])
+	
+	add_section(data, _("Tools"), "fa fa-wrench",
+		[d for d in doctype_info if (d.custom == False and d.document_type in Tools)])
+		
+	
+	
+		
+	
+	add_section(data, _("Custom Documents"), "fa fa-file-text",
+		[d for d in doctype_info if (d.custom and d.document_type in ("Document", "Transaction"))])
 
+	add_section(data, _("Custom Setup"), "fa fa-cog",
+		[d for d in doctype_info if (d.custom and d.document_type in ("Setup", "Master", ""))])
+
+	
+	
+	
+		
 	add_section(data, _("Standard Reports"), "fa fa-list",
-		get_report_list(module, is_standard="Yes"))
+		[d for d in get_report_list(module, is_standard="Yes") if (not d["favorite"])])
+		
+	add_section(data, _("Custom Reports"), "fa fa-list-alt",
+		[d for d in get_report_list(module) if (not d["favorite"])])
+	
+	add_section(data, _("Other"), "fa fa-file",
+		[d for d in doctype_info if (d.custom == False and d.document_type in Other)])	
 
 	return data
 
@@ -106,14 +139,21 @@ def add_section(data, label, icon, items):
 	})
 
 
-def add_custom_doctypes(data, doctype_info):
+def add_custom_doctypes(data, doctype_info,module):
 	"""Adds Custom DocTypes to modules setup via `config/desktop.py`."""
-	add_section(data, _("Documents"), "fa fa-star",
-		[d for d in doctype_info if (d.custom and d.document_type in ("Document", "Transaction"))])
+	add_section(data, _("Documents"), "fa fa-file-text",
+		[d for d in doctype_info if ((d.custom or d.beta) and d.document_type in ("Document", "Transaction"))])
 
 	add_section(data, _("Setup"), "fa fa-cog",
-		[d for d in doctype_info if (d.custom and d.document_type in ("Setup", "Master", ""))])
+		[d for d in doctype_info if ((d.custom or d.beta) and d.document_type in ("Setup", "Master", ""))])
 
+
+	add_section(data, _("Starred Reports"), "fa fa-star",
+		[d for d in get_report_list(module) if (d["favorite"])])
+		
+	add_section(data, _("Custom Reports"), "fa fa-list-alt",
+		[d for d in get_report_list(module) if (not d["favorite"])])
+		
 def get_doctype_info(module):
 	"""Returns list of non child DocTypes for given module."""
 	active_domains = frappe.get_active_domains()
@@ -125,10 +165,14 @@ def get_doctype_info(module):
 		"ifnull(restrict_to_domain, '')": "",
 		"restrict_to_domain": ("in", active_domains)
 	}, fields=["'doctype' as type", "name", "description", "ifnull(document_type, '') as document_type",
-		"custom", "issingle"], order_by="custom asc, document_type desc, name asc")
+		"custom", "issingle","beta","icon"], order_by="custom asc, document_type desc, name asc")
 
 	for d in doctype_info:
 		d.description = _(d.description or "")
+		if ('icon' not in d):
+			d["icon"] = "fa fa-file-text"
+		elif d.icon == "" or d.icon == None:
+			d["icon"] = "fa fa-file-text"
 
 	return doctype_info
 
@@ -139,6 +183,10 @@ def combine_common_sections(data):
 	for each in data:
 		if each["label"] not in sections_dict:
 			sections_dict[each["label"]] = each
+			if 'icon' not in each:
+				each["icon"] = "fa fa-file-text"
+			elif each["icon"] == "" or each["icon"] == None:
+				each["icon"] = "fa fa-file-text"
 			sections.append(each)
 		else:
 			sections_dict[each["label"]]["items"] += each["items"]
@@ -190,6 +238,10 @@ def get_config(app, module):
 				continue
 			if not "label" in item:
 				item["label"] = _(item["name"])
+			if not "icon" in item:
+				item["icon"] = "fa fa-file-text"
+			elif item["icon"] == "" or item["icon"] == None:
+				item["icon"] = "fa fa-file-text"
 	return config
 
 def add_setup_section(config, app, module, label, icon):
@@ -243,10 +295,10 @@ def get_last_modified(doctype):
 
 def get_report_list(module, is_standard="No"):
 	"""Returns list on new style reports for modules."""
-	reports =  frappe.get_list("Report", fields=["name", "ref_doctype", "report_type"], filters=
+	reports =  frappe.get_list("Report", fields=["name", "ref_doctype", "report_type","favorite"], filters=
 		{"is_standard": is_standard, "disabled": 0, "module": module},
 		order_by="name")
-
+		
 	out = []
 	for r in reports:
 		out.append({
@@ -254,7 +306,9 @@ def get_report_list(module, is_standard="No"):
 			"doctype": r.ref_doctype,
 			"is_query_report": 1 if r.report_type in ("Query Report", "Script Report") else 0,
 			"label": _(r.name),
-			"name": r.name
+			"name": r.name,
+			"icon": "fa fa-list",
+			"favorite":r.favorite
 		})
 
 	return out

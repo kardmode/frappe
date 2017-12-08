@@ -2,7 +2,8 @@
     <br>{{ __("Widths can be set in px or %.") }}</p>
 <div class="row">
     <div class="col-sm-6"><h4>{{ __("Column") }}</h4></div>
-    <div class="col-sm-6 text-right"><h4>{{ __("Width") }}</h4></div>
+    <div class="col-sm-3 text-right"><h4>{{ __("Width") }}</h4></div>
+	<div class="col-sm-3 text-right"><h4>{{ __("Label") }}</h4></div>
 </div>
 <div class="column-selector-list">
     {% for (i=0; i < fields.length; i++) { var f = fields[i]; %}
@@ -18,9 +19,16 @@
                     </label>
                 </div>
             </div>
-            <div class="col-sm-6 text-right">
+            <div class="col-sm-3 text-right">
                 <input class="form-control column-width input-sm text-right"
                     value="{{ (widths[f.fieldname] || "") }}"
+                    data-fieldname="{{ f.fieldname }}"
+                    style="width: 100px; display: inline"
+                    {{ selected ? "" : "disabled" }}>
+            </div>
+			<div class="col-sm-3 text-right">
+                <input class="form-control column-label input-sm text-right"
+                    value="{{ (labels[f.fieldname] || "") }}"
                     data-fieldname="{{ f.fieldname }}"
                     style="width: 100px; display: inline"
                     {{ selected ? "" : "disabled" }}>

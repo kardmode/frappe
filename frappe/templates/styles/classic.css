@@ -51,12 +51,29 @@
 }
 
 .signature-box img{
-	margin:10px auto;
-	max-height:150px;
 }
 
 img.stamp{
-	margin-left:40px;
+	float:left;
+	width:120px;
+	position:absolute;
+	bottom:10%;
+	left:-20px;
+}
+
+img.signature{
+	float:left;
+	width:150px;
+	border:none;
+	
+}
+
+img.signature_stamp{
+	float:left;
+	width:150px;
+	position:absolute;
+	bottom:5px;
+	left:30%;
 }
 
 .letter-head-header{
@@ -114,4 +131,59 @@ textarea.form-control {
 }
 .octicon, .mega-octicon {
     font: normal normal normal 18px/1 octicons;
+}
+
+a.module-link{
+	padding:5px 0 !important;
+}
+
+.sidebar-icon,.moduleview-icon {
+	padding: 5px;
+	display: inline-block;
+	margin: auto;
+	text-align: center;
+	border-radius: 8px;
+	/* cursor: pointer; */
+	/* box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.15); */
+}
+
+.sidebar-icon .inner, .sidebar-icon i,
+.moduleview-icon .inner, .moduleview-icon i {
+	/* font-size: 32px; */
+	min-width: 20px;
+	display: inline-block;
+	transition: 0.2s;
+	-webkit-transition: 0.2s;
+	text-shadow: -1px 1px 5px rgba(0, 0, 0, 0.15);
+
+}
+
+.sidebar-icon .inner {
+  line-height: 32px;
+  font-weight: bold;
+}
+
+a.module-link.active, a.module-link:hover{
+	background-color:#ddd !important;
+}
+
+.form-links .count{
+	font-size:larger;
+	font-weight:bold;
+}
+
+#page-desktop{
+	background-color:#F7FAFC !important;
+}
+
+.letterhead-logo{
+	position:absolute;
+}
+
+.page-break{
+	border-bottom:none !important;
+}
+
+.signature-hr{
+	width:60%;
 }

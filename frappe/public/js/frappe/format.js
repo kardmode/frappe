@@ -3,7 +3,6 @@ function format (str, args) {
 
 	this.unkeyed_index = 0;
 	return str.replace(/\{(\w*)\}/g, function(match, key) {
-
 		if (key === '') {
 			key = this.unkeyed_index;
 			this.unkeyed_index++

@@ -12,15 +12,16 @@ frappe.pages['modules'].on_page_load = function(wrapper) {
 	page.wrapper.find('.page-head h1').css({'padding-left': '15px'});
 	// page.wrapper.find('.page-content').css({'margin-top': '0px'});
 
-	// menu
-	page.add_menu_item(__('Set Desktop Icons'), function() {
-		frappe.route_options = {
-			"user": frappe.session.user
-		};
-		frappe.set_route("modules_setup");
-	});
+	
 
 	if(frappe.user.has_role('System Manager')) {
+		// menu
+		page.add_menu_item(__('Set Desktop Icons'), function() {
+			frappe.route_options = {
+				"user": frappe.session.user
+			};
+			frappe.set_route("modules_setup");
+		});
 		page.add_menu_item(__('Install Apps'), function() {
 			frappe.set_route("applications");
 		});

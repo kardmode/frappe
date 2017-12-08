@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 from frappe import _
 
 def get_data():
+	return []
 	return [
 		{
 			"label": _("Web Site"),
@@ -45,6 +46,11 @@ def get_data():
 					"type": "doctype",
 					"name": "Blog Category",
 					"description": _("Categorize blog posts."),
+				},
+				{
+					"type": "doctype",
+					"name": "Blogger",
+					"description": _("Blogger Info."),
 				},
 			]
 		},

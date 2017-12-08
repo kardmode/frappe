@@ -48,6 +48,13 @@ frappe.ui.Page = Class.extend({
 					</div>\
 				</div>');
 		} else {
+			
+			// if(frappe.get_route_str().substr(0, 4) === 'List') {
+				
+			// }
+			// else if(frappe.get_route_str().substr(0, 4) === 'Form') {
+			// }
+
 			var main = this.add_view("main", '<div class="row layout-main">\
 				<div class="col-md-2 layout-side-section"></div>\
 				<div class="col-md-10 layout-main-section-wrapper">\
@@ -91,6 +98,9 @@ frappe.ui.Page = Class.extend({
 
 		this.page_form = $('<div class="page-form row hide"></div>').prependTo(this.main);
 		this.inner_toolbar = $('<div class="form-inner-toolbar hide"></div>').prependTo(this.main);
+		
+		this.custom_toolbar = $('<div class="custom-toolbar hide"></div>').prependTo(this.main);
+		
 		this.icon_group = this.page_actions.find(".page-icon-group");
 	},
 

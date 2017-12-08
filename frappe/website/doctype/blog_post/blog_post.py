@@ -66,6 +66,11 @@ class BlogPost(WebsiteGenerator):
 		if "<!-- markdown -->" in context.content:
 			context.content = markdown(context.content)
 
+		blog_settings = frappe.get_doc('Blog Settings', 'Blog Settings')
+			
+		context.enable_comments = blog_settings.enable_comments
+		context.enable_blogger_info = blog_settings.enable_blogger_info
+		
 		image = find_first_image(self.content)
 		if image:
 			context.metatags["image"] = image

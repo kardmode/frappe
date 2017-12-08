@@ -32,17 +32,26 @@ frappe.ui.form.PrintPreview = Class.extend({
 			.prop("checked", cint(
 				(frappe.model.get_doc(":Print Settings", "Print Settings")
 					|| { with_letterhead: 1 }).with_letterhead) ? true : false);
+		
+		this.letterhead_sel = this.wrapper
+			.find(".print-letterhead-select")
+			.on("change", function() {
+				me.print_sel.trigger("change"); 
+			});
+			
+		this.print_sign_sel = this.wrapper
+			.find(".print-sign-select")
+			.on("change", function() {
+				me.print_sel.trigger("change"); 
+			});
+		
 		this.print_sel = this.wrapper
 			.find(".print-preview-select")
 			.on("change", function () {
 				me.multilingual_preview()
 			});
 			
-		this.letterhead_sel = this.wrapper
-			.find(".print-letterhead-select")
-			.on("change", function() {
-				me.multilingual_preview()
-			});
+		
 
 		//On selection of language get code and pass it to preview method
 		this.language_sel = this.wrapper
@@ -93,6 +102,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 					+"&format="+me.selected_format()
 					+"&no_letterhead="+(me.with_letterhead() ? "0" : "1")
 					+"&letterhead="+ me.selected_letterhead()
+					+"&sign_type="+ me.selected_sign()
 					+"&orientation="+encodeURIComponent(me.orientation)
 					+(me.lang_code ? ("&_lang="+me.lang_code) : "")));
 				if(!w) {
@@ -151,7 +161,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 		var me = this;
 		this.get_print_html(function (out) {
 			me.wrapper.find(".print-format").html(out.html);
-			me.show_footer();
+			//me.show_footer();
 			me.set_style(out.style);
 		});
 	},
@@ -177,6 +187,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 			+"&format="+me.selected_format()
 			+"&no_letterhead="+(me.with_letterhead() ? "0" : "1")
 			+"&letterhead="+ me.selected_letterhead()
+			+"&sign_type="+ me.selected_sign()
 			+(me.lang_code ? ("&_lang="+me.lang_code) : "")));
 		if(!w) {
 			msgprint(__("Please enable pop-ups")); return;
@@ -191,6 +202,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 				print_format: this.selected_format(),
 				no_letterhead: !this.with_letterhead() ? 1 : 0,
 				letterhead: this.selected_letterhead(),
+				sign_type: this.selected_sign(),
 				_lang: this.lang_code
 			},
 			callback: function (r) {
@@ -223,6 +235,12 @@ frappe.ui.form.PrintPreview = Class.extend({
 		
 		this.letterhead_sel.empty().add_options(["Default"]);
 		this.letterhead_sel.add_options($.map(frappe.boot.letter_heads, function(i,d){ return d }));
+
+		this.print_sign_sel.empty().add_options(["None"]);
+		this.print_sign_sel.add_options($.map(frappe.boot.sign_types, function(d){ 
+		if(frappe.model.can_read("Signature DocType")) {
+		return d} }));
+		
 		return this.print_sel
 			.empty().add_options(this.print_formats);
 	},
@@ -249,6 +267,9 @@ frappe.ui.form.PrintPreview = Class.extend({
 	},
 	selected_letterhead: function() {
 		return this.letterhead_sel.val() || "None";
+	},
+	selected_sign: function() {
+		return this.print_sign_sel.val() || "None";
 	},
 	is_old_style: function(format) {
 		return this.get_print_format(format).print_format_type==="Client";

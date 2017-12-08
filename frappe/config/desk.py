@@ -47,6 +47,7 @@ def get_data():
 		},
 		{
 			'label': _('Email'),
+			"icon": "fa fa-envelope",
 			'items': [
 				{
 					"type": "doctype",

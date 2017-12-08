@@ -29,14 +29,22 @@ def verify_request():
 		getattr(frappe.request, 'query_string', None) \
 
 	valid = False
-
+	frappe.errprint(query_string)
 	if '&_signature=' in query_string:
-		params, signature = query_string.split("&_signature=")
+		try:
+			params, signature = query_string.split("&_signature=")
 
-		given_signature = hmac.new(params.encode("utf-8"))
+		except Exception:
+			frappe.db.rollback()
 
-		given_signature.update(get_secret())
-		valid = signature == given_signature.hexdigest()
+		else:
+			given_signature = hmac.new(params.encode("utf-8"))
+
+			given_signature.update(get_secret())
+			valid = signature == given_signature.hexdigest()
+		
+
+		
 
 	if not valid:
 		frappe.respond_as_web_page(_("Invalid Link"),

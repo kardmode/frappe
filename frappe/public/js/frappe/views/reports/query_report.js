@@ -826,8 +826,10 @@ frappe.views.QueryReport = Class.extend({
 			return false;
 		}
 
-		frappe.prompt({fieldtype:"Select", label: __("Select File Type"), fieldname:"file_format_type",
-			options:"Excel\nCSV", default:"Excel", reqd: 1},
+		frappe.prompt([{fieldtype:"Select", label: __("Select File Type"), fieldname:"file_format_type",
+			options:"Excel\nCSV", default:"Excel", reqd: 1},{fieldtype:'Check', fieldname:'add_headers',
+								label: __('Add Headers'), 'default': 0},{fieldtype:'Data', fieldname:'file_name',
+								label: __('File Name')}],
 			function(data) {
 				var view_data = frappe.slickgrid_tools.get_view_data(me.columns, me.dataView);
 				var result = view_data.map(row => row.splice(1));
@@ -836,7 +838,10 @@ frappe.views.QueryReport = Class.extend({
 				var visible_idx = view_data.map(row => row[0]).filter(sr_no => sr_no !== 'Sr No');
 
 				if (data.file_format_type == "CSV") {
-					frappe.tools.downloadify(result, null, me.title);
+					if (data.file_name)
+						frappe.tools.downloadify(result, null, data.file_name);
+					else
+						frappe.tools.downloadify(result, null, me.title);
 				}
 
 				else if (data.file_format_type == "Excel") {
@@ -849,6 +854,8 @@ frappe.views.QueryReport = Class.extend({
 						cmd: 'frappe.desk.query_report.export_query',
 						report_name: me.report_name,
 						file_format_type: data.file_format_type,
+						add_headers: data.add_headers,
+						file_name: data.file_name,
 						filters: filters,
 						visible_idx: visible_idx,
 					}

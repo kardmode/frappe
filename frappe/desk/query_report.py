@@ -134,6 +134,16 @@ def export_query():
 		visible_idx = json.loads(data.get("visible_idx"))
 	else:
 		visible_idx = None
+		
+	if isinstance(data.get("add_headers"), basestring):
+		add_headers = data["add_headers"]
+	else:
+		add_headers = False
+		
+	if isinstance(data.get("file_name"), basestring):
+		file_name = data["file_name"]
+	else:
+		file_name = "None"
 
 	if file_format_type == "Excel":
 
@@ -144,8 +154,9 @@ def export_query():
 		result = [[]]
 
 		# add column headings
-		for idx in range(len(data.columns)):
-			result[0].append(columns[idx]["label"])
+		if add_headers:
+			for idx in range(len(data.columns)):
+				result[0].append(columns[idx]["label"])
 
 		# build table from dict
 		if isinstance(data.result[0], dict):
@@ -162,9 +173,15 @@ def export_query():
 			result = result + [d for i,d in enumerate(data.result) if (i+1 in visible_idx)]
 
 		from frappe.utils.xlsxutils import make_xlsx
+		
+		if not add_headers:
+			result.pop(0)
+
 		xlsx_file = make_xlsx(result, "Query Report")
 
-		frappe.response['filename'] = report_name + '.xlsx'
+		if file_name == "None":
+			file_name = report_name
+		frappe.response['filename'] = file_name + '.xlsx'
 		frappe.response['filecontent'] = xlsx_file.getvalue()
 		frappe.response['type'] = 'binary'
 

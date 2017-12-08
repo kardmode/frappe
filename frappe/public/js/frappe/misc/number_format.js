@@ -187,10 +187,12 @@ function roundNumber(num, precision) {
 }
 
 function precision(fieldname, doc) {
+
 	if (cur_frm) {
 		if (!doc) doc = cur_frm.doc;
 		var df = frappe.meta.get_docfield(doc.doctype, fieldname, doc.parent || doc.name);
-		if (!df) console.log(fieldname + ": could not find docfield in method precision()");
+		//if (!df) console.log(fieldname + ":could not find docfield in method precision()");
+		if (!df) return frappe.boot.sysdefaults.float_precision;
 		return frappe.meta.get_field_precision(df, doc);
 	} else {
 		return frappe.boot.sysdefaults.float_precision

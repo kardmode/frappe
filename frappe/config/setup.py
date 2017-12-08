@@ -47,7 +47,7 @@ def get_data():
 					"type": "report",
 					"is_query_report": True,
 					"doctype": "User",
-					"icon": "fa fa-eye-open",
+					"icon": "fa fa-eye",
 					"name": "Permitted Documents For User",
 					"description": _("Check which Documents are readable by a User")
 				},
@@ -205,7 +205,7 @@ def get_data():
 		},
 		{
 			"label": _("Customize"),
-			"icon": "fa fa-glass",
+			"icon": "fa fa-cog",
 			"items": [
 				{
 					"type": "doctype",
@@ -245,6 +245,7 @@ def get_data():
 		},
 		{
 			"label": _("Applications"),
+			"icon": "fa fa-th",
 			"items":[
 				{
 					"type": "page",
@@ -257,4 +258,5 @@ def get_data():
 		}
 	]
 	add_setup_section(data, "frappe", "website", _("Website"), "fa fa-globe")
+	
 	return data

@@ -52,10 +52,12 @@
   background-repeat: no-repeat;
   background-position: center center;
   border-radius: 4px;
-  color: #fff;
+  color: #d1d8dd;
   text-align: center;
   line-height: 0;
   float: left;
+  margin-right:5px;
+  /* background-color:#ddd !important; */
 }
 .editable-title .title-text {
   cursor: pointer;

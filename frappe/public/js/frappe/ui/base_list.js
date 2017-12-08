@@ -185,13 +185,16 @@ frappe.ui.BaseList = Class.extend({
 		}
 
 		if (this.meta) {
-			this.page.add_field({
+			var f = this.page.add_field({
 				fieldtype: 'Data',
 				label: 'ID',
 				condition: 'like',
 				fieldname: 'name',
 				onchange: () => { me.refresh(true); }
 			});
+			
+			$(f.wrapper)
+			.attr("style", "display: inline-block;");
 
 			this.meta.fields.forEach(function(df) {
 				if(df.in_standard_filter && !frappe.model.no_value_type.includes(df.fieldtype)) {
@@ -209,7 +212,8 @@ frappe.ui.BaseList = Class.extend({
 							options = options.join("\n");
 						}
 					}
-					me.page.add_field({
+					
+					var f = me.page.add_field({
 						fieldtype: fieldtype,
 						label: __(df.label),
 						options: options,
@@ -217,6 +221,9 @@ frappe.ui.BaseList = Class.extend({
 						condition: condition,
 						onchange: () => {me.refresh(true);}
 					});
+					
+					$(f.wrapper).attr("style", "display: inline-block;");
+					
 				}
 			});
 		}
