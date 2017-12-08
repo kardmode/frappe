@@ -244,11 +244,8 @@ def convert_markdown(doc, meta):
 
 @frappe.whitelist()
 def get_html_and_style(doc, name=None, print_format=None, meta=None,
-<<<<<<< HEAD
-	no_letterhead=None, trigger_print=False,letterhead = None,sign_type=None):
-=======
-	no_letterhead=None, trigger_print=False, style=None):
->>>>>>> 5927c6713055fd897cb530bf7c19883ad44e0a4a
+	no_letterhead=None, trigger_print=False, style=None,letterhead = None,sign_type=None):
+
 	"""Returns `html` and `style` of print format, used in PDF etc"""
 
 	if isinstance(doc, string_types) and isinstance(name, string_types):
@@ -260,13 +257,8 @@ def get_html_and_style(doc, name=None, print_format=None, meta=None,
 	print_format = get_print_format_doc(print_format, meta=meta or frappe.get_meta(doc.doctype))
 	return {
 		"html": get_html(doc, name=name, print_format=print_format, meta=meta,
-<<<<<<< HEAD
 	no_letterhead=no_letterhead, trigger_print=trigger_print,letterhead = letterhead,sign_type=sign_type),
-		"style": get_print_style(print_format=print_format)
-=======
-	no_letterhead=no_letterhead, trigger_print=trigger_print),
 		"style": get_print_style(style=style, print_format=print_format)
->>>>>>> 5927c6713055fd897cb530bf7c19883ad44e0a4a
 	}
 
 def validate_print_permission(doc):
