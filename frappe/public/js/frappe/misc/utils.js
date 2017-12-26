@@ -41,6 +41,14 @@ frappe.utils = {
 	is_md: function() {
 		return $(document).width() < 1199 && $(document).width() >= 991;
 	},
+	is_json: function(str) {
+		try {
+			JSON.parse(str);
+		} catch (e) {
+			return false;
+		}
+		return true;
+	},
 	strip_whitespace: function(html) {
 		return (html || "").replace(/<p>\s*<\/p>/g, "").replace(/<br>(\s*<br>\s*)+/g, "<br><br>");
 	},
@@ -537,6 +545,8 @@ frappe.utils = {
 	},
 
 	is_image_file: function(filename) {
+		// url can have query params
+		filename = filename.split('?')[0];
 		return (/\.(gif|jpg|jpeg|tiff|png|svg)$/i).test(filename);
 	},
 
