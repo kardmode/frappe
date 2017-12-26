@@ -114,8 +114,11 @@ def add_signature(doc,letterhead,sign_type = None):
 			authorized_signature = frappe.render_template(frappe.db.get_value("Print Fields", "Signature with Stamp", "print_field"), {"doc":doc,"authorized_signature":signature,"stamp":stamp})
 		elif signature:
 			authorized_signature = frappe.render_template(frappe.db.get_value("Print Fields", "Signature Only", "print_field"), {"doc":doc,"authorized_signature":signature,"stamp":stamp})		
+		elif stamp:
+			authorized_signature = frappe.render_template(frappe.db.get_value("Print Fields", "Stamp Only", "print_field"), {"doc":doc,"authorized_signature":signature,"stamp":stamp})		
 		else:
 			authorized_signature = ''
+
 	else:
 		# if doc.meta.is_submittable and doc.docstatus==1:
 			# pass
@@ -493,8 +496,9 @@ def get_visible_columns(data, table_meta, df):
 	columns = []
 	doc = data[0] or frappe.new_doc(df.options)
 	def add_column(col_df):
-		return is_visible(col_df, doc) \
-			and column_has_value(data, col_df.get("fieldname"))
+		# return is_visible(col_df, doc) \
+			# and column_has_value(data, col_df.get("fieldname"))
+		return is_visible(col_df, doc)
 
 	if df.get("visible_columns"):
 		# columns specified by column builder

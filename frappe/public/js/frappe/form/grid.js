@@ -372,6 +372,7 @@ frappe.ui.form.Grid = Class.extend({
 	set_editable_grid_column_disp: function(fieldname, show) {
 		//Hide columns for editable grids
 		if (this.meta.editable_grid) {
+			
 			this.grid_rows.forEach(function(row) {
 				row.columns_list.forEach(function(column) {
 					//Hide the column specified
@@ -740,5 +741,11 @@ frappe.ui.form.Grid = Class.extend({
 	clear_custom_buttons: function() {
 		// hide all custom buttons
 		this.grid_buttons.find('.btn-custom').addClass('hidden');
+	},
+	clear_default_buttons: function() {
+		// hide all default buttons
+		this.grid_buttons.find('.btn-default').addClass('hidden');
+		this.grid_buttons.find('.btn-danger').addClass('hidden');
+
 	}
 });

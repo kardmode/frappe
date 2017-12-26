@@ -158,7 +158,7 @@ def _notify(doc, print_html=None, print_format=None, attachments=None,
 		attachments=doc.attachments,
 		message_id=doc.message_id,
 		unsubscribe_message=unsubscribe_message,
-		delayed=True,
+		delayed=False,
 		communication=doc.name,
 		read_receipt=doc.read_receipt,
 		is_notification=True if doc.sent_or_received =="Received" else False
@@ -238,12 +238,24 @@ def prepare_to_notify(doc, print_html=None, print_format=None, attachments=None)
 		doc.sender = doc.outgoing_email_account.email_id
 
 	if not doc.sender_full_name:
-		doc.sender_full_name = doc.outgoing_email_account.name or _("Notification")
+		doc.sender_full_name = doc.outgoing_email_account.name or 'Notifications'
 
 	if doc.sender:
 		# combine for sending to get the format 'Jane <jane@example.com>'
-		doc.sender = formataddr([doc.sender_full_name, doc.sender])
+		
+		email_account = frappe.db.get_value("Email Account",
+			{"email_id": doc.sender, "enable_outgoing": 1},
+			["email_id", "always_use_account_email_id_as_sender", "name", "send_unsubscribe_message"], as_dict=True) or frappe._dict()
+		if not email_account:
+			email_account = frappe.db.get_value("Email Account",
+			{"default_outgoing": 1, "enable_outgoing": 1},
+			["email_id", "always_use_account_email_id_as_sender", "name", "send_unsubscribe_message"],as_dict=True) or frappe._dict()
+		sender_name = 'Notifications'
+		if email_account:
+			sender_name = email_account.name
 
+		doc.sender = formataddr([sender_name, doc.sender])
+	
 	doc.attachments = []
 
 	if print_html or print_format:

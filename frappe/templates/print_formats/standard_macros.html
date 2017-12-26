@@ -29,7 +29,7 @@
 					<tr>
 						<th style="width: 40px" class="table-sr">{{ _("Sr") }}</th>
 						{% for tdf in visible_columns %}
-						{% if (data and not data[0].flags.compact_item_print) or tdf.fieldname in doc.get(df.fieldname)[0].flags.compact_item_fields %}
+						{% if (not data[0].flags.compact_item_print) or tdf.fieldname in doc.get(df.fieldname)[0].flags.compact_item_fields %}
 							<th style="width: {{ get_width(tdf) }};" class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>
 								{{ _(tdf.label) }}</th>
 						{% endif %}
@@ -130,7 +130,7 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 
 {% macro get_align_class(df) %}
 	{%- if df.align -%}{{ "text-" + df.align }}
-	{%- elif df.fieldtype in ("Int", "Float", "Currency", "Check") -%}{{ "text-right" }}
+	{%- elif df.fieldtype in ("Int", "Float", "Currency","Percent", "Check") -%}{{ "text-right" }}
 	{%- else -%}{{ "" }}
 	{%- endif -%}
 {% endmacro %}
@@ -142,9 +142,12 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 {%- endmacro %}
 
 {%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None) -%}
+	
+	<div class="letter-head">
 	{% if letter_head and not no_letterhead %}
-		<div class="letter-head">{{ letter_head }}</div>
+		{{ letter_head }}
 	{% endif %}
+	</div>
     {% if doc.print_heading_template %}
         {{ frappe.render_template(doc.print_heading_template, {"doc":doc}) }}
     {% else %}
@@ -155,6 +158,7 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 
         </h2>
     </div>
+	
     {% endif %}
 	{%- if doc.meta.is_submittable and doc.docstatus==0 and (print_settings==None or print_settings.add_draft_heading) -%}
 	<div class="text-center" document-status="draft">

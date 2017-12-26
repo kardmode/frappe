@@ -965,7 +965,6 @@ frappe.views.QueryReport = Class.extend({
 			this.chart = new frappe.chart.FrappeChart(opts);
 		}
 	},
-<<<<<<< HEAD
 	
 	get_title: function(){
 		
@@ -986,8 +985,8 @@ frappe.views.QueryReport = Class.extend({
 			title += " " + f;
 		});
 		return title;
-
+	},
 	set_print_data: function(data_to_be_printed) {
 		this.data_to_be_printed = data_to_be_printed;
-	}
+	},
 })

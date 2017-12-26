@@ -1,5 +1,5 @@
 {% macro get_align(col) %}
-{%- if col.fieldtype in ('Int', 'Float', 'Currency', 'Check') %} style='text-align: right'{% endif -%}
+{%- if col.fieldtype in ('Int', 'Float', 'Currency','Percent', 'Check') %} style='text-align: right'{% endif -%}
 {% endmacro %}
 
 <table cellpadding=2px cellspacing=0 border=1px style='width:100%; border-collapse:collapse;'>

@@ -77,7 +77,7 @@ frappe.views.CommunicationComposer = Class.extend({
 			{label:__("Select Print Format"), fieldtype:"Select",
 				fieldname:"select_print_format"},
 			{label:__("Select Languages"), fieldtype:"Select",
-				fieldname:"language_sel"},
+				fieldname:"language_sel",hidden: 1},
 			{fieldtype: "Column Break"},
 			{label:__("Select Attachments"), fieldtype:"HTML",
 				fieldname:"select_attachments"}
