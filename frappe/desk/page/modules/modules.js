@@ -29,13 +29,14 @@ frappe.pages['modules'].on_page_load = function(wrapper) {
 
 	page.get_page_modules = () => {
 		return frappe.get_desktop_icons(true)
-			.filter(d => d.type==='module' && !d.blocked)
+			.filter(d => d.type==='module' && !d.blocked && d.module_name !=="Learn")
 			.sort((a, b) => { return (a._label > b._label) ? 1 : -1; });
 	};
 
 	let get_module_sidebar_item = (item) => `<li class="strong module-sidebar-item">
 		<a class="module-link" data-name="${item.module_name}" href="#modules/${item.module_name}">
 			<i class="fa fa-chevron-right pull-right" style="display: none;"></i>
+						<span class="sidebar-icon"><i class="${item.icon}"></i></span>
 			<span>${item._label}</span>
 		</a>
 	</li>`;
