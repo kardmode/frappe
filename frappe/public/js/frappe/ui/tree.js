@@ -218,6 +218,25 @@ frappe.ui.TreeNode = Class.extend({
 	reload_parent: function() {
 		this.parent_node && this.parent_node.load_all();
 	},
+	collapse_all: function(callback) {
+		var  me = this;
+		let args = $.extend({}, this.tree.args);
+
+		args.parent = this.data.value;
+		args.tree_method = this.tree.method;
+		args.is_root = this.is_root;
+
+		return frappe.call({
+			method: 'frappe.desk.treeview.get_all_nodes',
+			args: args,
+			callback: function(r) {
+				$.each(r.message, function(i, d) {
+					me.render_collapse_node(me.tree.nodes[d.parent], d.data);
+				});
+				if(callback) { callback(); }
+			}
+		});
+	},
 	load_all: function(callback) {
 		var  me = this;
 		let args = $.extend({}, this.tree.args);
@@ -266,6 +285,21 @@ frappe.ui.TreeNode = Class.extend({
 
 		node.expanded = false;
 		node.toggle_node(callback);
+		node.loaded = true;
+	},
+	render_collapse_node: function(node, data, callback) {
+		node.$ul.empty();
+		if (data) {
+			$.each(data, function(i, v) {
+				var child_node = node.addnode(v);
+				child_node.tree_link
+					.data('node-data', v)
+					.data('node', child_node);
+			});
+		}
+
+		node.expanded = false;
+		//node.toggle_node(callback);
 		node.loaded = true;
 	},
 })

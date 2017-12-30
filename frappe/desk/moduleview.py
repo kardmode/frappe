@@ -77,12 +77,40 @@ def filter_by_restrict_to_domain(data):
 
 	return data
 
+def get_custom_links(data,module, doctype_info):
+	if module == "Stock":
+		add_section(data, _("Setup"), "fa fa-cog",[
+		{
+			"type": "doctype",
+			"name": "Item Group",
+			"icon": "fa fa-sitemap",
+			"label": _("Item Group"),
+			"link": "Tree/Item Group",
+		}])
+	elif module == "Accounts":
+		add_section(data, _("Setup"), "fa fa-cog",
+				[{
+					"type": "doctype",
+					"name": "Company",
+					"icon": "fa fa-building-o",
+					"description": _("Company (not Customer or Supplier) master.")
+				},
+				{
+					"type": "doctype",
+					"name": "Account",
+					"icon": "fa fa-sitemap",
+					"label": _("Chart of Accounts"),
+					"route": "Tree/Account",
+					"description": _("Tree of financial accounts."),
+				}])
+
 def build_standard_config(module, doctype_info):
 	"""Build standard module data from DocTypes."""
 	if not frappe.db.get_value("Module Def", module):
 		frappe.throw(_("Module Not Found"))
 
 	data = []
+	
 	
 	Documents = ["Document", "Transaction"]
 	Setup = ["Master", "Setup"]
@@ -100,6 +128,9 @@ def build_standard_config(module, doctype_info):
 		
 	add_section(data, _("Setup"), "fa fa-cog",
 		[d for d in doctype_info if (d.custom == False and d.document_type in Setup)])
+		
+	get_custom_links(data,module, doctype_info)
+	
 	
 	add_section(data, _("Tools"), "fa fa-wrench",
 		[d for d in doctype_info if (d.custom == False and d.document_type in Tools)])

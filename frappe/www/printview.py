@@ -496,9 +496,8 @@ def get_visible_columns(data, table_meta, df):
 	columns = []
 	doc = data[0] or frappe.new_doc(df.options)
 	def add_column(col_df):
-		# return is_visible(col_df, doc) \
-			# and column_has_value(data, col_df.get("fieldname"))
-		return is_visible(col_df, doc)
+		return is_visible(col_df, doc) \
+			and column_has_value(data, col_df.get("fieldname"))
 
 	if df.get("visible_columns"):
 		# columns specified by column builder

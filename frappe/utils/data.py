@@ -39,6 +39,7 @@ def getdate(string_date=None):
 	if not string_date or string_date=="0000-00-00":
 		return None
 
+	frappe.errprint(string_date)
 	return parser.parse(string_date).date()
 
 def get_datetime(datetime_str=None):

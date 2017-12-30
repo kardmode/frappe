@@ -73,6 +73,10 @@ frappe.views.TreeView = Class.extend({
 		this.page.add_inner_button(__('Expand All'), function() {
 			me.tree.rootnode.load_all();
 		});
+		
+		this.page.add_inner_button(__('Collapse All'), function() {
+			me.tree.rootnode.collapse_all();
+		});
 
 		if(this.opts.view_template) {
 			var row = $('<div class="row"><div>').appendTo(this.page.main);
