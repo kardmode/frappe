@@ -106,6 +106,10 @@ def add_signature(doc,letterhead,sign_type = None):
 	stamp = ""
 	if sign_info.has_stamp:
 		stamp = frappe.db.get_value("Company Licenses", {'company':letterhead},"company_stamp") or ""
+		stamp_doc = frappe.get_doc('Company Licenses', {'company':letterhead}) or {}
+		if not stamp_doc.has_permission("read"):
+			stamp = ""
+		
 	
 	allow = frappe.db.get_single_value('System Settings', 'allow_signature_if_not_submitted')
 

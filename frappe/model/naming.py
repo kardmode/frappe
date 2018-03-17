@@ -4,7 +4,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
-from frappe.utils import now_datetime, cint
+from frappe.utils import now_datetime, cint,getdate
 import re
 from six import string_types
 
@@ -23,7 +23,6 @@ def set_new_name(doc):
 	doc.run_method("before_naming")
 
 	autoname = frappe.get_meta(doc.doctype).autoname or ""
-
 	if autoname.lower() != "prompt" and not frappe.flags.in_import:
 		doc.name = None
 
@@ -40,14 +39,21 @@ def set_new_name(doc):
 	if not doc.name and autoname:
 		if autoname.startswith('field:'):
 			fieldname = autoname[6:]
-			doc.name = (doc.get(fieldname) or "").strip()
+			key = fieldname.strip()
+			parts = key.split('.')
+			doc.name = parse_naming_series(parts, doc.doctype, doc)
+			
+			# doc.name = (doc.get(fieldname) or "").strip()
+			
+			
 			if not doc.name:
 				frappe.throw(_("{0} is required").format(doc.meta.get_label(fieldname)))
 				raise Exception('Name is required')
 		if autoname.startswith("naming_series:"):
 			set_name_by_naming_series(doc)
 		elif "#" in autoname:
-			doc.name = make_autoname(autoname)
+			autoname = get_custom_naming_series(autoname,doc,add_date = False)
+			doc.name = make_autoname(autoname,doc.doctype,doc=doc)
 		elif autoname.lower()=='prompt':
 			# set from __newname in save.py
 			if not doc.name:
@@ -58,6 +64,41 @@ def set_new_name(doc):
 
 	doc.name = validate_name(doc.doctype, doc.name, frappe.get_meta(doc.doctype).get_field("name_case"))
 
+def get_custom_naming_series(key,doc,add_date = False):
+	
+	add_company_abbr = 0 
+	if doc:
+		add_company_abbr = frappe.get_meta(doc.doctype).add_company_abbr_to_name or 0
+	
+
+	if add_company_abbr and doc:
+
+		date = ""
+		date_string = ""
+		
+		if add_date:
+			if hasattr(doc, 'posting_date'):
+				date = doc.posting_date
+			elif hasattr(doc, 'transaction_date'):
+				date = doc.transaction_date
+
+			
+			if date:
+				import datetime
+				year = (getdate(date)).year
+				date_string = str(year)
+		
+		naming_series = key + date_string
+		if hasattr(doc, 'company'):
+			if doc.company:
+				abbr = 	frappe.db.get_value("Company", doc.company, "abbr")
+				if abbr:
+					naming_series = str(abbr) + "-" + naming_series
+		
+		return naming_series
+	else:
+		return key
+
 def set_name_by_naming_series(doc):
 	"""Sets name by the `naming_series` property"""
 	if not doc.naming_series:
@@ -66,7 +107,9 @@ def set_name_by_naming_series(doc):
 	if not doc.naming_series:
 		frappe.throw(frappe._("Naming Series mandatory"))
 
-	doc.name = make_autoname(doc.naming_series+'.#####', '', doc)
+	naming_series = get_custom_naming_series(doc.naming_series,doc,add_date = True)
+			
+	doc.name = make_autoname(naming_series+'.#####', '', doc)
 
 def make_autoname(key='', doctype='', doc=''):
 	"""
@@ -93,7 +136,6 @@ def make_autoname(key='', doctype='', doc=''):
 		key = key + ".#####"
 	elif not "." in key:
 		frappe.throw(_("Invalid naming series (. missing)") + (_(" for {0}").format(doctype) if doctype else ""))
-
 	parts = key.split('.')
 	n = parse_naming_series(parts, doctype, doc)
 	return n
@@ -106,7 +148,7 @@ def parse_naming_series(parts, doctype= '', doc = ''):
 	series_set = False
 	today = now_datetime()
 	for e in parts:
-		part = ''
+		part = ''	
 		if e.startswith('#'):
 			if not series_set:
 				digits = len(e)
@@ -120,6 +162,28 @@ def parse_naming_series(parts, doctype= '', doc = ''):
 			part = today.strftime("%d")
 		elif e=='YYYY':
 			part = today.strftime('%Y')
+		elif e=='PDY':
+			date = ''
+			date_string = ''
+			if doc and doc.get('posting_date'):
+				date = doc.posting_date
+			elif doc and doc.get('transaction_date'):
+				date = doc.transaction_date
+			
+			if date:
+				import datetime
+				year = (getdate(date)).year
+				date_string = str(year)
+			
+			part = date_string	
+			
+		
+		elif e=='CABBR':
+			abbr = ''
+			if doc and doc.get('company'):
+				abbr = str(frappe.db.get_value("Company", doc.company, "abbr")) or ''
+			
+			part = abbr
 		elif doc and doc.get(e):
 			part = doc.get(e)
 		else: part = e
@@ -143,16 +207,22 @@ def getseries(key, digits, doctype=''):
 		current = 1
 	return ('%0'+str(digits)+'d') % current
 
-def revert_series_if_last(key, name):
+def revert_series_if_last(key, name,doc = None):
 	if ".#" in key:
 		prefix, hashes = key.rsplit(".", 1)
+		
 		if '.' in prefix:
-			prefix = parse_naming_series(prefix.split('.'))
-
+			prefix = parse_naming_series(prefix.split('.'),doc=doc)
+		else:
+			prefix = get_custom_naming_series(prefix,doc,add_date = False)
+			
 		if "#" not in hashes:
 			return
 	else:
-		prefix = key
+		if key == doc.naming_series:
+			prefix = get_custom_naming_series(key,doc,add_date = True)
+		else:
+			prefix = key
 
 	count = cint(name.replace(prefix, ""))
 	current = frappe.db.sql("select `current` from `tabSeries` where name=%s for update", (prefix,))

@@ -26,7 +26,7 @@ from pymysql.constants import ER
 @frappe.whitelist()
 def make(doctype=None, name=None, content=None, subject=None, sent_or_received = "Sent",
 	sender=None, sender_full_name=None, recipients=None, communication_medium="Email", send_email=False,
-	print_html=None, print_format=None, attachments='[]', send_me_a_copy=False, cc=None, bcc=None, flags=None,read_receipt=None):
+	print_html=None, print_format=None, attachments='[]', send_me_a_copy=False, cc=None, bcc=None, flags=None,read_receipt=None,print_options=None):
 	"""Make a new communication.
 
 	:param doctype: Reference DocType.
@@ -43,7 +43,6 @@ def make(doctype=None, name=None, content=None, subject=None, sent_or_received =
 	:param attachments: List of attachments as list of files or JSON string.
 	:param send_me_a_copy: Send a copy to the sender (default **False**).
 	"""
-
 	is_error_report = (doctype=="User" and name==frappe.session.user and subject=="Error Report")
 	send_me_a_copy = cint(send_me_a_copy)
 
@@ -53,6 +52,8 @@ def make(doctype=None, name=None, content=None, subject=None, sent_or_received =
 
 	if not sender:
 		sender = get_formatted_email(frappe.session.user)
+	
+	
 
 	comm = frappe.get_doc({
 		"doctype":"Communication",
@@ -87,7 +88,7 @@ def make(doctype=None, name=None, content=None, subject=None, sent_or_received =
 	frappe.db.commit()
 
 	if cint(send_email):
-		comm.send(print_html, print_format, attachments, send_me_a_copy=send_me_a_copy)
+		comm.send(print_html, print_format, attachments, send_me_a_copy=send_me_a_copy,print_options = print_options)
 
 	return {
 		"name": comm.name,
@@ -113,7 +114,7 @@ def validate_email(doc):
 	# validate sender
 
 def notify(doc, print_html=None, print_format=None, attachments=None,
-	recipients=None, cc=None, bcc=None, fetched_from_email_account=False):
+	recipients=None, cc=None, bcc=None, fetched_from_email_account=False,print_options=None):
 	"""Calls a delayed task 'sendmail' that enqueus email in Email Queue queue
 
 	:param print_html: Send given value as HTML attachment
@@ -142,12 +143,11 @@ def notify(doc, print_html=None, print_format=None, attachments=None,
 		enqueue(sendmail, queue="default", timeout=300, event="sendmail",
 			communication_name=doc.name,
 			print_html=print_html, print_format=print_format, attachments=attachments,
-			recipients=recipients, cc=cc, bcc=bcc, lang=frappe.local.lang, session=frappe.local.session)
+			recipients=recipients, cc=cc, bcc=bcc, lang=frappe.local.lang, session=frappe.local.session,print_options = print_options)
 
 def _notify(doc, print_html=None, print_format=None, attachments=None,
-	recipients=None, cc=None, bcc=None):
-
-	prepare_to_notify(doc, print_html, print_format, attachments)
+	recipients=None, cc=None, bcc=None,print_options=None):
+	prepare_to_notify(doc, print_html, print_format, attachments,print_options = print_options)
 
 	if doc.outgoing_email_account.send_unsubscribe_message:
 		unsubscribe_message = _("Leave this conversation")
@@ -238,7 +238,7 @@ def get_recipients_cc_and_bcc(doc, recipients, cc, bcc, fetched_from_email_accou
 
 	return recipients, cc, bcc
 
-def prepare_to_notify(doc, print_html=None, print_format=None, attachments=None):
+def prepare_to_notify(doc, print_html=None, print_format=None, attachments=None,print_options=None):
 	"""Prepare to make multipart MIME Email
 
 	:param print_html: Send given value as HTML attachment.
@@ -277,7 +277,7 @@ def prepare_to_notify(doc, print_html=None, print_format=None, attachments=None)
 
 	if print_html or print_format:
 		doc.attachments.append({"print_format_attachment":1, "doctype":doc.reference_doctype,
-			"name":doc.reference_name, "print_format":print_format, "html":print_html})
+			"name":doc.reference_name, "print_format":print_format, "html":print_html,"print_options":print_options})
 
 	if attachments:
 		if isinstance(attachments, string_types):
@@ -481,7 +481,7 @@ def get_attach_link(doc, print_format):
 	})
 
 def sendmail(communication_name, print_html=None, print_format=None, attachments=None,
-	recipients=None, cc=None, bcc=None, lang=None, session=None):
+	recipients=None, cc=None, bcc=None, lang=None, session=None,print_options = None):
 	try:
 
 		if lang:
@@ -497,7 +497,7 @@ def sendmail(communication_name, print_html=None, print_format=None, attachments
 			try:
 				communication = frappe.get_doc("Communication", communication_name)
 				communication._notify(print_html=print_html, print_format=print_format, attachments=attachments,
-					recipients=recipients, cc=cc, bcc=bcc)
+					recipients=recipients, cc=cc, bcc=bcc,print_options = print_options)
 
 			except pymysql.InternalError as e:
 				# deadlock, try again

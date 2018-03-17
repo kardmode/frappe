@@ -22,10 +22,12 @@ from frappe.utils import cint
 from six import text_type
 
 def report_error(status_code):
+
+	show_traceback = cint(frappe.db.get_system_setting('allow_error_traceback'))
+	if frappe.session.user == "Administrator":
+		show_traceback = True
 	'''Build error. Show traceback in developer mode'''
-	if (cint(frappe.db.get_system_setting('allow_error_traceback'))
-		and (status_code!=404 or frappe.conf.logging)
-		and not frappe.local.flags.disable_traceback):
+	if (show_traceback and (status_code!=404 or frappe.conf.logging) and not frappe.local.flags.disable_traceback):
 		frappe.errprint(frappe.utils.get_traceback())
 
 	response = build_response("json")
@@ -173,7 +175,7 @@ def send_private_file(path):
 	return response
 
 def handle_session_stopped():
-	frappe.respond_as_web_page(_("Updating"),
-		_("Your system is being updated. Please refresh again after a few moments"),
+	frappe.respond_as_web_page(_("Under Maintenance"),
+		_("Please refresh again after a few moments"),
 		http_status_code=503, indicator_color='orange', fullpage = True, primary_action=None)
 	return frappe.website.render.render("message", http_status_code=503)

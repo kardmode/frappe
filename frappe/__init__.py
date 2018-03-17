@@ -1252,7 +1252,7 @@ def get_print(doctype=None, name=None, print_format=None, style=None, html=None,
 	else:
 		return html
 
-def attach_print(doctype, name, file_name=None, print_format=None, style=None, html=None, doc=None):
+def attach_print(doctype, name, file_name=None, print_format=None, style=None, html=None, doc=None,print_options = None):
 	from frappe.utils import scrub_urls
 
 	if not file_name: file_name = name
@@ -1261,11 +1261,23 @@ def attach_print(doctype, name, file_name=None, print_format=None, style=None, h
 	print_settings = db.get_singles_dict("Print Settings")
 
 	local.flags.ignore_print_permissions = True
-
+	
+	letterhead = None
+	sign_type = None
+	
+	if print_options:
+		print_options = json.loads(print_options)
+		sign_type = print_options['sign_type'] or None
+		letterhead = print_options['letterhead'] or None
+	
+	# if print_options:
+		# sign_type = print_options['sign_type'] or None
+		# letterhead = print_options['letterhead'] or None
+	
 	if int(print_settings.send_print_as_pdf or 0):
 		out = {
 			"fname": file_name + ".pdf",
-			"fcontent": get_print(doctype, name, print_format=print_format, style=style, html=html, as_pdf=True, doc=doc)
+			"fcontent": get_print(doctype, name, print_format=print_format, style=style, html=html, as_pdf=True, doc=doc, output = None,no_letterhead = 0,options=None,letterhead = letterhead,sign_type=sign_type)
 		}
 	else:
 		out = {

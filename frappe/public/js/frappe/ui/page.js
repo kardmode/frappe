@@ -67,6 +67,9 @@ frappe.ui.Page = Class.extend({
 
 	add_main_section: function() {
 		$(frappe.render_template("page", {})).appendTo(this.wrapper);
+		
+		var test_page_name = frappe.get_route_str();
+		
 		if(this.single_column) {
 			// nesting under col-sm-12 for consistency
 			this.add_view("main", '<div class="row layout-main">\
@@ -76,14 +79,37 @@ frappe.ui.Page = Class.extend({
 					</div>\
 				</div>');
 		} else {
-
-			this.add_view("main", '<div class="row layout-main">\
+			
+			if(test_page_name.includes("Form/")){
+				this.add_view("main", '<div class="row layout-main">\
+				<div class="col-md-1 layout-side-section"></div>\
+				<div class="col-md-11 layout-main-section-wrapper">\
+					<div class="layout-main-section"></div>\
+					<div class="layout-footer hide"></div>\
+				</div>\
+			</div>');
+				
+			}
+			else if (test_page_name.includes("List/")){
+				this.add_view("main", '<div class="row layout-main">\
+				<div class="col-md-1 layout-side-section"></div>\
+				<div class="col-md-11 layout-main-section-wrapper">\
+					<div class="layout-main-section"></div>\
+					<div class="layout-footer hide"></div>\
+				</div>\
+			</div>');
+			}
+			else{
+				this.add_view("main", '<div class="row layout-main">\
 				<div class="col-md-2 layout-side-section"></div>\
 				<div class="col-md-10 layout-main-section-wrapper">\
 					<div class="layout-main-section"></div>\
 					<div class="layout-footer hide"></div>\
 				</div>\
 			</div>');
+				
+			}
+			
 		}
 
 		this.setup_page();

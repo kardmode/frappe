@@ -150,17 +150,17 @@ class Communication(Document):
 				self.sender_full_name = sender_name or get_fullname(frappe.session.user) if frappe.session.user!='Administrator' else None
 
 	def send(self, print_html=None, print_format=None, attachments=None,
-		send_me_a_copy=False, recipients=None):
+		send_me_a_copy=False, recipients=None, print_options = None):
 		"""Send communication via Email.
 
 		:param print_html: Send given value as HTML attachment.
 		:param print_format: Attach print format of parent document."""
 
 		self.send_me_a_copy = send_me_a_copy
-		self.notify(print_html, print_format, attachments, recipients)
+		self.notify(print_html, print_format, attachments, recipients,print_options=print_options)
 
 	def notify(self, print_html=None, print_format=None, attachments=None,
-		recipients=None, cc=None, bcc=None,fetched_from_email_account=False):
+		recipients=None, cc=None, bcc=None,fetched_from_email_account=False,print_options = None):
 		"""Calls a delayed task 'sendmail' that enqueus email in Email Queue queue
 
 		:param print_html: Send given value as HTML attachment
@@ -172,12 +172,12 @@ class Communication(Document):
 
 		"""
 		notify(self, print_html, print_format, attachments, recipients, cc, bcc,
-			fetched_from_email_account)
+			fetched_from_email_account,print_options=print_options)
 
 	def _notify(self, print_html=None, print_format=None, attachments=None,
-		recipients=None, cc=None, bcc=None):
+		recipients=None, cc=None, bcc=None,print_options = None):
 
-		_notify(self, print_html, print_format, attachments, recipients, cc, bcc)
+		_notify(self, print_html, print_format, attachments, recipients, cc, bcc,print_options=print_options)
 
 	def bot_reply(self):
 		if self.comment_type == 'Bot' and self.communication_type == 'Chat':

@@ -11,20 +11,36 @@ frappe.ui.form.ControlLink = frappe.ui.form.ControlData.extend({
 		$('<div class="link-field ui-front" style="position: relative; line-height: 1;">\
 			<input type="text" class="input-with-feedback form-control">\
 			<span class="link-btn">\
+				<a class="btn-link-sync no-decoration" title="' + __("Sync") + '">\
+					<i class="octicon octicon-sync"></i></a>\
+				<span style="margin:0 2px;"></span>\
 				<a class="btn-open no-decoration" title="' + __("Open Link") + '">\
-					<i class="octicon octicon-arrow-right"></i></a>\
+					<i class="octicon octicon-info"></i></a>\
 			</span>\
 		</div>').prependTo(this.input_area);
 		this.$input_area = $(this.input_area);
 		this.$input = this.$input_area.find('input');
 		this.$link = this.$input_area.find('.link-btn');
 		this.$link_open = this.$link.find('.btn-open');
+		this.$link_sync = this.$link.find('.btn-link-sync');
+		
 		this.set_input_attributes();
 		this.$input.on("focus", function() {
 			setTimeout(function() {
 				if(me.$input.val() && me.get_options()) {
 					me.$link.toggle(true);
 					me.$link_open.attr('href', '#Form/' + me.get_options() + '/' + me.$input.val());
+					
+					me.$link_sync.on('click', function(event) {
+						event.preventDefault();
+						
+						if(me.frm.script_manager.has_handlers(me.df.fieldname, me.doctype)) {
+								me.frm.script_manager.trigger(me.df.fieldname, me.doctype, me.docname);
+							} else {
+								me.frm.runscript(me.doctype, me);
+							}
+					});
+					
 				}
 
 				if(!me.$input.val()) {

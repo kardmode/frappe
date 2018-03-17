@@ -8,6 +8,20 @@ from frappe.boot import get_allowed_pages, get_allowed_reports
 from frappe.desk.doctype.desktop_icon.desktop_icon import set_hidden, clear_desktop_icons_cache
 
 @frappe.whitelist()
+def get_modules_data(modules):
+	"""Returns data (sections, list of reports, counts) to render module view in desk:
+	`/desk/#Module/[name]`."""
+	data = []
+	for module in modules:
+		data.append(get_data(module))
+
+	out = {
+		"data": data
+	}
+
+	return out
+
+@frappe.whitelist()
 def get(module):
 	"""Returns data (sections, list of reports, counts) to render module view in desk:
 	`/desk/#Module/[name]`."""

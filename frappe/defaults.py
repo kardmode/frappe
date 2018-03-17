@@ -22,7 +22,7 @@ def get_user_default(key, user=None):
 
 	if is_a_user_permission_key(key):
 		if d and isinstance(d, (list, tuple)) and len(d)==1:
-			# Use User Permission value when only when it has a single value
+			# Use User Permission value when it has a single value
 			d = d[0]
 
 		else:

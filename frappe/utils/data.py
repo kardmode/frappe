@@ -39,7 +39,6 @@ def getdate(string_date=None):
 	if not string_date or string_date=="0000-00-00":
 		return None
 
-	frappe.errprint(string_date)
 	return parser.parse(string_date).date()
 
 def get_datetime(datetime_str=None):
@@ -444,7 +443,7 @@ def get_number_format_info(format):
 #
 # convet currency to words
 #
-def money_in_words(number, main_currency = None, fraction_currency=None):
+def money_in_words(number, main_currency = None, fraction_currency=None,show_main_currency = True):
 	"""
 	Returns string in words with currency and fraction currency.
 	"""
@@ -483,6 +482,9 @@ def money_in_words(number, main_currency = None, fraction_currency=None):
 
 	in_million = True
 	if number_format == "#,##,###.##": in_million = False
+
+	if not show_main_currency:
+		main_currency = ""
 
 	# 0.00
 	if main == '0' and fraction in ['00', '000']:
@@ -887,3 +889,5 @@ def get_source_value(source, key):
 		return source.get(key)
 	else:
 		return getattr(source, key)
+		
+

@@ -93,6 +93,14 @@ def download_pdf(doctype, name, format=None,doc=None, no_letterhead=0,letterhead
 	frappe.local.response.filename = "{name}.pdf".format(name=name.replace(" ", "-").replace("/", "-"))
 	frappe.local.response.filecontent = get_pdf(html, {"orientation": orientation})
 	frappe.local.response.type = "download"
+	
+@frappe.whitelist()
+def dpdf(dt, dn, ft=None,doc=None, nl=0,lh = None,on="Portrait",sn = None):
+	html = frappe.get_print(dt, dn, ft, doc=doc, no_letterhead=nl,letterhead=lh,sign_type=sn)
+
+	frappe.local.response.filename = "{name}.pdf".format(name=dn.replace(" ", "-").replace("/", "-"))
+	frappe.local.response.filecontent = get_pdf(html, {"orientation": on})
+	frappe.local.response.type = "download"
 
 @frappe.whitelist()
 def report_to_pdf(html, orientation="Landscape"):

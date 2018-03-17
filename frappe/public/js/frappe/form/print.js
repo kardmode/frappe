@@ -32,6 +32,21 @@ frappe.ui.form.PrintPreview = Class.extend({
 			.prop("checked", cint(
 				(frappe.model.get_doc(":Print Settings", "Print Settings")
 					|| { with_letterhead: 1 }).with_letterhead) ? true : false);
+					
+		//////
+		this.letter_heads = $.map(frappe.boot.letter_heads, function(i,d){
+			return d 
+		})
+		this.letter_heads.unshift(["Default"]);
+		
+		
+		this.print_signs = $.map(frappe.boot.sign_types, function(d){
+			if(frappe.model.can_read("Signature DocType")) 
+			{
+				return d
+			}
+		})
+		this.print_signs.unshift(["None"]);
 		
 		this.letterhead_sel = this.wrapper
 			.find(".print-letterhead-select")
@@ -95,7 +110,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 					me.orientation = "Portrait";
 				}
 				
-				var w = window.open(
+			/* 	var w = window.open(
 					frappe.urllib.get_full_url("/api/method/frappe.utils.print_format.download_pdf?"
 					+"doctype="+encodeURIComponent(me.frm.doc.doctype)
 					+"&name="+encodeURIComponent(me.frm.doc.name)
@@ -104,7 +119,20 @@ frappe.ui.form.PrintPreview = Class.extend({
 					+"&letterhead="+ me.selected_letterhead()
 					+"&sign_type="+ me.selected_sign()
 					+"&orientation="+encodeURIComponent(me.orientation)
+					+(me.lang_code ? ("&_lang="+me.lang_code) : ""))); */
+					
+				
+				var w = window.open(
+					frappe.urllib.get_full_url("/api/method/frappe.utils.print_format.dpdf?"
+					+"dt="+encodeURIComponent(me.frm.doc.doctype)
+					+"&dn="+encodeURIComponent(me.frm.doc.name)
+					+"&ft="+me.selected_format()
+					+"&nl="+(me.with_letterhead() ? "0" : "1")
+					+"&lh="+ me.selected_letterhead()
+					+"&sn="+ me.selected_sign()
+					+"&on="+encodeURIComponent(me.orientation)
 					+(me.lang_code ? ("&_lang="+me.lang_code) : "")));
+				
 				if(!w) {
 					msgprint(__("Please enable pop-ups")); 
 					return;
@@ -237,13 +265,24 @@ frappe.ui.form.PrintPreview = Class.extend({
 		? locals[":Company"][frappe.defaults.get_default('company')]["default_letter_head"]
 		: '';
 		
-		this.letterhead_sel.empty().add_options(["Default"]);
-		this.letterhead_sel.add_options($.map(frappe.boot.letter_heads, function(i,d){ return d }));
+		
+		this.letter_heads = $.map(frappe.boot.letter_heads, function(i,d){
+			return d 
+		})
+		this.letter_heads.unshift(["Default"]);
+		this.letterhead_sel.empty().add_options(this.letter_heads);
+		
+		
+		this.print_signs = $.map(frappe.boot.sign_types, function(d){
+			if(frappe.model.can_read("Signature DocType")) 
+			{
+				return d
+			}
+		})
+		this.print_signs.unshift(["None"]);
+		this.print_sign_sel.empty().add_options(this.print_signs);
 
-		this.print_sign_sel.empty().add_options(["None"]);
-		this.print_sign_sel.add_options($.map(frappe.boot.sign_types, function(d){ 
-		if(frappe.model.can_read("Signature DocType")) {
-		return d} }));
+		
 		
 		return this.print_sel
 			.empty().add_options(this.print_formats);

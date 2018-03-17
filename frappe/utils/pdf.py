@@ -61,10 +61,9 @@ def prepare_options(html, options):
 		# 'no-outline': None,
 		'encoding': "UTF-8",
 		#'load-error-handling': 'ignore',
-
 		# defaults
-		'margin-right': '13mm',
-		'margin-left': '13mm'
+		'margin-right': '12.5mm',
+		'margin-left': '12.5mm',
 	})
 
 	html, html_options = read_options_from_html(html)
@@ -75,9 +74,10 @@ def prepare_options(html, options):
 		options['cookie'] = [('sid', '{0}'.format(frappe.session.sid))]
 
 	# page size
-	if not options.get("page-size"):
+	if not (options.get("page-width") or options.get("page-height")) and not options.get("page-size"):
 		options['page-size'] = frappe.db.get_single_value("Print Settings", "pdf_page_size") or "A4"
-
+	
+	
 	return html, options
 
 def read_options_from_html(html):
@@ -89,7 +89,7 @@ def read_options_from_html(html):
 	toggle_visible_pdf(soup)
 
 	# extract pdfkit options from html
-	for html_id in ("margin-top", "margin-bottom", "margin-left", "margin-right", "page-size"):
+	for html_id in ("orientation","margin-top", "margin-bottom", "margin-left", "margin-right", "page-size","page-width","page-height"):
 		try:
 			tag = soup.find(id=html_id)
 			if tag and tag.contents:
@@ -135,9 +135,9 @@ def prepare_header_footer(soup):
 			options[html_id] = fname
 		else:
 			if html_id == "header-html":
-				options["margin-top"] = "13mm"
+				options["margin-top"] = "12.5mm"
 			elif html_id == "footer-html":
-				options["margin-bottom"] = "13mm"
+				options["margin-bottom"] = "12.5mm"
 
 	return options
 

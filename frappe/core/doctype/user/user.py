@@ -69,6 +69,9 @@ class User(Document):
 		self.validate_user_email_inbox()
 		ask_pass_update()
 		self.validate_roles()
+		
+		
+		frappe.defaults.set_user_default("company", self.default_company)
 
 		if self.language == "Loading...":
 			self.language = None

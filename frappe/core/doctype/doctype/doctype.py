@@ -187,9 +187,17 @@ class DocType(Document):
 		# validate field name if autoname field:fieldname is used
 
 		if autoname and autoname.startswith('field:'):
-			field = autoname.split(":")[1]
-			if not field or field not in [ df.fieldname for df in self.fields ]:
-				frappe.throw(_("Invalid fieldname '{0}' in autoname".format(field)))
+			test_name = autoname[6:]
+			test_fields = test_name.split('.')
+			
+			if not test_name:
+				frappe.throw(_("Invalid fieldname '{0}' in autoname".format(test_name)))
+			for field in test_fields:
+				if field not in [ df.fieldname for df in self.fields ]:
+					if field not in ['-','/',',']:
+						frappe.throw(_("Invalid fieldname '{0}' in autoname".format(field)))
+					
+			
 
 		if autoname and (not autoname.startswith('field:')) \
 			and (not autoname.startswith('eval:')) \

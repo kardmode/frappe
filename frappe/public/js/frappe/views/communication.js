@@ -300,7 +300,8 @@ frappe.views.CommunicationComposer = Class.extend({
 			$(fields.select_print_format.input)
 				.empty()
 				.add_options(cur_frm.print_preview.print_formats)
-				.val(cur_frm.print_preview.print_formats[0]);
+				.val(cur_frm.print_preview.print_sel.val() || cur_frm.print_preview.print_formats[0]);	
+			
 		} else {
 			$(fields.attach_document_print.wrapper).toggle(false);
 		}
@@ -471,11 +472,19 @@ frappe.views.CommunicationComposer = Class.extend({
 			return;
 		}
 
+		var print_options = {};
+		
 		if(!form_values.attach_document_print) {
 			print_html = null;
 			print_format = null;
 		}
-
+		
+		if(print_format) {
+			if(cur_frm){
+				print_options = {'letterhead': cur_frm.print_preview.letterhead_sel.val() || cur_frm.print_preview.letter_heads[0], 'sign_type': cur_frm.print_preview.print_sign_sel.val() || cur_frm.print_preview.print_signs[0]};
+			}			
+		}
+		
 		if(form_values.send_email) {
 			if(cur_frm && !frappe.model.can_email(me.doc.doctype, cur_frm)) {
 				frappe.msgprint(__("You are not allowed to send emails related to this document"));
@@ -506,7 +515,8 @@ frappe.views.CommunicationComposer = Class.extend({
 				sender_full_name: form_values.sender?frappe.user.full_name():undefined,
 				attachments: selected_attachments,
 				_lang : me.lang_code,
-				read_receipt:form_values.send_read_receipt
+				read_receipt:form_values.send_read_receipt,
+				print_options:JSON.stringify(print_options)
 			},
 			btn: btn,
 			callback: function(r) {
