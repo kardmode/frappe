@@ -95,7 +95,8 @@ kbd {
   min-width: 200px;
   padding: 0px;
   font-size: 12px;
-  max-height: 400px;
+  /* max-height: 400px; */
+  max-height: 66vh;
   overflow: auto;
   border-radius: 0px 0px 4px 4px;
 }
@@ -1139,3 +1140,5 @@ input[type="checkbox"]:focus {
 .user-progress-dialog .done-state .help-links a {
   margin: 0px 10px;
 }
+
+

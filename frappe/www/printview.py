@@ -74,10 +74,11 @@ def add_signature(doc,letterhead,sign_type = None):
 	if not sign_type or sign_type == "None":
 		return ""
 
-	sign_info = frappe._dict(frappe.db.get_value("Signature DocType", sign_type, ["has_stamp", "print_field","has_sign","full_authority_sign"], as_dict=True) or {})
+	sign_info = frappe._dict(frappe.db.get_value("Signature DocType", sign_type, ["has_stamp", "print_field","has_sign","full_authority_sign","use_signoff"], as_dict=True) or {})
 	
 	if not sign_info:
 		return ""
+		
 	
 	if letterhead == "Default":
 		if doc.get("company"):
@@ -85,23 +86,38 @@ def add_signature(doc,letterhead,sign_type = None):
 		else:
 			letterhead = frappe.db.get_value("Letter Head", {"is_default": 1}, "name") or "Default"
 
-	
+	signoff = "Authorized Signatory"
 	signature = ""
 	if sign_info.has_sign:
 		if sign_info.full_authority_sign:
 			signature = frappe.db.get_value("Authority Signature", letterhead, "company_signature") or ""
+			user_signoff = frappe.db.get_value("Authority Signature", letterhead, "signoff") or "Authorized Signatory"
 			if signature:
 				sign_doc = frappe.get_doc('Authority Signature', letterhead) or {}
 				if not sign_doc.has_permission("read"):
 					signature = ""
+			
+			if user_signoff or user_signoff != "":
+				signoff = user_signoff
+			else:
+				signoff = "Authorized Signatory"
+				
 	
 		else:
-			signature = frappe.db.get_value("User", doc.owner, "signature") or ""
+			
+			signature = frappe.db.get_value("User", frappe.session.user, "signature") or ""
+			user_signoff = frappe.db.get_value("User", frappe.session.user, "signoff") or "Authorized Signatory"
+		
 			if signature:
-				sign_doc = frappe.get_doc('User', doc.owner) or {}
+				sign_doc = frappe.get_doc('User', frappe.session.user) or {}
 				if not sign_doc.has_permission("read"):
 					signature = ""
-	
+					
+			if sign_info.use_signoff:
+				if user_signoff or user_signoff != "":
+					signoff = user_signoff
+				else:
+					signoff = "Authorized Signatory"
 	
 	stamp = ""
 	if sign_info.has_stamp:
@@ -109,6 +125,10 @@ def add_signature(doc,letterhead,sign_type = None):
 		stamp_doc = frappe.get_doc('Company Licenses', {'company':letterhead}) or {}
 		if not stamp_doc.has_permission("read"):
 			stamp = ""
+			
+	
+	
+		
 		
 	
 	allow = frappe.db.get_single_value('System Settings', 'allow_signature_if_not_submitted')
@@ -134,7 +154,7 @@ def add_signature(doc,letterhead,sign_type = None):
 	
 	signature_html = ""
 	if sign_info.print_field:
-		signature_html = frappe.render_template(frappe.db.get_value("Print Fields",  sign_info.print_field, "print_field"), {"doc":doc,"authorized_signature":authorized_signature})
+		signature_html = frappe.render_template(frappe.db.get_value("Print Fields",  sign_info.print_field, "print_field"), {"doc":doc,"authorized_signature":authorized_signature,"signoff":signoff})
 	
 	return signature_html
 def get_html(doc, name=None, print_format=None, meta=None,
@@ -374,6 +394,12 @@ def make_layout(doc, meta, format_data=None):
 			section = get_new_section()
 			if df.fieldtype=='Section Break' and df.label:
 				section['label'] = df.label
+				
+			if df.fieldtype=='Section Break':
+				try:
+					section['page_break'] = cint(df.page_break) or 0
+				except:
+					section['page_break'] = 0
 
 			page.append(section)
 
@@ -388,7 +414,7 @@ def make_layout(doc, meta, format_data=None):
 		if df.fieldtype=="HTML" and df.options:
 			doc.set(df.fieldname, True) # show this field
 
-		if is_visible(df, doc) and has_value(df, doc):
+		if (df.fieldname == "taxes" and df.fieldtype=="Table" and is_visible(df, doc)) or (is_visible(df, doc) and has_value(df, doc)):
 			append_empty_field_dict_to_page_column(page)
 
 			page[-1]['columns'][-1]['fields'].append(df)

@@ -56,6 +56,10 @@ def format_value(value, df=None, doc=None, currency=None, translated=False):
 		return ""
 
 	elif df.get("fieldtype") == "Currency" or (df.get("fieldtype")=="Float" and (df.options or "").strip()):
+		if df.get("fieldtype") == "Currency":
+			if doc:
+				if frappe.is_table(doc.doctype):
+					return fmt_money(value, precision=get_field_precision(df, doc))
 		return fmt_money(value, precision=get_field_precision(df, doc),
 			currency=currency if currency else (get_field_currency(df, doc) if doc else None))
 

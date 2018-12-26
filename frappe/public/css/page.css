@@ -15,10 +15,16 @@
 }
 .sub-heading {
   display: inline-block;
+  text-align:left;
   margin-right: 10px;
-  max-width: 50%;
+  /* max-width: 50%; */
   vertical-align: middle;
+  position:absolute;
+  left:0;
+	z-index:-1;
+
 }
+
 @media (min-width: 767px) {
   .page-body {
     overflow-x: hidden;
@@ -69,10 +75,12 @@
   padding-bottom: 17px;
 }
 .page-icon-group {
-  vertical-align: middle;
+  /* vertical-align: middle; */
+  display:inline-block;
 }
 .page-icon-group a {
-  margin-right: 7px;
+  margin-left: 5px;
+  color:black !important;
 }
 .page-content {
   margin-top: 70px;
@@ -140,17 +148,17 @@ select.input-sm {
 }
 @media (max-width: 767px) {
   .page-actions {
-    max-width: 150px;
-    float: right;
+    /* max-width: 150px; */
+    /* float: right; */
   }
   .page-title {
-    position: absolute;
-    left: 0;
-    right: 101px;
-    width: 100%;
+    /* position: absolute; */
+    /* left: 0; */
+    /* right: 101px; */
+    /* width: 100%; */
   }
   .page-title h1 {
-    padding-right: 170px;
+    /* padding-right: 170px; */
   }
   .page-head .page-title h1 {
     font-size: 18px;
@@ -315,4 +323,9 @@ select.input-sm {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.module-view-list {
+    margin:8px 0;
+	
 }

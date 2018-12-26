@@ -154,20 +154,6 @@ table td div {
 	thead, tfoot { display: table-row-group; }
 }
 
-[document-status] {
-	margin-bottom: 1mm;
-}
 
-.print-format hr {
-	margin-top:10px !important;
-	margin-bottom:10px !important;
-}
-
-.signature-img {
-	background: #fff;
-	border-radius: 3px;
-	margin-top: 5px;
-	max-height: 150px;
-}
 
 

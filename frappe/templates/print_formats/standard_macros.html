@@ -11,7 +11,10 @@
 	{%- elif df.fieldtype=="Geolocation" -%}
 		{{ render_geolocation(df, doc) }}
 	{%- else -%}
+	
 		{{ render_field_with_label(df, doc) }}
+	
+		
 	{%- endif -%}
 {%- endmacro -%}
 
@@ -33,11 +36,9 @@
 						{% for tdf in visible_columns %}
 						{% if (not data[0].flags.compact_item_print) or tdf.fieldname in doc.get(df.fieldname)[0].flags.compact_item_fields %}
 							<th style="width: {{ get_width(tdf) }};" class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>
-								{% if (tdf.print_label)%}
-								{{ _(tdf.print_label) }}
-								{%- else -%}
-								{{ _(tdf.label) }}
-								{% endif %}
+								
+								{{ print_table_label(tdf,data[0]) }}
+								
 							</th>
 						{% endif %}
 						{% endfor %}
@@ -64,6 +65,19 @@
 
 {% macro fieldmeta(df) -%}
 data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
+{%- endmacro %}
+
+{% macro print_table_label(df,doc) -%}
+	{% if (df.print_label)%}
+	{{ _(df.print_label) }}
+	{%- else -%}
+	{{ _(df.label) }}
+	{% endif %}
+
+	{% if df.fieldtype == "Currency" %}
+	<!-- ({{doc.get_currency(df.fieldname,doc)}}) -->
+	{% endif %}
+	
 {%- endmacro %}
 
 {%- macro render_field_with_label(df, doc) -%}
@@ -129,7 +143,11 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
     {% elif df.fieldtype=="HTML" %}
         {{ frappe.render_template(df.options, {"doc":doc}) }}
 	{% else %}
-		{{ doc.get_formatted(df.fieldname, parent_doc or doc, translated=True) }}
+		{% if df.fieldtype=="Currency" %}
+			{{ doc.get_formatted(df.fieldname, doc, translated=True) }}
+		{% else %}
+			{{ doc.get_formatted(df.fieldname, parent_doc or doc, translated=True) }}
+		{% endif %}
 	{% endif %}
 {%- endmacro %}
 
@@ -172,7 +190,7 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	
     {% endif %}
 	{%- if doc.meta.is_submittable and doc.docstatus==0 and (print_settings==None or print_settings.add_draft_heading) -%}
-	<div class="text-center" document-status="draft">
+	<div class="text-center document-status" document-status="draft">
 		<h4 style="margin: 0px;">{{ _("DRAFT") }}</h4>
     </div>
 	{%- endif -%}

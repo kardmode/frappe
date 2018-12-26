@@ -13,18 +13,18 @@
 		{% for (var j=0; j < section.items.length; j++) {
 			var item = section.items[j];
 			if(item.shown) { %}
-				<div style="<!-- margin-left:35px; -->min-height: 22px; margin-top: 8px;">
+				<div class="module-view-list">
 				
-					<span class="moduleview-icon">
+					<!-- <span class="moduleview-icon">
 		 <i class="{{item.icon}}"></i>
-		 </span>
-		 
+		 </span> -->
+					<span class="module-view-link">
 					<a class="module-section-link small" data-type="{{ item.type }}"
 						{% if(item.type==="help") { %}
 							data-youtube-id="{{ item.youtube_id }}"{% } %}
 						href="#{{ item.route }}" style="{{ item.style }}">
 						{{ item.label || __(item.name) }}
-					</a>
+					</a></span>
 					{% if(item.type==="doctype") { %}
 					<span class="open-notification global hide"
 						data-doctype="{{ item.doctype || item.name }}"></span>

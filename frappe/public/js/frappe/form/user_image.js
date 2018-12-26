@@ -71,4 +71,19 @@ frappe.ui.form.setup_user_image_event = function(frm) {
 		}
 		field.$input.trigger('click');
 	});
+	
+	
+	var title_image = frm.page.$title_area.find('.title-image');
+	// bind click on image_wrapper
+	if(title_image)
+	{
+		title_image.on('click', function() {
+		var field = frm.get_field(frm.meta.image_field);
+		if(!field.$input) {
+			field.make_input();
+		}
+		field.$input.trigger('click');
+		});
+	}
+	
 }

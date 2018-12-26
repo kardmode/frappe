@@ -26,7 +26,8 @@ frappe.Chat = Class.extend({
 		this.wrapper = wrapper;
 		this.page = wrapper.page;
 		this.make();
-		this.page.sidebar.addClass("col-sm-3");
+
+		this.page.left_sidebar.addClass("col-sm-3");
 		this.page.wrapper.find(".layout-main-section-wrapper").addClass("col-sm-9");
 		this.page.wrapper.find(".page-title").removeClass("col-xs-6").addClass("col-xs-12");
 		this.page.wrapper.find(".page-actions").removeClass("col-xs-6").addClass("hidden-xs");
@@ -73,10 +74,10 @@ frappe.Chat = Class.extend({
 				r.message.sort(function(a, b) { return cint(b.has_session) - cint(a.has_session); });
 
 				// render
-				me.page.sidebar.html(frappe.render_template("chat_sidebar", {data: r.message}));
+				me.page.left_sidebar.html(frappe.render_template("chat_sidebar", {data: r.message}));
 
 				// bind click
-				me.page.sidebar.find("a").on("click", function() {
+				me.page.left_sidebar.find("a").on("click", function() {
 					var li = $(this).parents("li:first");
 					if (li.hasClass("active"))
 						return false;
@@ -84,13 +85,13 @@ frappe.Chat = Class.extend({
 					var contact = li.attr("data-user");
 
 					// active
-					me.page.sidebar.find("li.active").removeClass("active");
-					me.page.sidebar.find('[data-user="'+ contact +'"]').addClass("active");
+					me.page.left_sidebar.find('[data-user="'+ contact +'"]').addClass("active");
+					me.page.left_sidebar.find("li.active").removeClass("active");
 
 					me.make_messages(contact);
 				});
 
-				$(me.page.sidebar.find("a")[0]).click();
+				$(me.page.left_sidebar.find("a")[0]).click();
 			}
 		});
 	},

@@ -4,7 +4,7 @@
 			<div class="col-md-7 col-sm-8 col-xs-6 page-title">
 				<!-- title -->
 				<h1>
-						<div class="title-image hide hidden-md hidden-lg">
+						<div class="title-image hide">
 						</div>
 						<div class="ellipsis title-text"></div>
 						<span class="indicator hide"></span>
@@ -13,17 +13,21 @@
 			<div class="text-right col-md-5 col-sm-4 col-xs-6 page-actions">
 				<!-- ID and icon buttons -->
 				<span class="checked-items-status text-ellipsis text-muted small hide hidden-xs hidden-sm" style="margin-right: 20px;">## items selected</span>
-				<h6 class="ellipsis sub-heading hide text-muted"></h6>
+				<span><h6 class="ellipsis sub-heading hide text-muted"></h6></span>
 				<span class="page-icon-group hide hidden-xs hidden-sm"></span>
 
+				<div class="btn toggle-rightbar btn-default btn-sm hide">
+					<span class=""><i class="octicon octicon-comment"></i></span>
+				</div>
+				
 				<!-- buttons -->
 				<div class="btn-group menu-btn-group hide">
 						<button type="button" class="btn btn-default btn-sm dropdown-toggle"
 								data-toggle="dropdown" aria-expanded="false">
-						<span class="hidden-xs">
+						<!-- <span class="hidden-xs hidden-sm">
 							<span class="menu-btn-group-label">{%= __("Menu") %}</span>
-							<span class="caret"></span></span>
-	<span class="visible-xs"><i class="octicon octicon-triangle-down"></i></span>
+							<span class="caret"></span></span> -->
+						<span class="<!-- visible-xs visible-sm -->"><i class="octicon octicon-triangle-down"></i></span>
 						</button>
 						<ul class="dropdown-menu" role="menu">
 						</ul>

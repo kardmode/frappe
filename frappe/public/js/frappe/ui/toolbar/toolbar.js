@@ -19,7 +19,7 @@ frappe.ui.toolbar.Toolbar = Class.extend({
 	},
 
 	make: function() {
-		this.setup_sidebar();
+		// this.setup_sidebar();
 		this.setup_help();
 		this.setup_progress_dialog();
 		this.bind_events();
@@ -49,7 +49,7 @@ frappe.ui.toolbar.Toolbar = Class.extend({
 	setup_sidebar: function () {
 		var header = $('header');
 		header.find(".toggle-sidebar").on("click", function () {
-			var layout_side_section = $('.layout-side-section');
+			var layout_side_section = $('.layout-leftside-section');
 			var overlay_sidebar = layout_side_section.find('.overlay-sidebar');
 
 			overlay_sidebar.addClass('opened');

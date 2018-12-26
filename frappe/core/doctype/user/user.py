@@ -777,21 +777,7 @@ def sign_up(email, full_name, redirect_to):
 		else:
 			return 2, _("Please ask your administrator to verify your sign-up")
 
-# @frappe.whitelist()
-# def update_tfa():
-	# secret_key = ""
-	# from pyotp import random_base32
-	# secret_key = random_base32()
-	# return secret_key,encrypt(secret_key)
-		
-# @frappe.whitelist()
-# def verify_tfa(token,secret_key,window=2,interval_length=30):
-	# secret_key_decrypted = decrypt(secret_key)
-	# import pyotp
-	# totp = pyotp.TOTP(secret_key_decrypted)
-	# if totp.verify(token):
-		# return True,secret_key
-	# return False,secret_key
+
 			
 @frappe.whitelist(allow_guest=True)
 def reset_password(user):

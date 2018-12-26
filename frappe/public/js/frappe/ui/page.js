@@ -69,7 +69,7 @@ frappe.ui.Page = Class.extend({
 		$(frappe.render_template("page", {})).appendTo(this.wrapper);
 		
 		var test_page_name = frappe.get_route_str();
-		
+		this.is_module_page = false;
 		if(this.single_column) {
 			// nesting under col-sm-12 for consistency
 			this.add_view("main", '<div class="row layout-main">\
@@ -82,26 +82,49 @@ frappe.ui.Page = Class.extend({
 			
 			if(test_page_name.includes("Form/")){
 				this.add_view("main", '<div class="row layout-main">\
-				<div class="col-md-1 layout-side-section"></div>\
-				<div class="col-md-11 layout-main-section-wrapper">\
+				<div class="always-compact layout-side-section layout-left"></div>\
+				<div class="layout-side-section layout-right"></div>\
+				<div class="col-md-12 layout-main-section-wrapper">\
 					<div class="layout-main-section"></div>\
 					<div class="layout-footer hide"></div>\
 				</div>\
+				<div class="close-sidebar" style="display: none;"></div>\
 			</div>');
+			
+				this.wrapper.find(".toggle-rightbar").removeClass('hide');
+			
 				
 			}
 			else if (test_page_name.includes("List/")){
 				this.add_view("main", '<div class="row layout-main">\
-				<div class="col-md-1 layout-side-section"></div>\
-				<div class="col-md-11 layout-main-section-wrapper">\
+				<div class="always-compact layout-side-section layout-left"></div>\
+				<div class="layout-side-section layout-right"></div>\
+				<div class="col-md-12 layout-main-section-wrapper">\
 					<div class="layout-main-section"></div>\
 					<div class="layout-footer hide"></div>\
 				</div>\
+				<div class="close-sidebar" style="display: none;"></div>\
+			</div>');
+			
+				this.wrapper.find(".toggle-rightbar").removeClass('hide');
+				// this.wrapper.find(".toggle-sidebar").removeClass('hide');
+			}
+			else if (test_page_name.includes("modules/")){
+				
+				this.is_module_page = true;
+				
+				this.add_view("main", '<div class="row layout-main">\
+				<div class="col-md-2 layout-side-section layout-left"></div>\
+				<div class="col-md-10 layout-main-section-wrapper">\
+					<div class="layout-main-section"></div>\
+					<div class="layout-footer hide"></div>\
+				</div>\
+				<div class="close-sidebar" style="display: none;"></div>\
 			</div>');
 			}
 			else{
 				this.add_view("main", '<div class="row layout-main">\
-				<div class="col-md-2 layout-side-section"></div>\
+				<div class="col-md-2 layout-side-section layout-left"></div>\
 				<div class="col-md-10 layout-main-section-wrapper">\
 					<div class="layout-main-section"></div>\
 					<div class="layout-footer hide"></div>\
@@ -130,7 +153,8 @@ frappe.ui.Page = Class.extend({
 			this.get_main_icon(this.icon);
 
 		this.body = this.main = this.wrapper.find(".layout-main-section");
-		this.sidebar = this.wrapper.find(".layout-side-section");
+		this.left_sidebar = this.wrapper.find(".layout-side-section.layout-left");
+		this.sidebar = this.wrapper.find(".layout-side-section.layout-right");
 		this.footer = this.wrapper.find(".layout-footer");
 		this.indicator = this.wrapper.find(".indicator");
 
@@ -148,13 +172,167 @@ frappe.ui.Page = Class.extend({
 		this.page_form = $('<div class="page-form row hide"></div>').prependTo(this.main);
 		this.inner_toolbar = $('<div class="form-inner-toolbar hide"></div>').prependTo(this.main);
 		
-		this.custom_toolbar = $('<div class="custom-toolbar hide"></div>').prependTo(this.main);
+		this.custom_btn_group = this.page_actions.find(".toggle-rightbar");
+		this.setup_rightbar();
+		this.setup_leftbar();
+		
+		if(this.is_module_page !== true)
+		{
+			this.setup_module_sidebar();
+		}
+		
+		
 		
 		this.icon_group = this.page_actions.find(".page-icon-group");
 
+		
 		if(this.make_page) {
 			this.make_page();
 		}
+	},
+	
+	setup_module_sidebar: function() {
+		
+		this.get_page_modules = () => {
+		return frappe.get_desktop_icons(true)
+			.filter(d => d.type==='module' && !d.blocked && d.module_name !=="Learn")
+			.sort((a, b) => { return (a._label > b._label) ? 1 : -1; });
+		};
+
+		let get_module_sidebar_item = (item) => `<li class="strong module-sidebar-item">
+			<a class="module-link" data-name="${item.module_name}" href="#modules/${item.module_name}">
+				<i class="fa fa-chevron-right pull-right" style="display: none;"></i>
+							<span class="sidebar-icon"><i class="${item.icon}"></i></span>
+				<span>${item._label}</span>
+			</a>
+		</li>`;
+
+		let get_sidebar_html = () => {
+			let sidebar_items_html = this.get_page_modules()
+				.map(get_module_sidebar_item.bind(this)).join("");
+
+			return `<ul class="hide module-sidebar-nav overlay-sidebar nav nav-pills nav-stacked">
+				${sidebar_items_html}
+				<li class="divider"></li>
+			</ul>`;
+		};
+
+		// render sidebar
+		this.left_sidebar.html(get_sidebar_html());
+		
+	},
+	
+	setup_leftbar: function () {
+		var header = $('header');
+		header.find(".toggle-sidebar").on("click", function () {
+			var layout_side_section = $('.layout-side-section.layout-left');
+			var overlay_sidebar = layout_side_section.find('.overlay-sidebar');
+
+			overlay_sidebar.addClass('opened');
+			overlay_sidebar.find('.reports-dropdown')
+				.removeClass('dropdown-menu')
+				.addClass('list-unstyled');
+			overlay_sidebar.find('.dropdown-toggle')
+				.addClass('text-muted').find('.caret')
+				.addClass('hidden-xs hidden-sm');
+			
+			var close_sidebar_div = $('.close-sidebar');
+			var fadespeed = 50;
+			if (close_sidebar_div.length !== 0)
+			{
+				close_sidebar_div.hide().fadeIn(fadespeed);
+			}
+			else{
+				//$('<div class="close-sidebar">').hide().appendTo(layout_side_section).fadeIn(fadespeed);
+			}
+			
+
+			var scroll_container = $('html');
+			scroll_container.css("overflow-y", "hidden");
+
+			close_sidebar_div.on('click', close_sidebar);
+			layout_side_section.on("click", "a", close_sidebar);
+
+			function close_sidebar(e) {
+				scroll_container.css("overflow-y", "");
+
+							close_sidebar_div.fadeOut(50,function() {
+					overlay_sidebar.removeClass('opened')
+						.find('.dropdown-toggle')
+						.removeClass('text-muted');
+					overlay_sidebar.find('.reports-dropdown')
+						.addClass('dropdown-menu');
+				});
+			}
+		});
+	},
+	
+	setup_rightbar: function() {
+		this.custom_btn_group.on("click", function () {
+
+			var layout_side_section = $('.layout-side-section.layout-right');
+			var overlay_sidebar = layout_side_section.find('.overlay-rightbar');
+
+			overlay_sidebar.addClass('opened');
+			overlay_sidebar.find('.reports-dropdown')
+				.removeClass('dropdown-menu')
+				.addClass('list-unstyled');
+			overlay_sidebar.find('.kanban-dropdown')
+				.removeClass('dropdown-menu')
+				.addClass('list-unstyled');
+			overlay_sidebar.find('.dropdown-toggle')
+				.addClass('text-muted').find('.caret')
+				.addClass('hidden-xs hidden-sm');
+
+			var close_sidebar_div = $('.close-sidebar');
+			var fadespeed = 50;
+			if (close_sidebar_div.length !== 0)
+			{
+				close_sidebar_div.hide().fadeIn(fadespeed);
+			}
+			else{
+				//$('<div class="close-sidebar">').hide().appendTo(layout_side_section).fadeIn(fadespeed);
+			}
+			
+
+			var scroll_container = $('html');
+			scroll_container.css("overflow-y", "hidden");
+
+			close_sidebar_div.on('click', close_sidebar);
+			layout_side_section.on("click", "a", close_sidebar);
+
+			function close_sidebar(e) {
+				scroll_container.css("overflow-y", "");
+
+							close_sidebar_div.fadeOut(50,function() {
+					overlay_sidebar.removeClass('opened')
+						.find('.dropdown-toggle')
+						.removeClass('text-muted');
+					overlay_sidebar.find('.reports-dropdown')
+						.addClass('dropdown-menu');
+					overlay_sidebar.find('.kanban-dropdown')
+						.addClass('dropdown-menu');
+						
+				});
+			}
+		});
+	},
+	
+	add_dropdown_menu:function(name) {
+		var lower_case = name.toLowerCase();
+		var html = `<div class="btn-group ${lower_case}-btn-group">
+						<button type="button" class="btn btn-default btn-sm dropdown-toggle"
+								data-toggle="dropdown" aria-expanded="false">
+						<span class="hidden-xs">
+							<span class="${lower_case}-btn-group-label">${name}</span>
+							<span class="caret"></span></span>
+						<span class="visible-xs"><i class="octicon octicon-triangle-down"></i></span>
+						</button>
+						<ul class="dropdown-menu" role="${lower_case}">
+						</ul>
+				</div>`
+		return html;
+		
 	},
 
 	set_indicator: function(label, color) {
@@ -162,7 +340,8 @@ frappe.ui.Page = Class.extend({
 	},
 
 	add_action_icon: function(icon, click) {
-		return $('<a class="text-muted no-decoration"><i class="'+icon+'"></i></a>')
+		
+		return $('<a class="btn btn-default btn-sm text-muted no-decoration"><i class="'+icon+'"></i></a>')
 			.appendTo(this.icon_group.removeClass("hide"))
 			.click(click);
 	},
@@ -172,7 +351,13 @@ frappe.ui.Page = Class.extend({
 	},
 
 	get_icon_label: function(icon, label) {
-		return '<i class="visible-xs ' + icon + '"></i><span class="hidden-xs">' + label + '</span>'
+		if(label === "Refresh")
+		{
+			return '<i class="visible-xs visible-sm ' + icon + '"></i><span class="hidden-xs hidden-sm">' + label + '</span>'
+		}
+		else
+			return '<i class="visible-xs ' + icon + '"></i><span class="hidden-xs">' + label + '</span>'
+		
 	},
 
 	set_action: function(btn, opts) {

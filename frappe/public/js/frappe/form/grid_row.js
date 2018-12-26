@@ -193,7 +193,7 @@ frappe.ui.form.GridRow = Class.extend({
 			// remove row
 			if(!this.open_form_button) {
 				this.open_form_button = $('<a class="close btn-open-row">\
-					<span class="octicon octicon-triangle-down"></span></a>')
+					<span class="octicon octicon-info"></span></a>')
 					.appendTo($('<div class="col col-xs-1 sortable-handle"></div>').appendTo(this.row))
 					.on('click', function() { me.toggle_view(); return false; });
 

@@ -9,12 +9,12 @@ frappe.pages['modules'].on_page_load = function(wrapper) {
 	frappe.module_links = {};
 	page.section_data = {};
 
-	page.wrapper.find('.page-head h1').css({'padding-left': '15px'});
+	// page.wrapper.find('.page-head h1').css({'padding-left': '15px'});
 	// page.wrapper.find('.page-content').css({'margin-top': '0px'});
 
 	
 
-	if(frappe.user.has_role('System Manager')) {
+	/* if(frappe.user.has_role('System Manager')) {
 		// menu
 		page.add_menu_item(__('Set Desktop Icons'), function() {
 			frappe.route_options = {
@@ -25,7 +25,7 @@ frappe.pages['modules'].on_page_load = function(wrapper) {
 		page.add_menu_item(__('Install Apps'), function() {
 			frappe.set_route("applications");
 		});
-	}
+	} */
 
 	page.get_page_modules = () => {
 		return frappe.get_desktop_icons(true)
@@ -52,7 +52,7 @@ frappe.pages['modules'].on_page_load = function(wrapper) {
 	};
 
 	// render sidebar
-	page.sidebar.html(get_sidebar_html());
+	page.left_sidebar.html(get_sidebar_html());
 
 	// help click
 	page.main.on("click", '.module-section-link[data-type="help"]', function() {
@@ -175,7 +175,7 @@ frappe.pages['modules'].on_page_show = function(wrapper) {
 		let module_name = route[1];
 		if(modules.includes(module_name)) {
 			frappe.modules_page.activate_link(
-				frappe.modules_page.sidebar.find('.module-link[data-name="'+ module_name +'"]'));
+				frappe.modules_page.left_sidebar.find('.module-link[data-name="'+ module_name +'"]'));
 		} else {
 			frappe.throw(__(`Module ${module_name} not found.`));
 		}

@@ -785,7 +785,27 @@ class BaseDocument(object):
 		if self.doctype != "DocType":
 			for df in self.meta.get("fields", {"fieldtype": ('=', "Text Editor")}):
 				extract_images_from_doc(self, df.fieldname)
+				
+	def get_currency(self, fieldname, doc=None):
+		df = self.meta.get_field(fieldname)
+		if not df and fieldname in default_fields:
+			from frappe.model.meta import get_default_df
+			df = get_default_df(fieldname)
 
+		val = 1
+
+		if not doc:
+			doc = getattr(self, "parent_doc", None) or self
+
+		from frappe.model.meta import get_field_currency
+		
+		return get_field_currency(df, doc=doc)
+	
+	
+		
+		
+		
+		
 def _filter(data, filters, limit=None):
 	"""pass filters as:
 		{"key": "val", "key": ["!=", "val"],

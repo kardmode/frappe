@@ -1,13 +1,16 @@
 {
+ "add_company_abbr_to_name": 1, 
  "allow_copy": 1, 
  "allow_guest_to_view": 0, 
  "allow_import": 0, 
  "allow_rename": 0, 
+ "append_company_abbr_to_name": "0", 
  "beta": 0, 
  "creation": "2013-01-10 16:34:24", 
  "custom": 0, 
  "docstatus": 0, 
  "doctype": "DocType", 
+ "document_type": "Setup", 
  "editable_grid": 0, 
  "fields": [
   {
@@ -202,7 +205,7 @@
  "issingle": 1, 
  "istable": 0, 
  "max_attachments": 0, 
- "modified": "2017-11-01 12:57:20.943845", 
+ "modified": "2018-11-29 18:56:48.801198", 
  "modified_by": "Administrator", 
  "module": "Core", 
  "name": "SMS Settings", 

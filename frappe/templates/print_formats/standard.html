@@ -7,9 +7,7 @@
 
 
 {% for page in layout %}
-<div class="page-break">
 	
-
 	
     {% for section in page %}
     <div class="row section-break">
@@ -18,18 +16,26 @@
 		<h4 class='col-sm-12'>{{ _(section.label) }}</h4>
 		{%- endif -%}
         {% for column in section.columns %}
-			<div class="col-xs-{{ (12 / section.columns|len)|int }} column-break">
-            {% for df in column.fields %}
-                {{ render_field(df, doc) }}
-            {% endfor %}
-			</div>
+			{%- if section.page_break == 1 -%}
+				<div class="column-break">
+				{% for df in column.fields %}
+					{{ render_field(df, doc) }}
+				{% endfor %}
+				</div>
+			{% else %}
+				<div class="col-xs-{{ (12 / section.columns|len)|int }} column-break">
+				{% for df in column.fields %}
+					{{ render_field(df, doc) }}
+				{% endfor %}
+				</div>
+			{%- endif -%}
         {% endfor %}
     </div>
     {% endfor %}
 	
 	
-	
-</div>
+
+<div class="page-break"></div>
 {% endfor %}
 
 		{{ add_footer(layout|len, doc, no_letterhead, footer,signature_html, print_settings) }}

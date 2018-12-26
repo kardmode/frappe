@@ -23,7 +23,9 @@ from six import text_type
 
 def report_error(status_code):
 
-	show_traceback = cint(frappe.db.get_system_setting('allow_error_traceback'))
+	show_traceback = False
+	if cint(frappe.db.get_system_setting('allow_error_traceback')) == 1:
+		show_traceback = True
 	if frappe.session.user == "Administrator":
 		show_traceback = True
 	'''Build error. Show traceback in developer mode'''

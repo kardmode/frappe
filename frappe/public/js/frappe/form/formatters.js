@@ -65,7 +65,13 @@ frappe.form.formatters = {
 			}
 		}
 		
+		if (doc && frappe.model.is_table(doc.doctype))
+		{
+			currency = " ";
+		}
+		
 		value = (value == null || value == "") ? "" : format_currency(value, currency, precision);
+		
 		
 		if ( options && options.only_value ) {
 			return value;

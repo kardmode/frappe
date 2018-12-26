@@ -19,7 +19,7 @@ frappe.views.ListSidebar = Class.extend({
 	make: function() {
 		var sidebar_content = frappe.render_template("list_sidebar", {doctype: this.list_view.doctype});
 
-		this.sidebar = $('<div class="list-sidebar overlay-sidebar hidden-xs hidden-sm"></div>')
+		this.sidebar = $('<div class="list-sidebar overlay-rightbar hide"></div>')
 			.html(sidebar_content)
 			.appendTo(this.page.sidebar.empty());
 

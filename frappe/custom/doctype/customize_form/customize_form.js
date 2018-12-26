@@ -296,3 +296,12 @@ frappe.customize_form.add_fields_help = function(frm) {
 
 	});
 }
+
+cur_frm.fields_dict['default_print_format'].get_query = function(doc) {
+			return {
+				filters: {
+					'doc_type': cur_frm.doc.doc_type,
+					'disabled': ["!=",1]
+				}
+			}
+		}

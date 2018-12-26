@@ -132,7 +132,7 @@ def build_standard_config(module, doctype_info):
 	Tools = ["Tool"]
 	
 	add_section(data, _("Documents"), "fa fa-file-text",
-		[d for d in doctype_info if (d.custom == False and d.document_type in Documents)])
+		[d for d in doctype_info if (d.document_type in Documents)])
 
 	add_section(data, _("Starred Reports"), "fa fa-star",
 		[d for d in get_report_list(module, is_standard="Yes") if (d["favorite"])])
@@ -141,36 +141,22 @@ def build_standard_config(module, doctype_info):
 		[d for d in get_report_list(module) if (d["favorite"])])
 		
 	add_section(data, _("Setup"), "fa fa-cog",
-		[d for d in doctype_info if (d.custom == False and d.document_type in Setup)])
+		[d for d in doctype_info if (d.document_type in Setup)])	
 		
 	get_custom_links(data,module, doctype_info)
 	
-	
 	add_section(data, _("Tools"), "fa fa-wrench",
-		[d for d in doctype_info if (d.custom == False and d.document_type in Tools)])
+		[d for d in doctype_info if (d.document_type in Tools)])
 		
-	
-	
 		
-	
-	add_section(data, _("Custom Documents"), "fa fa-file-text",
-		[d for d in doctype_info if (d.custom and d.document_type in ("Document", "Transaction"))])
-
-	add_section(data, _("Custom Setup"), "fa fa-cog",
-		[d for d in doctype_info if (d.custom and d.document_type in ("Setup", "Master", ""))])
-
-	
-	
-	
-		
-	add_section(data, _("Standard Reports"), "fa fa-list",
+	add_section(data, _("Reports"), "fa fa-list",
 		[d for d in get_report_list(module, is_standard="Yes") if (not d["favorite"])])
 		
-	add_section(data, _("Custom Reports"), "fa fa-list-alt",
+	add_section(data, _("Reports"), "fa fa-list-alt",
 		[d for d in get_report_list(module) if (not d["favorite"])])
 	
 	add_section(data, _("Other"), "fa fa-file",
-		[d for d in doctype_info if (d.custom == False and d.document_type in Other)])	
+		[d for d in doctype_info if (d.document_type in Other)])	
 
 	return data
 
@@ -196,7 +182,7 @@ def add_custom_doctypes(data, doctype_info,module):
 	add_section(data, _("Starred Reports"), "fa fa-star",
 		[d for d in get_report_list(module) if (d["favorite"])])
 		
-	add_section(data, _("Custom Reports"), "fa fa-list-alt",
+	add_section(data, _("Reports"), "fa fa-list-alt",
 		[d for d in get_report_list(module) if (not d["favorite"])])
 		
 def get_doctype_info(module):

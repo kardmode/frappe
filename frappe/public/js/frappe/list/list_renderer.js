@@ -178,7 +178,7 @@ frappe.views.ListRenderer = Class.extend({
 		if (frappe.has_indicator(this.doctype)) {
 			// indicator
 			this.columns.push({
-				colspan: this.settings.colwidths && this.settings.colwidths.indicator || 3,
+				colspan: this.settings.colwidths && this.settings.colwidths.indicator || 1,
 				type: 'Indicator',
 				title: 'Status'
 			});
@@ -247,7 +247,7 @@ frappe.views.ListRenderer = Class.extend({
 		this.columns = this.columns.filter(col => col.fieldtype !== 'Color');
 
 		// Limit number of columns to 4 - changed to 5
-		this.columns = this.columns.slice(0, 4);
+		this.columns = this.columns.slice(0, 5);
 	},
 	add_column: function (df) {
 		// field width
