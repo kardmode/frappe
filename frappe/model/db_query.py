@@ -209,6 +209,8 @@ class DatabaseQuery(object):
 				_raise_exception()
 
 		for field in self.fields:
+			# frappe.errprint(field)
+
 			if sub_query_regex.match(field):
 				if any(keyword in field.lower().split() for keyword in blacklisted_keywords):
 					_raise_exception()
