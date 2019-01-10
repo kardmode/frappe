@@ -121,6 +121,9 @@ ul#dropdown-notification {
   .dropdown-mobile.open .dropdown-menu > li > a {
     padding: 12px;
   }
+  .dropdown-help {
+    display: none !important;
+  }
 }
 .navbar-new-comments {
   display: inline-block;
@@ -181,7 +184,7 @@ ul#dropdown-notification {
   font-style: normal;
   text-decoration: inherit;
   -webkit-font-smoothing: antialiased;
-  *margin-right: .3em;
+  *margin-right: 0.3em;
   display: inline-block;
   speak: none;
   font-size: 24px;

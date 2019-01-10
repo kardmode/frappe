@@ -2,7 +2,6 @@
 # MIT License. See license.txt
 
 from __future__ import unicode_literals
-from six.moves import range
 import frappe
 from six.moves import html_parser as HTMLParser
 import smtplib, quopri, json
@@ -24,7 +23,7 @@ def send(recipients=None, sender=None, subject=None, message=None, text_content=
 		attachments=None, reply_to=None, cc=[], bcc=[], message_id=None, in_reply_to=None, send_after=None,
 		expose_recipients=None, send_priority=1, communication=None, now=False, read_receipt=None,
 		queue_separately=False, is_notification=False, add_unsubscribe_link=1, inline_images=None,
-		header=None):
+		header=None, print_letterhead=False):
 	"""Add email to sending queue (Email Queue)
 
 	:param recipients: List of recipients.
@@ -90,6 +89,13 @@ def send(recipients=None, sender=None, subject=None, message=None, text_content=
 
 	recipients = [r for r in list(set(recipients)) if r and r not in unsubscribed]
 
+	if cc:
+		cc = [r for r in list(set(cc)) if r and r not in unsubscribed]
+
+	if not recipients and not cc:
+		# Recipients may have been unsubscribed, exit quietly
+		return
+
 	email_text_context = text_content
 
 	should_append_unsubscribe = (add_unsubscribe_link
@@ -131,7 +137,8 @@ def send(recipients=None, sender=None, subject=None, message=None, text_content=
 		is_notification = is_notification,
 		inline_images = inline_images,
 		header=header,
-		now=now)
+		now=now,
+		print_letterhead=print_letterhead)
 
 
 def add(recipients, sender, subject, **kwargs):
@@ -168,6 +175,8 @@ def get_email_queue(recipients, sender, subject, **kwargs):
 			if att.get('fid'):
 				_attachments.append(att)
 			elif att.get("print_format_attachment") == 1:
+				att['lang'] = frappe.local.lang
+				att['print_letterhead'] = kwargs.get('print_letterhead')
 				_attachments.append(att)
 		e.attachments = json.dumps(_attachments)
 
@@ -201,7 +210,8 @@ def get_email_queue(recipients, sender, subject, **kwargs):
 		frappe.log_error('Invalid Email ID Sender: {0}, Recipients: {1}'.format(mail.sender,
 			', '.join(mail.recipients)), 'Email Not Sent')
 
-	e.set_recipients(recipients + kwargs.get('cc', []) + kwargs.get('bcc', []))
+	recipients = list(set(recipients + kwargs.get('cc', []) + kwargs.get('bcc', [])))
+	e.set_recipients(recipients)
 	e.reference_doctype = kwargs.get('reference_doctype')
 	e.reference_name = kwargs.get('reference_name')
 	e.add_unsubscribe_link = kwargs.get("add_unsubscribe_link")
@@ -328,7 +338,6 @@ def return_unsubscribed_page(email, doctype, name):
 def flush(from_test=False):
 	"""flush email queue, every time: called from scheduler"""
 	# additional check
-	cache = frappe.cache()
 	check_email_limit([])
 
 	auto_commit = not from_test
@@ -336,28 +345,27 @@ def flush(from_test=False):
 		msgprint(_("Emails are muted"))
 		from_test = True
 
-	smtpserver = SMTPServer()
+	smtpserver_dict = frappe._dict()
 
-	make_cache_queue()
-
-	for i in range(cache.llen('cache_email_queue')):
-		email = cache.lpop('cache_email_queue')
+	for email in get_queue():
 
 		if cint(frappe.defaults.get_defaults().get("hold_queue"))==1:
 			break
 
-		if email:
-			send_one(email, smtpserver, auto_commit, from_test=from_test)
+		if email.name:
+			smtpserver = smtpserver_dict.get(email.sender)
+			if not smtpserver:
+				smtpserver = SMTPServer()
+				smtpserver_dict[email.sender] = smtpserver
+
+			send_one(email.name, smtpserver, auto_commit, from_test=from_test)
 
 		# NOTE: removing commit here because we pass auto_commit
 		# finally:
 		# 	frappe.db.commit()
-def make_cache_queue():
-	'''cache values in queue before sendign'''
-	cache = frappe.cache()
-
-	emails = frappe.db.sql('''select
-			name
+def get_queue():
+	return frappe.db.sql('''select
+			name, sender
 		from
 			`tabEmail Queue`
 		where
@@ -365,12 +373,8 @@ def make_cache_queue():
 			(send_after is null or send_after < %(now)s)
 		order
 			by priority desc, creation asc
-		limit 500''', { 'now': now_datetime() })
+		limit 500''', { 'now': now_datetime() }, as_dict=True)
 
-	# reset value
-	cache.delete_value('cache_email_queue')
-	for e in emails:
-		cache.rpush('cache_email_queue', e[0])
 
 def send_one(email, smtpserver=None, auto_commit=True, now=False, from_test=False):
 	'''Send Email Queue with given smtpserver'''

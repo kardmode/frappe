@@ -62,6 +62,9 @@ def get_permissions(doctype=None, role=None):
 		if not d.parent in linked_doctypes:
 			linked_doctypes[d.parent] = get_linked_doctypes(d.parent)
 		d.linked_doctypes = linked_doctypes[d.parent]
+		meta = frappe.get_meta(d.parent)
+		if meta:
+			d.is_submittable = meta.is_submittable
 
 	return out
 
@@ -108,6 +111,5 @@ def get_users_with_role(role):
 @frappe.whitelist()
 def get_standard_permissions(doctype):
 	frappe.only_for("System Manager")
-	module = frappe.db.get_value("DocType", doctype, "module")
-	path = get_file_path(module, "DocType", doctype)
-	return read_doc_from_file(path).get("permissions")
+	doc = frappe.get_doc('DocType', doctype)
+	return [p.as_dict() for p in doc.permissions]

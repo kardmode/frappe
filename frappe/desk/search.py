@@ -7,6 +7,43 @@ import frappe, json
 from frappe.utils import cstr, unique
 from frappe import _
 from six import string_types
+import re
+
+
+def sanitize_searchfield(searchfield):
+	blacklisted_keywords = ['select', 'delete', 'drop', 'update', 'case', 'and', 'or', 'like']
+
+	def _raise_exception(searchfield):
+		frappe.throw(_('Invalid Search Field {0}').format(searchfield), frappe.DataError)
+
+	if len(searchfield) == 1:
+		# do not allow special characters to pass as searchfields
+		regex = re.compile('^.*[=;*,\'"$\-+%#@()_].*')
+		if regex.match(searchfield):
+			_raise_exception(searchfield)
+
+	if len(searchfield) >= 3:
+
+		# to avoid 1=1
+		if '=' in searchfield:
+			_raise_exception(searchfield)
+
+		# in mysql -- is used for commenting the query
+		elif ' --' in searchfield:
+			_raise_exception(searchfield)
+
+		# to avoid and, or and like
+		elif any(' {0} '.format(keyword) in searchfield.split() for keyword in blacklisted_keywords):
+			_raise_exception(searchfield)
+
+		# to avoid select, delete, drop, update and case
+		elif any(keyword in searchfield.split() for keyword in blacklisted_keywords):
+			_raise_exception(searchfield)
+
+		else:
+			regex = re.compile('^.*[=;*,\'"$\-+%#@()].*')
+			if any(regex.match(f) for f in searchfield.split()):
+				_raise_exception(searchfield)
 
 # this is called by the Link Field
 @frappe.whitelist()
@@ -21,8 +58,9 @@ def search_widget(doctype, txt, query=None, searchfield=None, start=0,
 	page_length=10, filters=None, filter_fields=None, as_dict=False):
 	if isinstance(filters, string_types):
 		filters = json.loads(filters)
-
-	meta = frappe.get_meta(doctype)
+	
+	if searchfield:
+		sanitize_searchfield(searchfield)
 
 	if not searchfield:
 		searchfield = "name"
@@ -38,6 +76,8 @@ def search_widget(doctype, txt, query=None, searchfield=None, start=0,
 		search_widget(doctype, txt, standard_queries[doctype][0],
 			searchfield, start, page_length, filters)
 	else:
+		meta = frappe.get_meta(doctype)
+
 		if query:
 			frappe.throw(_("This query style is discontinued"))
 			# custom query
@@ -91,7 +131,7 @@ def search_widget(doctype, txt, query=None, searchfield=None, start=0,
 			# In order_by, `idx` gets second priority, because it stores link count
 			from frappe.model.db_query import get_order_by
 			order_by_based_on_meta = get_order_by(doctype, meta)
-			order_by = "if(_relevance, _relevance, 99999), idx desc, {0}".format(order_by_based_on_meta)
+			order_by = "if(_relevance, _relevance, 99999), `tab{0}`.idx desc, {1}".format(doctype, order_by_based_on_meta)
 
 			values = frappe.get_list(doctype,
 				filters=filters, fields=formatted_fields,

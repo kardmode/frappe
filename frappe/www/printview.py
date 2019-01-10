@@ -51,7 +51,8 @@ def get_context(context):
 			no_letterhead=frappe.form_dict.no_letterhead,letterhead=letterhead,sign_type=sign_type),
 		"css": get_print_style(frappe.form_dict.style, print_format),
 		"comment": frappe.session.user,
-		"title": doc.get(meta.title_field) if meta.title_field else doc.name
+		"title": doc.get(meta.title_field) if meta.title_field else doc.name,
+		"has_rtl": True if frappe.local.lang in ["ar", "he", "fa"] else False
 	}
 
 def get_print_format_doc(print_format_name, meta):
@@ -466,6 +467,9 @@ def has_value(df, doc):
 		return False
 
 	elif isinstance(value, string_types) and not strip_html(value).strip():
+		if df.fieldtype in ["Text", "Text Editor"]:
+			return True
+
 		return False
 
 	elif isinstance(value, list) and not len(value):

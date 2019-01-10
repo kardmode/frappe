@@ -391,6 +391,10 @@ li.user-progress {
 	li.user-progress .progress-chart {
 		width: 25px;
 	}
+
+	li.user-progress {
+		display: none;
+	}
 }
 
 .msg-box {
@@ -495,10 +499,6 @@ li.user-progress {
 .frappe-rtl .checkbox .disp-area {
 	margin-right: -20px;
 	margin-left: 0px;
-}
-
-.checkbox .disp-area {
-	margin-left: -20px;
 }
 
 .text-editor {
@@ -892,6 +892,17 @@ li.user-progress {
 
 .note-editor.note-frame .note-editing-area .note-editable {
 	color: @text-color;
+}
+
+.checkbox label {
+	padding-left: 0px;
+}
+
+.checkbox input[type=checkbox] {
+	margin-right: 5px;
+	margin-left: 0px;
+	position: relative;
+	height: 12px;
 }
 
 // custom font awesome checkbox

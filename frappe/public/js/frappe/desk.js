@@ -79,6 +79,8 @@ frappe.Application = Class.extend({
 			this.show_notes();
 		}
 
+		this.show_update_available();
+
 		// listen to csrf_update
 		frappe.realtime.on("csrf_generated", function(data) {
 			// handles the case when a user logs in again from another tab
@@ -233,7 +235,7 @@ frappe.Application = Class.extend({
 
 	refresh_notifications: function() {
 		var me = this;
-		if(frappe.session_alive) {
+		if(frappe.session_alive && frappe.boot && !frappe.boot.in_setup_wizard) {
 			return frappe.call({
 				method: "frappe.desk.notifications.get_notifications",
 				callback: function(r) {
@@ -466,6 +468,12 @@ frappe.Application = Class.extend({
 			});
 			me.show_notes();
 		};
+	},
+
+	show_update_available: () => {
+		frappe.call({
+			"method": "frappe.utils.change_log.show_update_popup"
+		});
 	},
 
 	setup_analytics: function() {

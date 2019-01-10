@@ -273,7 +273,7 @@ frappe.views.CommunicationComposer = Class.extend({
 		this.lang_code = doc.language
 
 		//On selection of language retrieve language code
-		$(fields.language_sel.input).click(function(){
+		$(fields.language_sel.input).change(function(){
 			me.lang_code = this.value
 		})
 
@@ -516,6 +516,7 @@ frappe.views.CommunicationComposer = Class.extend({
 				attachments: selected_attachments,
 				_lang : me.lang_code,
 				read_receipt:form_values.send_read_receipt,
+				print_letterhead: me.is_print_letterhead_checked(),
 				print_options:JSON.stringify(print_options)
 			},
 			btn: btn,
@@ -562,6 +563,15 @@ frappe.views.CommunicationComposer = Class.extend({
 		});
 	},
 
+	is_print_letterhead_checked: function() {
+		if (this.frm && $(this.frm.wrapper).find('.form-print-wrapper').is(':visible')){
+			return $(this.frm.wrapper).find('.print-letterhead').prop('checked') ? 1 : 0;
+		} else {
+			return (frappe.model.get_doc(":Print Settings", "Print Settings") ||
+				{ with_letterhead: 1 }).with_letterhead ? 1 : 0;
+		}
+	},
+
 	setup_earlier_reply: function() {
 		var fields = this.dialog.fields_dict,
 			signature = frappe.boot.user.email_signature || "",
@@ -595,12 +605,13 @@ frappe.views.CommunicationComposer = Class.extend({
 				.replace(/&lt;meta[\s\S]*meta&gt;/g, '') // remove <meta> tags
 				.replace(/&lt;style[\s\S]*&lt;\/style&gt;/g, ''); // // remove <style> tags
 
+			var communication_date = last_email.communication_date || last_email.creation;
 			content = '<div><br></div>'
 				+ reply
 				+ "<br><!-- original-reply --><br>"
 				+ '<blockquote>' +
 					'<p>' + __("On {0}, {1} wrote:",
-					[frappe.datetime.global_date_format(last_email.communication_date) , last_email.sender]) + '</p>' +
+					[frappe.datetime.global_date_format(communication_date) , last_email.sender]) + '</p>' +
 					last_email_content +
 				'<blockquote>';
 		} else {

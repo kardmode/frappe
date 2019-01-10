@@ -69,8 +69,8 @@ class User(Document):
 		self.validate_user_email_inbox()
 		ask_pass_update()
 		self.validate_roles()
-		
-		
+		self.validate_user_image()
+
 		frappe.defaults.set_user_default("company", self.default_company)
 
 		if self.language == "Loading...":
@@ -84,6 +84,10 @@ class User(Document):
 				role_profile = frappe.get_doc('Role Profile', self.role_profile_name)
 				self.set('roles', [])
 				self.append_roles(*[role.role for role in role_profile.roles])
+
+	def validate_user_image(self):
+		if self.user_image and len(self.user_image) > 2000:
+			frappe.throw(_("Not a valid User Image."))
 
 	def on_update(self):
 		# clear new password
@@ -902,10 +906,11 @@ def notify_admin_access_to_system_manager(login_manager=None):
 		)
 
 def extract_mentions(txt):
-	"""Find all instances of @username in the string.
+	"""Find all instances of @name in the string.
 	The mentions will be separated by non-word characters or may appear at the start of the string"""
-	return re.findall(r'(?:[^\w]|^)@([\w]*)', txt)
-
+	txt = txt.replace("<div>", "<div> ")
+	txt = re.sub(r'(<[a-zA-Z\/][^>]*>)', '', txt)
+	return re.findall(r'(?:[^\w\.\-\@]|^)@([\w\.\-\@]*)', txt)
 
 def handle_password_test_fail(result):
 	suggestions = result['feedback']['suggestions'][0] if result['feedback']['suggestions'] else ''

@@ -7,13 +7,14 @@ from six import iteritems, string_types
 
 """build query for doclistview and return results"""
 
-import frappe, json, copy
+import frappe, json, copy, re
 import frappe.defaults
 import frappe.share
 import frappe.permissions
 from frappe.utils import flt, cint, getdate, get_datetime, get_time, make_filter_tuple, get_filter, add_to_date
 from frappe import _
 from frappe.model import optional_fields
+from frappe.client import check_parent_permission
 from frappe.model.utils.user_settings import get_user_settings, update_user_settings
 from datetime import datetime
 
@@ -113,6 +114,7 @@ class DatabaseQuery(object):
 
 	def prepare_args(self):
 		self.parse_args()
+		self.sanitize_fields()
 		self.extract_tables()
 		self.set_optional_columns()
 		self.build_conditions()
@@ -139,7 +141,7 @@ class DatabaseQuery(object):
 
 		if self.or_conditions:
 			args.conditions += (' or ' if args.conditions else "") + \
-				 ' or '.join(self.or_conditions)
+				' or '.join(self.or_conditions)
 
 		self.set_field_tables()
 
@@ -178,6 +180,54 @@ class DatabaseQuery(object):
 					filters.append(make_filter_tuple(self.doctype, key, value))
 			setattr(self, filter_name, filters)
 
+	def sanitize_fields(self):
+		'''
+			regex : ^.*[,();].*
+			purpose : The regex will look for malicious patterns like `,`, '(', ')', ';' in each
+					field which may leads to sql injection.
+			example :
+				field = "`DocType`.`issingle`, version()"
+
+			As field contains `,` and mysql function `version()`, with the help of regex
+			the system will filter out this field.
+		'''
+
+		sub_query_regex = re.compile("^.*[,();].*")
+		blacklisted_keywords = ['select', 'create', 'insert', 'delete', 'drop', 'update', 'case']
+		blacklisted_functions = ['concat', 'concat_ws', 'if', 'ifnull', 'nullif', 'coalesce',
+			'connection_id', 'current_user', 'database', 'last_insert_id', 'session_user',
+			'system_user', 'user', 'version']
+
+		def _raise_exception():
+			frappe.throw(_('Use of sub-query or function is restricted'), frappe.DataError)
+
+		def _is_query(field):
+			if re.compile("^(select|delete|update|drop|create)\s").match(field):
+				_raise_exception()
+
+			elif re.compile("\s*[0-9a-zA-z]*\s*( from | group by | order by | where | join )").match(field):
+				_raise_exception()
+
+		for field in self.fields:
+			if sub_query_regex.match(field):
+				if any(keyword in field.lower().split() for keyword in blacklisted_keywords):
+					_raise_exception()
+
+				if any("({0}".format(keyword) in field.lower() for keyword in blacklisted_keywords):
+					_raise_exception()
+
+				if any("{0}(".format(keyword) in field.lower() for keyword in blacklisted_functions):
+					_raise_exception()
+
+			if re.compile("[0-9a-zA-Z]+\s*'").match(field):
+				_raise_exception()
+
+			if re.compile('[0-9a-zA-Z]+\s*,').match(field):
+				_raise_exception()
+
+			_is_query(field)
+
+
 	def extract_tables(self):
 		"""extract tables from fields"""
 		self.tables = ['`tab' + self.doctype + '`']
@@ -185,8 +235,8 @@ class DatabaseQuery(object):
 		# add tables from fields
 		if self.fields:
 			for f in self.fields:
-				if ( not ("tab" in f and "." in f) ) or ("locate(" in f): continue
-
+				if ( not ("tab" in f and "." in f) ) or ("locate(" in f) or ("count(" in f):
+					continue
 
 				table_name = f.split('.')[0]
 				if table_name.lower().startswith('group_concat('):
@@ -308,7 +358,7 @@ class DatabaseQuery(object):
 			if f.operator.lower() == 'between' and \
 				(f.fieldname in ('creation', 'modified') or (df and (df.fieldtype=="Date" or df.fieldtype=="Datetime"))):
 
-				value = get_between_date_filter(f.value)
+				value = get_between_date_filter(f.value, df)
 				fallback = "'0000-00-00 00:00:00'"
 
 			elif df and df.fieldtype=="Date":
@@ -569,39 +619,21 @@ def get_order_by(doctype, meta):
 def get_list(doctype, *args, **kwargs):
 	'''wrapper for DatabaseQuery'''
 	kwargs.pop('cmd', None)
+	kwargs.pop('ignore_permissions', None)
+
+	# If doctype is child table
+	if frappe.is_table(doctype):
+		# Example frappe.db.get_list('Purchase Receipt Item', {'parent': 'Purchase Receipt'})
+		# Here purchase receipt is the parent doctype of the child doctype Purchase Receipt Item
+
+		if not kwargs.get('parent'):
+			frappe.flags.error_message = _('Parent is required to get child table data')
+			raise frappe.PermissionError(doctype)
+
+		check_parent_permission(kwargs.get('parent'), doctype)
+		del kwargs['parent']
+
 	return DatabaseQuery(doctype).execute(None, *args, **kwargs)
-
-@frappe.whitelist()
-def get_count(doctype, filters=None):
-	if filters:
-		filters = json.loads(filters)
-
-	if is_parent_only_filter(doctype, filters):
-		if isinstance(filters, list):
-			filters = frappe.utils.make_filter_dict(filters)
-
-		return frappe.db.count(doctype, filters=filters)
-
-	else:
-		# If filters contain child table as well as parent doctype - Join
-		tables, conditions = ['`tab{0}`'.format(doctype)], []
-		for f in filters:
-			fieldname = '`tab{0}`.{1}'.format(f[0], f[1])
-			table = '`tab{0}`'.format(f[0])
-
-			if table not in tables:
-				tables.append(table)
-
-			conditions.append('{fieldname} {operator} "{value}"'.format(fieldname=fieldname,
-				operator=f[2], value=f[3]))
-
-			if doctype != f[0]:
-				join_condition = '`tab{child_doctype}`.parent =`tab{doctype}`.name'.format(child_doctype=f[0], doctype=doctype)
-				if join_condition not in conditions:
-					conditions.append(join_condition)
-
-		return frappe.db.sql_list("""select count(*) from {0}
-			where {1}""".format(','.join(tables), ' and '.join(conditions)), debug=0)
 
 def is_parent_only_filter(doctype, filters):
 	#check if filters contains only parent doctype
@@ -616,20 +648,27 @@ def is_parent_only_filter(doctype, filters):
 
 	return only_parent_doctype
 
-def get_between_date_filter(value):
+def get_between_date_filter(value, df=None):
 	'''
 		return the formattted date as per the given example
 		[u'2017-11-01', u'2017-11-03'] => '2017-11-01 00:00:00.000000' AND '2017-11-04 00:00:00.000000'
 	'''
 	from_date = None
 	to_date = None
+	date_format = "%Y-%m-%d %H:%M:%S.%f"
+
+	if df:
+		date_format = "%Y-%m-%d %H:%M:%S.%f" if df.fieldtype == 'Datetime' else "%Y-%m-%d"
 
 	if value and isinstance(value, (list, tuple)):
 		if len(value) >= 1: from_date = value[0]
 		if len(value) >= 2: to_date = value[1]
 
+	if not df or (df and df.fieldtype == 'Datetime'):
+		to_date = add_to_date(to_date,days=1)
+
 	data = "'%s' AND '%s'" % (
-		get_datetime(from_date).strftime("%Y-%m-%d %H:%M:%S.%f"),
-		add_to_date(get_datetime(to_date),days=1).strftime("%Y-%m-%d %H:%M:%S.%f"))
+		get_datetime(from_date).strftime(date_format),
+		get_datetime(to_date).strftime(date_format))
 
 	return data

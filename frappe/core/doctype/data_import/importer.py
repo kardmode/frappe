@@ -34,8 +34,12 @@ def get_data_keys():
 @frappe.whitelist()
 def upload(rows = None, submit_after_import=None, ignore_encoding_errors=False, no_email=True, overwrite=None,
 	update_only = None, ignore_links=False, pre_process=None, via_console=False, from_data_import="No",
-	skip_errors = True, data_import_doc=None, validate_template=False):
+	skip_errors = True, data_import_doc=None, validate_template=False, user=None):
 	"""upload data"""
+
+	# for translations
+	if user:
+		frappe.set_user_lang(user)
 
 	if data_import_doc and isinstance(data_import_doc, string_types):
 		data_import_doc = frappe.get_doc("Data Import", data_import_doc)
@@ -72,7 +76,6 @@ def upload(rows = None, submit_after_import=None, ignore_encoding_errors=False, 
 		frappe.throw(_("Please do not change the rows above {0}").format(get_data_keys_definition().data_separator))
 
 	def check_data_length():
-		max_rows = 5000
 		if not data:
 			frappe.throw(_("No data found in the file. Please reattach the new file with data."))
 
@@ -165,7 +168,7 @@ def upload(rows = None, submit_after_import=None, ignore_encoding_errors=False, 
 									# added file to attachments list
 									attachments.append(d[fieldname])
 
-								elif fieldtype in ("Link", "Dynamic Link") and d[fieldname]:
+								elif fieldtype in ("Link", "Dynamic Link", "Data") and d[fieldname]:
 									# as fields can be saved in the number format(long type) in data import template
 									d[fieldname] = cstr(d[fieldname])
 
@@ -195,8 +198,15 @@ def upload(rows = None, submit_after_import=None, ignore_encoding_errors=False, 
 			doc['doctype'] = doctype
 			return doc
 
+	# used in testing whether a row is empty or parent row or child row
+	# checked only 3 first columns since first two columns can be blank for example the case of
+	# importing the item variant where item code and item name will be blank.
 	def main_doc_empty(row):
-		return not (row and ((len(row) > 1 and row[1]) or (len(row) > 2 and row[2])))
+		if row:
+			for i in xrange(3,1,-1):
+				if len(row) > i and row[i]:
+					return False
+		return True
 
 	def validate_naming(doc):
 		autoname = frappe.get_meta(doctype).autoname
@@ -278,8 +288,11 @@ def upload(rows = None, submit_after_import=None, ignore_encoding_errors=False, 
 	start_row = get_start_row()
 	header = rows[:start_row]
 	data = rows[start_row:]
-	doctype = get_header_row(get_data_keys_definition().main_table)[1]
-	columns = filter_empty_columns(get_header_row(get_data_keys_definition().columns)[1:])
+	try:
+		doctype = get_header_row(get_data_keys_definition().main_table)[1]
+		columns = filter_empty_columns(get_header_row(get_data_keys_definition().columns)[1:])
+	except:
+		frappe.throw(_("Cannot change header content"))
 	doctypes = []
 	column_idx_to_fieldname = {}
 	column_idx_to_fieldtype = {}

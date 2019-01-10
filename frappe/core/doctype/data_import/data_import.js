@@ -13,6 +13,9 @@ frappe.ui.form.on('Data Import', {
 			};
 		});
 
+		// should never check public
+		frm.fields_dict["import_file"].df.is_private = 1;
+
 		frappe.realtime.on("data_import_progress", function(data) {
 			if (data.data_import === frm.doc.name) {
 				if (data.reload && data.reload === true) {
@@ -60,7 +63,8 @@ frappe.ui.form.on('Data Import', {
 			});
 		}
 
-		if (frm.doc.reference_doctype && frm.doc.import_file && frm.doc.total_rows  && frm.doc.docstatus === 0) {
+		if (frm.doc.reference_doctype && frm.doc.import_file && frm.doc.total_rows &&
+			frm.doc.docstatus === 0 && (!frm.doc.import_status || frm.doc.import_status=="Failed")) {
 			frm.page.set_primary_action(__("Start Import"), function() {
 				frappe.call({
 					method: "frappe.core.doctype.data_import.data_import.import_data",

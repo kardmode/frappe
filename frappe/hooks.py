@@ -11,9 +11,11 @@ app_color = "orange"
 source_link = "https://github.com/frappe/frappe"
 app_license = "MIT"
 
-develop_version = '9.x.x-develop'
+develop_version = '10.x.x-develop'
 
 app_email = "info@frappe.io"
+
+docs_app = "frappe_io"
 
 before_install = "frappe.utils.install.before_install"
 after_install = "frappe.utils.install.after_install"
@@ -153,7 +155,7 @@ scheduler_events = {
 		"frappe.utils.scheduler.restrict_scheduler_events_if_dormant",
 		"frappe.email.doctype.auto_email_report.auto_email_report.send_daily",
 		"frappe.core.doctype.feedback_request.feedback_request.delete_feedback_request",
-		"frappe.core.doctype.activity_log.activity_log.clear_authentication_logs"
+		"frappe.core.doctype.activity_log.activity_log.clear_authentication_logs",
 	],
 	"daily_long": [
 		"frappe.integrations.doctype.dropbox_settings.dropbox_settings.take_backups_daily",
@@ -161,7 +163,8 @@ scheduler_events = {
 	],
 	"weekly_long": [
 		"frappe.integrations.doctype.dropbox_settings.dropbox_settings.take_backups_weekly",
-		"frappe.integrations.doctype.s3_backup_settings.s3_backup_settings.take_backups_weekly"
+		"frappe.integrations.doctype.s3_backup_settings.s3_backup_settings.take_backups_weekly",
+		"frappe.utils.change_log.check_for_update"
 	],
 	"monthly": [
 		"frappe.email.doctype.auto_email_report.auto_email_report.send_monthly"

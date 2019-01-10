@@ -81,7 +81,7 @@ def is_static_file(path):
 		return False
 	extn = path.rsplit('.', 1)[-1]
 
-	if extn in ('html', 'md', 'js', 'xml', 'css', 'txt'):
+	if extn in ('html', 'md', 'js', 'xml', 'css', 'txt', 'py'):
 		return False
 
 	for app in frappe.get_installed_apps():
@@ -168,9 +168,7 @@ def build_page(path):
 		frappe.local.path = path
 
 	context = get_context(path)
-	# if context.title and "{{" in str(context.title):
-		# title_template = context.pop('title')
-		# context.title = frappe.render_template(title_template, context)
+
 
 	if context.source:
 		html = frappe.render_template(context.source, context)

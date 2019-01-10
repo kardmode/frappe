@@ -29,6 +29,7 @@ frappe.views.TreeView = Class.extend({
 
 		this.opts = {};
 		this.opts.get_tree_root = true;
+		this.opts.show_expand_all = true;
 		$.extend(this.opts, opts);
 		this.doctype = opts.doctype;
 		this.args = {doctype: me.doctype};
@@ -70,13 +71,12 @@ frappe.views.TreeView = Class.extend({
 			"padding-bottom": "25px"
 		});
 
-		this.page.add_inner_button(__('Expand All'), function() {
-			me.tree.rootnode.load_all();
-		});
-		
-		this.page.add_inner_button(__('Collapse All'), function() {
-			me.tree.rootnode.collapse_all();
-		});
+
+		if(this.opts.show_expand_all) {
+			this.page.add_inner_button(__('Expand All'), function() {
+				me.tree.rootnode.load_all();
+			});
+		}
 
 		if(this.opts.view_template) {
 			var row = $('<div class="row"><div>').appendTo(this.page.main);
@@ -172,12 +172,14 @@ frappe.views.TreeView = Class.extend({
 					return !node.is_root && me.can_read;
 				},
 				click: function(node) {
-					frappe.set_route("Form", me.doctype, node.label);
+					frappe.set_route("Form", me.doctype, encodeURIComponent(node.label));
 				}
 			},
 			{
 				label:__("Add Child"),
-				condition: function(node) { return me.can_create && node.expandable; },
+				condition: function(node) {
+					return me.can_create && node.expandable && !node.hide_add;
+				},
 				click: function(node) {
 					me.new_node();
 				},
@@ -188,11 +190,7 @@ frappe.views.TreeView = Class.extend({
 				condition: function(node) {
 					let allow_rename = true;
 					if (me.doctype && frappe.get_meta(me.doctype)) {
-						let autoname = frappe.get_meta(me.doctype).autoname;
-
-						// only allow renaming if doctye is set and
-						// autoname property is "prompt"
-						allow_rename = autoname && autoname.toLowerCase()==='prompt';
+						if(!frappe.get_meta(me.doctype).allow_rename) allow_rename = false;
 					}
 					return !node.is_root && me.can_write && allow_rename;
 				},
@@ -256,6 +254,13 @@ frappe.views.TreeView = Class.extend({
 			var node = me.tree.get_selected_node();
 			v.parent = node.label;
 			v.doctype = me.doctype;
+
+			if(node.is_root){
+				v['is_root'] = node.is_root;
+			}
+			else{
+				v['is_root'] = false;
+			}
 
 			$.extend(args, v)
 			return frappe.call({

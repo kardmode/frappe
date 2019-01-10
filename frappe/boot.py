@@ -87,8 +87,10 @@ def get_bootinfo():
 def get_letter_heads():
 	letter_heads = {}
 	for letter_head in frappe.get_all("Letter Head", fields = ["name","content","footer"]):
-		letter_heads.setdefault(letter_head.name, {'header': letter_head.content, 'footer': letter_head.footer})
+		letter_heads.setdefault(letter_head.name,
+			{'header': letter_head.content, 'footer': letter_head.footer})
 			
+
 	return letter_heads
 	
 def get_sign_types():

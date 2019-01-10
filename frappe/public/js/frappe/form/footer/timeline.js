@@ -17,7 +17,7 @@ frappe.ui.form.Timeline = Class.extend({
 
 		this.comment_area = new frappe.ui.CommentArea({
 			parent: this.wrapper.find('.timeline-head'),
-			mentions: this.get_usernames_for_mentions(),
+			mentions: this.get_names_for_mentions(),
 			on_submit: (val) => {
 				val && this.insert_comment(
 					"Comment", val, this.comment_area.button);
@@ -99,7 +99,7 @@ frappe.ui.form.Timeline = Class.extend({
 
 		this.editing_area = new frappe.ui.CommentArea({
 			parent: this.$editing_area,
-			mentions: this.get_usernames_for_mentions(),
+			mentions: this.get_names_for_mentions(),
 			no_wrapper: true
 		});
 
@@ -118,7 +118,6 @@ frappe.ui.form.Timeline = Class.extend({
 		this.wrapper.toggle(true);
 		this.list.empty();
 		this.comment_area.val('');
-
 		var communications = this.get_communications(true);
 
 		communications
@@ -178,7 +177,6 @@ frappe.ui.form.Timeline = Class.extend({
 				} else {
 					var $edit_btn = $(this);
 					var content = $timeline_item.find('.timeline-item-content').html();
-
 					$edit_btn
 						.text("Save")
 						.find('i')
@@ -298,7 +296,6 @@ frappe.ui.form.Timeline = Class.extend({
 				c.original_content = c.content;
 				c.content = frappe.utils.toggle_blockquote(c.content);
 			}
-
 			if(!frappe.utils.is_html(c.content)) {
 				c.content_html = frappe.markdown(__(c.content));
 			} else {
@@ -310,9 +307,19 @@ frappe.ui.form.Timeline = Class.extend({
 			// bold @mentions
 			if(c.comment_type==="Comment" &&
 				// avoid adding <b> tag a 2nd time
-				!c.content_html.match(/(^|\W)<b>(@\w+)<\/b>/)
+				!c.content_html.match(/(^|\W)<b>(@[^\s]+)<\/b>/)
 			) {
-				c.content_html = c.content_html.replace(/(^|\W)(@\w+)/g, "$1<b>$2</b>");
+				/*
+					Replace the email ids by only displaying the string which
+					occurs before the second `@` to enhance the mentions.
+					Eg.
+					@abc@a-example.com will be converted to
+					@abc with the below line of code.
+				*/
+
+				c.content_html = c.content_html.replace(/(<[a][^>]*>)/g, "");
+				// bold the @mentions
+				c.content_html = c.content_html.replace(/(@[^\s@]*)@[^\s@|<]*/g, "<b>$1</b>");
 			}
 
 			if (this.is_communication_or_comment(c)) {
@@ -477,8 +484,8 @@ frappe.ui.form.Timeline = Class.extend({
 								parts.push(__('{0} from {1} to {2} in row #{3}', [
 									frappe.meta.get_label(me.frm.fields_dict[row[0]].grid.doctype,
 										p[0]),
-									(frappe.ellipsis(p[1], 40) || '""').bold(),
 									(frappe.ellipsis(p[2], 40) || '""').bold(),
+									(frappe.ellipsis(p[1], 40) || '""').bold(),
 									row[1]
 								]));
 							}
@@ -653,11 +660,11 @@ frappe.ui.form.Timeline = Class.extend({
 		return last_email;
 	},
 
-	get_usernames_for_mentions: function() {
+	get_names_for_mentions: function() {
 		var valid_users = Object.keys(frappe.boot.user_info)
 			.filter(user => !["Administrator", "Guest"].includes(user));
 
-		return valid_users.map(user => frappe.boot.user_info[user].username || frappe.boot.user_info[user].name);
+		return valid_users.map(user => frappe.boot.user_info[user].email);
 	},
 
 	setup_comment_like: function() {

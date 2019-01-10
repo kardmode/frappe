@@ -184,7 +184,7 @@ class Document(BaseDocument):
 		frappe.flags.error_message = _('Insufficient Permission for {0}').format(self.doctype)
 		raise frappe.PermissionError
 
-	def insert(self, ignore_permissions=None, ignore_if_duplicate=False, ignore_mandatory=None):
+	def insert(self, ignore_permissions=None, ignore_links=None, ignore_if_duplicate=False, ignore_mandatory=None):
 		"""Insert the document in the database (as a new document).
 		This will check for user permissions and execute `before_insert`,
 		`validate`, `on_update`, `after_insert` methods if they are written.
@@ -197,6 +197,9 @@ class Document(BaseDocument):
 
 		if ignore_permissions!=None:
 			self.flags.ignore_permissions = ignore_permissions
+
+		if ignore_links!=None:
+			self.flags.ignore_links = ignore_links
 
 		if ignore_mandatory!=None:
 			self.flags.ignore_mandatory = ignore_mandatory
@@ -451,13 +454,12 @@ class Document(BaseDocument):
 			d._extract_images_from_text_editor()
 			d._sanitize_content()
 			d._save_passwords()
-
-		self.validate_set_only_once()
-
 		if self.is_new():
 			# don't set fields like _assign, _comments for new doc
 			for fieldname in optional_fields:
 				self.set(fieldname, None)
+		else:
+			self.validate_set_only_once()
 
 	def validate_set_only_once(self):
 		'''Validate that fields are not changed if not in insert'''
@@ -564,7 +566,7 @@ class Document(BaseDocument):
 		if not df:
 			df = self.meta.get_field(fieldname)
 
-		return df.permlevel in self.get_permlevel_access()
+		return df.permlevel in self.get_permlevel_access(permission_type)
 
 	def get_permissions(self):
 		if self.meta.istable:
@@ -902,7 +904,7 @@ class Document(BaseDocument):
 
 		update_global_search(self)
 
-		if self._doc_before_save and not self.flags.ignore_version:
+		if getattr(self.meta, 'track_changes', False) and self._doc_before_save and not self.flags.ignore_version:
 			self.save_version()
 
 		if (self.doctype, self.name) in frappe.flags.currently_saving:

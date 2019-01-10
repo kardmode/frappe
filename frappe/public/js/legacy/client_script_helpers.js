@@ -433,13 +433,14 @@ _f.Frm.prototype.set_indicator_formatter = function(fieldname, get_color, get_te
 		})
 	}
 
-	frappe.meta.get_docfield(doctype, fieldname, this.doc.name).formatter =
+	frappe.meta.docfield_map[doctype][fieldname].formatter =
 		function(value, df, options, doc) {
 			if(value) {
+				const escaped_name = encodeURIComponent(value);
 				return repl('<a class="indicator %(color)s" href="#Form/%(doctype)s/%(name)s">%(label)s</a>', {
-					color: get_color(doc),
+					color: get_color(doc || {}),
 					doctype: df.options,
-					name: value,
+					name: escaped_name,
 					label: get_text ? get_text(doc) : value
 				});
 			} else {
@@ -509,3 +510,11 @@ _f.Frm.prototype.update_in_all_rows = function(table_fieldname, fieldname, value
 	}
 	refresh_field("items");
 }
+
+_f.Frm.prototype.get_sum = function(table_fieldname, fieldname) {
+	let sum = 0;
+	for (let d of (this.doc[table_fieldname] || [])) {
+		sum += d[fieldname];
+	}
+	return sum;
+};

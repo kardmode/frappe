@@ -198,7 +198,9 @@ def get_doctype_info(module):
 	}, fields=["'doctype' as type", "name", "description", "ifnull(document_type, '') as document_type",
 		"custom", "issingle","beta","icon"], order_by="custom asc, document_type desc, name asc")
 
+
 	for d in doctype_info:
+		d.document_type = d.document_type or ""
 		d.description = _(d.description or "")
 		if ('icon' not in d):
 			d["icon"] = "fa fa-file-text"

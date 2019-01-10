@@ -396,6 +396,10 @@ class Database:
 
 			conditions.append(condition)
 
+		if isinstance(filters, int):
+			# docname is a number, convert to string
+			filters = str(filters)
+
 		if isinstance(filters, string_types):
 			filters = { "name": filters }
 
@@ -611,7 +615,7 @@ class Database:
 		order_by = ("order by " + order_by) if order_by else ""
 
 		r = self.sql("select {0} from `tab{1}` {2} {3} {4}"
-			.format(fl, doctype, "where" if conditions else "", conditions, order_by), values, 
+			.format(fl, doctype, "where" if conditions else "", conditions, order_by), values,
 			as_dict=as_dict, debug=debug, update=update)
 
 		return r
@@ -772,9 +776,9 @@ class Database:
 		"""Return true of field exists."""
 		return self.sql("select name from tabDocField where fieldname=%s and parent=%s", (dt, fn))
 
-	def table_exists(self, tablename):
-		"""Returns True if table exists."""
-		return ("tab" + tablename) in self.get_tables()
+	def table_exists(self, doctype):
+		"""Returns True if table for given doctype exists."""
+		return ("tab" + doctype) in self.get_tables()
 
 	def get_tables(self):
 		return [d[0] for d in self.sql("show tables")]
@@ -806,15 +810,25 @@ class Database:
 			except:
 				return None
 
-	def count(self, dt, filters=None, debug=False):
+	def count(self, dt, filters=None, debug=False, cache=False):
 		"""Returns `COUNT(*)` for given DocType and filters."""
+		if cache and not filters:
+			cache_count = frappe.cache().get_value('doctype:count:{}'.format(dt))
+			if cache_count is not None:
+				return cache_count
 		if filters:
 			conditions, filters = self.build_conditions(filters)
-			return frappe.db.sql("""select count(*)
+			count = frappe.db.sql("""select count(*)
 				from `tab%s` where %s""" % (dt, conditions), filters, debug=debug)[0][0]
+			return count
 		else:
-			return frappe.db.sql("""select count(*)
+			count = frappe.db.sql("""select count(*)
 				from `tab%s`""" % (dt,))[0][0]
+
+			if cache:
+				frappe.cache().set_value('doctype:count:{}'.format(dt), count, expires_in_sec = 86400)
+
+			return count
 
 
 	def get_creation_count(self, doctype, minutes):
@@ -837,6 +851,10 @@ class Database:
 	def has_column(self, doctype, column):
 		"""Returns True if column exists in database."""
 		return column in self.get_table_columns(doctype)
+
+	def get_column_type(self, doctype, column):
+		return frappe.db.sql('''SELECT column_type FROM INFORMATION_SCHEMA.COLUMNS
+			WHERE table_name = 'tab{0}' AND COLUMN_NAME = "{1}"'''.format(doctype, column))[0][0]
 
 	def add_index(self, doctype, fields, index_name=None):
 		"""Creates an index with given fields if not already created.
