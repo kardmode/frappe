@@ -385,7 +385,7 @@ frappe.views.ListRenderer = Class.extend({
 	// returns html for a data item,
 	// usually based on a template
 	get_item_html: function (data) {
-		var main = this.columns.map(column =>
+		var main = this.columns.map((column,index) =>
 			frappe.render_template('list_item_main', {
 				data: data,
 				col: column,
@@ -393,6 +393,7 @@ frappe.views.ListRenderer = Class.extend({
 				formatters: this.settings.formatters,
 				subject: this.get_subject_html(data, true),
 				indicator: this.get_indicator_html(data),
+				index:index,
 			})
 		).join("");
 
@@ -406,11 +407,12 @@ frappe.views.ListRenderer = Class.extend({
 	},
 
 	get_header_html: function () {
-		var main = this.columns.map(column =>
+		var main = this.columns.map((column,index) =>
 			frappe.render_template('list_item_main_head', {
 				col: column,
 				_checkbox: ((frappe.model.can_delete(this.doctype) || this.settings.selectable)
-					&& !this.no_delete)
+					&& !this.no_delete),
+				index:index,
 			})
 		).join("");
 

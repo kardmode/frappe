@@ -34,11 +34,24 @@ frappe.ui.form.ControlLink = frappe.ui.form.ControlData.extend({
 					me.$link_sync.on('click', function(event) {
 						event.preventDefault();
 						
-						if(me.frm.script_manager.has_handlers(me.df.fieldname, me.doctype)) {
-								me.frm.script_manager.trigger(me.df.fieldname, me.doctype, me.docname);
+						if(this.frm && this.frm.doc) {
+							if(this.frm.script_manager.has_handlers(this.df.fieldname, this.doctype)) {
+								this.frm.script_manager.trigger(this.df.fieldname, this.doctype, this.docname);
 							} else {
-								me.frm.runscript(me.doctype, me);
+								this.frm.runscript(this.df.options, this);
 							}
+						}
+						// else if(this.df.click) {
+							// this.df.click();
+						// }
+						
+						
+						// if(me.frm.script_manager.has_handlers(me.df.fieldname, me.doctype)) 
+						// {
+							// me.frm.script_manager.trigger(me.df.fieldname, me.doctype, me.docname);
+						// } else {
+							// me.frm.runscript(me.doctype, me);
+						// }
 					});
 					
 				}

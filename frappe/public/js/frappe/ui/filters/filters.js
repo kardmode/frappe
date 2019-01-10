@@ -18,10 +18,13 @@ frappe.ui.FilterList = Class.extend({
 					<button
 						style="margin-right: 10px;"
 						class="btn btn-default btn-xs new-filter text-muted">
-						${__("Add Filter")}</button>
+						<i class="visible-xs octicon octicon-plus"></i><span class="hidden-xs">${__("Add")}</span>
+						</button>
 				</div>
 			</div>
 			<div class="filter_area"></div>`);
+			
+			
 	},
 	set_events: function() {
 		var me = this;
