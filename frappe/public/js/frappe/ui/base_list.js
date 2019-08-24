@@ -215,22 +215,43 @@ frappe.ui.BaseList = Class.extend({
 							options = options.join("\n");
 						}
 					}
-
-					let f = me.page.add_field({
-						fieldtype: fieldtype,
-						label: __(df.label),
-						options: options,
-						fieldname: df.fieldname,
-						condition: condition,
-						onchange: () => {me.refresh(true);}
-					});
+					
+					if(df.fieldtype == "Link" && df.fieldname == "company")
+					{
+						let f = me.page.add_field({
+							fieldtype: fieldtype,
+							label: __(df.label),
+							options: options,
+							fieldname: df.fieldname,
+							condition: condition,
+							// default:frappe.defaults.get_user_default(df.fieldname),
+							onchange: () => {me.refresh(true);}
+						});
+						
+						
+					}
+					else
+					{
+						let f = me.page.add_field({
+							fieldtype: fieldtype,
+							label: __(df.label),
+							options: options,
+							fieldname: df.fieldname,
+							condition: condition,
+							onchange: () => {me.refresh(true);}
+						});
+						
+						
+					}
+					
+					
 
 					filter_count ++;
 					if (filter_count > 3) {
-						$(f.wrapper).addClass('hidden-sm').addClass('hidden-xs');
+						// $(f.wrapper).addClass('hidden-sm').addClass('hidden-xs');
 					}
 					if (filter_count > 5) {
-						return false;
+						//return false;
 					}
 				}
 			});

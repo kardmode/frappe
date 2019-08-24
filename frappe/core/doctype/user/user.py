@@ -71,7 +71,6 @@ class User(Document):
 		self.validate_roles()
 		self.validate_user_image()
 
-		frappe.defaults.set_user_default("company", self.default_company)
 
 		if self.language == "Loading...":
 			self.language = None
@@ -90,16 +89,18 @@ class User(Document):
 			frappe.throw(_("Not a valid User Image."))
 
 	def on_update(self):
+		frappe.defaults.set_user_default("company", self.default_company,user=self.name)
+
 		# clear new password
 		self.validate_user_limit()
 		self.share_with_self()
 		clear_notifications(user=self.name)
 		frappe.clear_cache(user=self.name)
 		self.send_password_notification(self.__new_password)
-
+		
 		if self.name not in ('Administrator', 'Guest') and not self.user_image:
 			frappe.enqueue('frappe.core.doctype.user.user.update_gravatar', name=self.name)
-
+		
 
 	def has_website_permission(self, ptype, verbose=False):
 		"""Returns true if current user is the session user"""

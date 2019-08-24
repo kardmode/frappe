@@ -185,7 +185,8 @@ frappe.ui.form.save = function (frm, action, callback, btn) {
 			throw "saving";
 		}
 
-		frappe.ui.form.remove_old_form_route();
+		if (frm.doc.__islocal)
+			frappe.ui.form.remove_old_form_route();
 		frappe.ui.form.is_saving = true;
 
 		return frappe.call({

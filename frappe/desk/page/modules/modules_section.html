@@ -1,39 +1,65 @@
 <div class="module-body">
+{% var section_count=0 %}
+
 {% for (var i=0; i < data.length; i++) { var section = data[i]; %}
-{% if ((i % 3)===0) { %}<div class="row module-section">{% } %}
-	<div class="col-sm-4 module-section-column">
-		<div class="h4 section-head">
-		
-		 <span class="moduleview-icon" <!-- style="color:{{item.color}}" -->>
-		 <i class="{{section.icon}}"></i>
-		 </span>
-			{{ section.label }}
-		</div>
-		<div class="section-body">
-		{% for (var j=0; j < section.items.length; j++) {
-			var item = section.items[j];
-			if(item.shown) { %}
-				<div class="module-view-list">
-				
-					<!-- <span class="moduleview-icon">
-		 <i class="{{item.icon}}"></i>
-		 </span> -->
-					<span class="module-view-link">
-					<a class="module-section-link small" data-type="{{ item.type }}"
-						{% if(item.type==="help") { %}
-							data-youtube-id="{{ item.youtube_id }}"{% } %}
-						href="#{{ item.route }}" style="{{ item.style }}">
-						{{ item.label || __(item.name) }}
-					</a></span>
-					{% if(item.type==="doctype") { %}
-					<span class="open-notification global hide"
-						data-doctype="{{ item.doctype || item.name }}"></span>
-					{% } %}
-				</div>
+	
+	
+	{% if(section.shown_in == "module_view") { %}
+			{% if ((section_count % 3)===0) { %}<div class="row module-section">{% } %}
+	
+		<div class="col-sm-4 module-section-column">
+			<div class="h4 section-head">
+			
+			
+			
+			
+			<!-- {% if(section.color) { %}
+					<span class="moduleview-icon" style="background-color:{{section.color || iii}}">
+			{% } else { %}
+					 <span class="moduleview-icon" style="background-color:lightgrey">
+
 			{% } %}
-		{% } %}
+			 <i class="{{section.icon}}"></i>
+			 </span> -->
+			 <span class="ellipsis">{{ section.label }}</span>
+			 
+				
+			</div>
+			<div class="section-body">
+			{% for (var j=0; j < section.items.length; j++) {
+				var item = section.items[j];
+				if(item.shown) { %}
+					<div class="module-view-list">
+					
+						<!-- <span class="moduleview-icon">
+			 <i class="{{item.icon}}"></i>
+			 </span> -->
+						<span class="module-view-link">
+						<a class="module-section-link small" data-type="{{ item.type }}"
+							{% if(item.type==="help") { %}
+								data-youtube-id="{{ item.youtube_id }}"{% } %}
+							href="#{{ item.route }}" style="{{ item.style }}">
+							{{ item.label || __(item.name) }}
+						</a></span>
+						{% if(item.type==="doctype") { %}
+						<span class="open-notification global hide"
+							data-doctype="{{ item.doctype || item.name }}"></span>
+						{% } %}
+					</div>
+				{% } %}
+			{% } %}
+			</div>
 		</div>
-	</div>
-{% if ((i % 3)===2 || i===data.length-1) { %}</div>{% } %}
+		
+		{% if ((section_count % 3)===2 && i!==data.length-1) { %}</div>{% } %}
+		
+		
+		{% section_count = section_count + 1  %}
+	{% } else { %}
+
+	{% } %}
+	
+	{% if (i===data.length-1) { %}</div>{% } %}
+	
 {% } %}
 </div>

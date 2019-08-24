@@ -4,11 +4,23 @@
     data-fieldname="{%= field.fieldname %}"
     data-label="{{ field.label }}"
 
-	{% if field.align %}data-align="{{ field.align }}"{% endif %}
+	{% if field.align %}
+	
+	data-align="{{ field.align }}"
+	
+		{% if field.label_location %}
+			data-label-location="{{ field.label_location }}"
+		{% else %}
+		data-label-location="left"
+		{% endif %}
+	
+	
+	{% endif %}
     data-fieldtype="{%= field.fieldtype %}"
     {% if(field.fieldtype==="Table") { %}
         data-columns="{%= me.get_visible_columns_string(field) %}"
         data-doctype="{%= field.options %}"
+        data-hide-sr="{%= field.hide_sr %}"
     {% } %}>
 	{% if !in_list(["Table", "HTML", "Custom HTML"], field.fieldtype) %}
     <a class="field-settings pull-right

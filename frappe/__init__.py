@@ -1395,12 +1395,18 @@ def bold(text):
 	return '<b>{0}</b>'.format(text)
 
 def safe_eval(code, eval_globals=None, eval_locals=None):
+	
+	from math import ceil,floor
+
 	'''A safer `eval`'''
 	whitelisted_globals = {
 		"int": int,
 		"float": float,
 		"long": int,
-		"round": round
+		"round": round,
+		"ceil":ceil,
+		"floor":floor,
+		"abs":abs
 	}
 
 	if '__' in code:

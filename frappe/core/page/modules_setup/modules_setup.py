@@ -31,7 +31,7 @@ def get_module_icons_html(user=None):
 
 	if not user:
 		icons = frappe.db.get_all('Desktop Icon',
-			fields='*', filters={'standard': 1}, order_by='idx')
+			fields='*', filters={'standard': 1}, order_by='module_name')
 	else:
 		frappe.cache().hdel('desktop_icons', user)
 		icons = get_user_icons(user)

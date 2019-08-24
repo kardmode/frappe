@@ -1,14 +1,18 @@
 {
+ "add_company_abbr_to_name": 1, 
+ "add_date_to_name": 1, 
+ "add_posting_date_to_name": 0, 
  "allow_copy": 0, 
  "allow_guest_to_view": 1, 
  "allow_import": 1, 
  "allow_rename": 0, 
+ "append_company_abbr_to_name": "0", 
  "beta": 0, 
  "creation": "2014-10-30 14:25:53.780105", 
  "custom": 0, 
  "docstatus": 0, 
  "doctype": "DocType", 
- "document_type": "", 
+ "document_type": "Documents", 
  "editable_grid": 0, 
  "fields": [
   {
@@ -357,7 +361,7 @@
  "issingle": 0, 
  "istable": 0, 
  "max_attachments": 0, 
- "modified": "2017-11-10 20:51:15.599844", 
+ "modified": "2019-02-07 23:00:18.101803", 
  "modified_by": "Administrator", 
  "module": "Website", 
  "name": "Help Article", 

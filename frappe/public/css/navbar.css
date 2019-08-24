@@ -140,7 +140,7 @@ ul#dropdown-notification {
 }
 .navbar-form .awesomplete {
   margin-left: -15px;
-  width: 300px;
+  width: 500px;
 }
 @media (max-width: 1199px) {
   .navbar-form .awesomplete {
@@ -201,7 +201,7 @@ ul#dropdown-notification {
   color: #36414C;
 }
 #navbar-breadcrumbs > li > a {
-  padding: 6px 15px 10px 0px;
+  padding: 8px 5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -11,9 +11,10 @@
 	{%- elif df.fieldtype=="Geolocation" -%}
 		{{ render_geolocation(df, doc) }}
 	{%- elif df.fieldtype=="Currency" -%}
-		{%- if doc.print_templates and
-				doc.print_templates.get(df.fieldname) -%}
+		{%- if doc.print_templates and doc.print_templates.get(df.fieldname) -%}
 			{% include doc.print_templates[df.fieldname] %}
+		{%- elif doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname) -%}
+			{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"doc":doc}) }}	
 		{%- else -%}
 			{{ render_field_with_label(df, doc) }}
 		{%- endif -%}
@@ -28,9 +29,10 @@
 {%- macro render_table(df, doc) -%}
 	{%- set table_meta = frappe.get_meta(df.options) -%}
 	{%- set data = doc.get(df.fieldname)[df.start:df.end] -%}
-	{%- if doc.print_templates and
-			doc.print_templates.get(df.fieldname) -%}
+	{%- if doc.print_templates and doc.print_templates.get(df.fieldname) -%}
 		{% include doc.print_templates[df.fieldname] %}
+	{%- elif doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname) -%}
+		{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"doc":doc}) }}		
 	{%- else -%}
 		{%- if data -%}
 		{%- set visible_columns = get_visible_columns(doc.get(df.fieldname),
@@ -39,14 +41,12 @@
 			<table class="table table-bordered table-condensed">
 				<thead>
 					<tr>
-						<th style="width: 40px" class="table-sr">{{ _("Sr") }}</th>
+						{% if not df.get("hide_sr") or df.hide_sr == None or df.hide_sr == "0" or df.hide_sr == 0 %}
+							<th style="width: 30px" class="table-sr">{{ _("Sr") }}</th>
+						{% endif %}	
 						{% for tdf in visible_columns %}
-						{% if (not data[0].flags.compact_item_print) or tdf.fieldname in doc.get(df.fieldname)[0].flags.compact_item_fields %}
-							<th style="width: {{ get_width(tdf) }};" class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>
-								
-								{{ print_table_label(tdf,data[0]) }}
-								
-							</th>
+						{% if ((not data[0].flags.compact_item_print) or tdf.fieldname in doc.get(df.fieldname)[0].flags.compact_item_fields) and (not tdf.get("print_parent") or tdf.print_parent == "" or tdf.print_parent == None) %}
+							<th style="width: {{ get_width(tdf) }};" class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>{{print_table_label(tdf,data[0])}}</th>
 						{% endif %}
 						{% endfor %}
 					</tr>
@@ -54,11 +54,14 @@
 				<tbody>
 					{% for d in data %}
 					<tr>
-						<td class="table-sr">{{ d.idx }}</td>
+						{% if not df.get("hide_sr") or df.hide_sr == None or df.hide_sr == "0" or df.hide_sr == 0 %}
+							<td class="table-sr">{{ d.idx }}</td>
+						{% endif %}	
+						
 						{% for tdf in visible_columns %}
-						{% if not d.flags.compact_item_print or tdf.fieldname in doc.get(df.fieldname)[0].flags.compact_item_fields %}
+						{% if ((not data[0].flags.compact_item_print) or tdf.fieldname in doc.get(df.fieldname)[0].flags.compact_item_fields) and (not tdf.get("print_parent") or tdf.print_parent == "" or tdf.print_parent == None) %}
 							<td class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>
-                                <div class="value">{{ print_value(tdf, d, doc, visible_columns) }}</div></td>
+							<div class="value">{{ print_value(tdf, d, doc, visible_columns) }}</div></td>
 						{% endif %}
 						{% endfor %}
 					</tr>
@@ -87,9 +90,43 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	
 {%- endmacro %}
 
+{% macro render_compact_fields_for_parent(df, d, parent_doc, visible_columns) -%}
+	{% for tdf in visible_columns %}
+		{% if tdf.print_parent == df.fieldname %}
+			{% if tdf.print_align == "inline-before" %}
+				<span class="pull-left">{% if tdf.print_label  -%}<strong>{{ _(tdf.print_label) }}:</strong>{% endif %}
+				{{ print_value(tdf, d, parent_doc) }}</span>
+			
+			{% endif %}
+		{% endif %}
+	{% endfor %}
+
+	{{ print_value(df, d, parent_doc) }}
+	
+	{% for tdf in visible_columns %}
+		{% if tdf.print_parent == df.fieldname %}
+			{% if tdf.print_align == "inline" %}
+				<span>{% if tdf.print_label  -%}<strong>{{ _(tdf.print_label) }}:</strong>{% endif %}
+				{{ print_value(tdf, d, parent_doc) }}</span>
+			{%- elif tdf.print_align != "inline-before" %}
+				<div>{% if tdf.print_label  -%}<strong>{{ _(tdf.print_label) }}:</strong>{% endif %}
+				{{ print_value(tdf, d, parent_doc) }}</div>
+			{% endif %}
+		{% endif %}
+	{% endfor %}
+	
+{%- endmacro %}
+
 {%- macro render_field_with_label(df, doc) -%}
 		<div class="row {% if df.bold %}important{% endif %} data-field" {{ fieldmeta(df) }}>
-			<div class="print_label col-xs-{{ "9" if df.fieldtype=="Check" else "4" }}
+			{% if get_label_location(df) == "hidden"  %}
+				<div class="col-xs-{{ "12" if df.fieldtype=="Check" else "12" }}
+				{{ get_align_class(df) }} value">
+					{% if doc.get(df.fieldname) != None -%}
+						{{ print_value(df, doc) }}{% endif %}
+				</div>
+			{% elif get_label_location(df) =="above" %}
+				<div class="print_label col-xs-{{ "12" if df.fieldtype=="Check" else "12" }}
 				{%- if doc._align_labels_right %} text-right{%- endif -%}">
 
 				{% if df.fieldtype not in ("Image","HTML","Check") and
@@ -100,12 +137,72 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 				doc.get(df.fieldname) != 0 %}
 				<label>{{ _(df.label) }}</label>
 				{% endif %}
-			</div>
-			<div class="col-xs-{{ "3" if df.fieldtype=="Check" else "8" }}
-			{{ get_align_class(df) }} value">
-				{% if doc.get(df.fieldname) != None -%}
-					{{ print_value(df, doc) }}{% endif %}
-			</div>
+				</div>
+				<div class="col-xs-{{ "12" if df.fieldtype=="Check" else "12" }}
+				{{ get_align_class(df) }} value">
+					{% if doc.get(df.fieldname) != None -%}
+						{{ print_value(df, doc) }}{% endif %}
+				</div>
+			{% elif get_label_location(df) =="below" %}
+				
+				<div class="col-xs-{{ "12" if df.fieldtype=="Check" else "12" }}
+				{{ get_align_class(df) }} value">
+					{% if doc.get(df.fieldname) != None -%}
+						{{ print_value(df, doc) }}{% endif %}
+				</div>
+				<div class="print_label col-xs-{{ "12" if df.fieldtype=="Check" else "12" }}
+				{%- if doc._align_labels_right %} text-right{%- endif -%}">
+
+				{% if df.fieldtype not in ("Image","HTML","Check") and
+					doc.get(df.fieldname) != None %}
+				<label>{{ _(df.label) }}</label>
+				{% endif %}
+				{% if df.fieldtype == "Check" and
+				doc.get(df.fieldname) != 0 %}
+				<label>{{ _(df.label) }}</label>
+				{% endif %}
+				</div>
+			{% elif get_label_location(df) =="right" %}
+			
+				
+				<div class="col-xs-{{ "3" if df.fieldtype=="Check" else "8" }}
+				{{ get_align_class(df) }} value">
+					{% if doc.get(df.fieldname) != None -%}
+						{{ print_value(df, doc) }}{% endif %}
+				</div>
+				<div class="print_label col-xs-{{ "9" if df.fieldtype=="Check" else "4" }}
+				{%- if doc._align_labels_right %} text-right{%- endif -%}">
+
+				{% if df.fieldtype not in ("Image","HTML","Check") and
+					doc.get(df.fieldname) != None %}
+				<label>{{ _(df.label) }}</label>
+				{% endif %}
+				{% if df.fieldtype == "Check" and
+				doc.get(df.fieldname) != 0 %}
+				<label>{{ _(df.label) }}</label>
+				{% endif %}
+				</div>
+			{% else -%}
+			
+				<div class="print_label col-xs-{{ "9" if df.fieldtype=="Check" else "4" }}
+				{%- if doc._align_labels_right %} text-right{%- endif -%}">
+
+				{% if df.fieldtype not in ("Image","HTML","Check") and
+					doc.get(df.fieldname) != None %}
+				<label>{{ _(df.label) }}</label>
+				{% endif %}
+				{% if df.fieldtype == "Check" and
+				doc.get(df.fieldname) != 0 %}
+				<label>{{ _(df.label) }}</label>
+				{% endif %}
+				</div>
+				<div class="col-xs-{{ "3" if df.fieldtype=="Check" else "8" }}
+				{{ get_align_class(df) }} value">
+					{% if doc.get(df.fieldname) != None -%}
+						{{ print_value(df, doc) }}{% endif %}
+				</div>
+			{% endif %}
+			
 		</div>
 {%- endmacro -%}
 
@@ -131,9 +228,21 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 {%- endmacro -%}
 
 {%- macro print_value(df, doc, parent_doc=None, visible_columns=None) -%}
-    {% if doc.print_templates and
-			doc.print_templates.get(df.fieldname) %}
+	
+	
+	{% if doc.print_templates and doc.print_templates.get(df.fieldname) %}
         {% include doc.print_templates[df.fieldname] %}
+	
+	{% elif parent_doc and parent_doc.mrp_print_templates and parent_doc.mrp_print_templates.get(df.fieldname) %}
+		{{ frappe.render_template(parent_doc.mrp_print_templates[df.fieldname], {"doc":doc}) }}	
+	
+	{% elif doc and doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname)%}
+	
+		{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"doc":doc}) }}	
+		
+	{% elif visible_columns %}
+		{{  render_compact_fields_for_parent(df, doc, parent_doc, visible_columns) }}
+	
 	{% elif df.fieldtype=="Check" %}
 		<i class="{{ 'fa fa-check' if doc[df.fieldname] }}"></i>
 	{% elif df.fieldtype=="Image" %}
@@ -152,6 +261,8 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{% else %}
 		{% if df.fieldtype=="Currency" %}
 			{{ doc.get_formatted(df.fieldname, doc, translated=True) }}
+		{% elif df.fieldtype =="Link" and  df.options =="Project" %}
+			{{ doc.get_formatted(df.fieldname, parent_doc or doc, translated=True)|replace("AMLS - ", "") }}
 		{% else %}
 			{{ doc.get_formatted(df.fieldname, parent_doc or doc, translated=True) }}
 		{% endif %}
@@ -159,7 +270,12 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 {%- endmacro %}
 
 {% macro get_width(df) -%}
-	{%- if df.print_width -%}{{ (df.print_width|str).replace("px", "") }}px
+	{%- if df.print_width -%}	
+		{%- if "%" in (df.print_width|str) -%}
+			{{ ((df.print_width|str).replace("%", "")|trim) }}%
+		{%- else -%}
+			{{ ((df.print_width|str).replace("px", "")|trim) }}px
+		{% endif -%}
 	{%- elif df.fieldtype in ("Int", "Check", "Float", "Currency") -%}{{ 80 }}px
 	{%- else -%}{{ 150 }}px{% endif -%}
 {%- endmacro %}
@@ -167,6 +283,18 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 {% macro get_align_class(df) %}
 	{%- if df.align -%}{{ "text-" + df.align }}
 	{%- elif df.fieldtype in ("Int", "Float", "Currency","Percent", "Check") -%}{{ "text-right" }}
+	{%- else -%}{{ "" }}
+	{%- endif -%}
+{% endmacro %}
+
+{% macro get_label_location(df) %}
+	{%- if df.label_location -%}{{ df.label_location  }}
+	{%- else -%}{{ "left" }}
+	{%- endif -%}
+{% endmacro %}
+
+{% macro get_label_align_class(df) %}
+	{%- if df.label_align -%}{{ "text-" + df.align }}
 	{%- else -%}{{ "" }}
 	{%- endif -%}
 {% endmacro %}

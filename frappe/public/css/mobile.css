@@ -46,9 +46,15 @@ body {
     /* min-width: 200px; */
 	    /* width: calc(100% - 150px); */
   }
-  body[data-route^="Form"] .title-text {
+  body[data-route^="Form"] .title-text{
     margin-top: 10px;
   }
+  
+   body[data-route^="Form"] .title-image {
+    margin-top: 5px;
+  }
+  
+  
   .toggle-navbar-new-comments {
     padding: 8px 0px !important;
   }
@@ -181,13 +187,13 @@ body {
   body[data-route="desktop"] .navbar .navbar-home img {
     margin-top: 0;
   }
-  body[data-route=""] .toggle-sidebar,
-  body[data-route="desktop"] .toggle-sidebar {
-    display: none !important;
-  }
-  body[data-sidebar="0"] .toggle-sidebar {
-    display: none !important;
-  }
+  /* body[data-route=""] .toggle-sidebar, */
+  /* body[data-route="desktop"] .toggle-sidebar { */
+    /* display: none !important; */
+  /* } */
+  /* body[data-sidebar="0"] .toggle-sidebar { */
+    /* display: none !important; */
+  /* } */
   body[data-sidebar="0"] #navbar-breadcrumbs,
   body[data-sidebar="0"] .navbar-home {
     /* margin-left: 15px !important; */
@@ -207,9 +213,9 @@ body {
     width: calc(100% - 90px);
   }
   body[data-route^="Form"] .page-title .indicator {
-    float: left;
-    margin-top: 10px;
-    margin-right: 5px;
+    /* float: left; */
+    /* margin-top: 10px; */
+    /* margin-right: 5px; */
   }
   .modal .modal-dialog {
     margin: 0px;

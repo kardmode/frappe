@@ -1,5 +1,7 @@
 {
  "add_company_abbr_to_name": 1, 
+ "add_date_to_name": 1, 
+ "add_posting_date_to_name": 0, 
  "allow_copy": 1, 
  "allow_guest_to_view": 0, 
  "allow_import": 0, 
@@ -10,7 +12,7 @@
  "custom": 0, 
  "docstatus": 0, 
  "doctype": "DocType", 
- "document_type": "Setup", 
+ "document_type": "Users", 
  "editable_grid": 1, 
  "engine": "InnoDB", 
  "fields": [
@@ -212,7 +214,7 @@
  "issingle": 1, 
  "istable": 0, 
  "max_attachments": 0, 
- "modified": "2018-11-29 18:58:33.688927", 
+ "modified": "2019-02-13 08:27:47.713472", 
  "modified_by": "Administrator", 
  "module": "Core", 
  "name": "Role Permission for Page and Report", 

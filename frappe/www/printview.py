@@ -69,7 +69,30 @@ def get_print_format_doc(print_format_name, meta):
 		except frappe.DoesNotExistError:
 			# if old name, return standard!
 			return None
-			
+
+def add_mrp_print_templates(doc):
+	doc.mrp_print_templates = {}
+	
+	doc_details = frappe.db.sql("""
+					select t1.name , t2.print_field
+					from `tabMRP Print Templates` t1,`tabPrint Fields` t2
+					where
+					(t1.for_doctype = %s or t1.use_for_all_doctypes = 1)
+					and t2.name = t1.print_field
+					""", (doc.doctype), as_dict=True)
+	
+	# doc_details = frappe.db.sql("""
+					# select t1.name , t2.print_field
+					# from `tabMRP Print Templates` t1,
+					# `tabPrint Fields` t2, 
+					# `tabMRP Print Template Type` t3
+					# where
+					# (t1.use_for_all_doctypes = 1 or (t3.type = %s and t1.name = t3.parent))
+					# and t2.name = t1.print_field
+					# """, (doc.doctype), as_dict=True)
+	for d in doc_details:
+		doc.mrp_print_templates[d.name] = d.print_field
+		
 def add_signature(doc,letterhead,sign_type = None):
 
 	if not sign_type or sign_type == "None":
@@ -122,8 +145,8 @@ def add_signature(doc,letterhead,sign_type = None):
 	
 	stamp = ""
 	if sign_info.has_stamp:
-		stamp = frappe.db.get_value("Company Licenses", {'company':letterhead},"company_stamp") or ""
-		stamp_doc = frappe.get_doc('Company Licenses', {'company':letterhead}) or {}
+		stamp = frappe.db.get_value("Company Stamps", {'company':letterhead},"stamp") or ""
+		stamp_doc = frappe.get_doc('Company Stamps', {'company':letterhead}) or {}
 		if not stamp_doc.has_permission("read"):
 			stamp = ""
 			
@@ -243,6 +266,9 @@ def get_html(doc, name=None, print_format=None, meta=None,
 
 	convert_markdown(doc, meta)
 	signature_html = add_signature(doc,letterhead,sign_type)
+	
+	add_mrp_print_templates(doc)
+	
 	args = {
 		"doc": doc,
 		"meta": frappe.get_meta(doc.doctype),
@@ -555,7 +581,7 @@ def column_has_value(data, fieldname, col_df):
 	"""Check if at least one cell in column has non-zero and non-blank value"""
 	has_value = False
 
-	if col_df.fieldtype in ['Float', 'Currency'] and not col_df.print_hide_if_no_value:
+	if col_df.fieldtype in ['Float', 'Currency','Code'] and not col_df.print_hide_if_no_value:
 		return True
 
 	for row in data:

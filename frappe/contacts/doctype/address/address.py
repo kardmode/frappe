@@ -195,8 +195,8 @@ def get_address_templates(address):
 def get_shipping_address(company, address = None):
 	filters = [
 		["Dynamic Link", "link_doctype", "=", "Company"],
-		["Dynamic Link", "link_name", "=", company],
-		["Address", "is_your_company_address", "=", 1]
+		["Dynamic Link", "link_name", "=", company]
+		# ["Address", "is_your_company_address", "=", 1]
 	]
 	fields = ["*"]
 	if address and frappe.db.get_value('Dynamic Link',

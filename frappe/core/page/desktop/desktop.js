@@ -13,6 +13,7 @@ frappe.pages['desktop'].on_page_show = function(wrapper) {
 	if(frappe.list_desktop) {
 		$("body").attr("data-route", "list-desktop");
 	}
+	// $("body").attr("data-sidebar", 0);
 };
 
 $.extend(frappe.desktop, {
@@ -32,24 +33,33 @@ $.extend(frappe.desktop, {
 		var template = frappe.list_desktop ? "desktop_list_view" : "desktop_icon_grid";
 
 		var all_icons = frappe.get_desktop_icons();
-		var explore_icon = {
-			module_name: 'Explore',
-			label: 'Explore',
-			_label: __('Explore'),
-			_id: 'Explore',
-			_doctype: '',
-			icon: 'octicon octicon-telescope',
-			color: '#7578f6',
-			link: 'modules'
-		};
-		explore_icon.app_icon = frappe.ui.app_icon.get_html(explore_icon);
-		all_icons.push(explore_icon);
+		// var explore_icon = {
+			// module_name: 'Explore',
+			// label: 'Explore',
+			// _label: __('Explore'),
+			// _id: 'Explore',
+			// _doctype: '',
+			// icon: 'octicon octicon-telescope',
+			// color: '#7578f6',
+			// link: 'modules'
+		// };
+		// explore_icon.app_icon = frappe.ui.app_icon.get_html(explore_icon);
+		// all_icons.push(explore_icon);
+		
+		
+		
+		
+		
+		
+		
 
 		frappe.desktop.wrapper.html(frappe.render_template(template, {
 			// all visible icons
 			desktop_items: all_icons,
 		}));
-
+		
+		
+		this.setup_leftbar();
 		frappe.desktop.setup_module_click();
 
 		// notifications
@@ -61,7 +71,109 @@ $.extend(frappe.desktop, {
 		$(document).trigger("desktop-render");
 
 	},
+	
+	setup_leftbar: function () {
+		
+		this.get_page_modules = () => {
+		return frappe.get_desktop_icons(true)
+			.filter(d => d.type==='module' && !d.blocked)
+			.sort((a, b) => { return (a._label > b._label) ? 1 : -1; });
+		};
 
+		let get_module_sidebar_item = (item) => `<li class="strong module-sidebar-item">
+			<a class="module-link`+ (item.hide_in_module_sidebar ? ' hide':'')+`" data-name="${item.module_name}" href="#modules/${item.module_name}">
+				<i class="fa fa-chevron-right pull-right" style="display: none;"></i>
+							<span class="sidebar-icon" style="background-color: ${item.color}"><i class="${item.icon}"></i></span>
+				<span class="ellipsis">${item._label}</span>
+			</a>
+		</li>`;
+
+		let get_sidebar_html = () => {
+			let sidebar_items_html = this.get_page_modules()
+				.map(get_module_sidebar_item.bind(this)).join("");
+
+			return `<ul class="module-sidebar-nav overlay-sidebar nav nav-pills nav-stacked">
+				${sidebar_items_html}
+				<li class="divider"></li>
+			</ul>`;
+		};
+		
+		this.left_sidebar = this.wrapper.find(".layout-side-section.layout-left");
+		// render sidebar
+		this.left_sidebar.html(get_sidebar_html());
+		
+		var header = $('header');
+		header.find(".toggle-sidebar").on("click", function () {
+			var layout_side_section = $('.layout-side-section.layout-left');
+			var overlay_sidebar = layout_side_section.find('.overlay-sidebar');
+			var close_sidebar_div = $('.close-sidebar');
+			var fadespeed = 50;
+			var scroll_container = $('html');
+			
+			
+			
+			if(overlay_sidebar.hasClass('opened') === false)
+			{
+				
+			}
+			else
+			{
+				
+				
+
+			}
+			
+			
+			overlay_sidebar.addClass('opened');
+			overlay_sidebar.find('.reports-dropdown')
+				.removeClass('dropdown-menu')
+				.addClass('list-unstyled');
+			overlay_sidebar.find('.dropdown-toggle')
+				.addClass('text-muted').find('.caret')
+				.addClass('hidden-xs hidden-sm');
+				
+				
+			if (close_sidebar_div.length !== 0)
+			{
+				close_sidebar_div.hide().fadeIn(fadespeed);
+			}
+			else{
+				//$('<div class="close-sidebar">').hide().appendTo(layout_side_section).fadeIn(fadespeed);
+			}
+			
+
+			
+
+			
+			scroll_container.css("overflow-y", "hidden");
+
+
+			close_sidebar_div.on('click', close_sidebar);
+			
+			// close_sidebar_div.on('touchstart', function (e) { e.preventDefault(); }); 
+			close_sidebar_div.on('touchmove', function (e) { e.preventDefault(); }); 
+			
+			layout_side_section.on("click", "a", close_sidebar);
+					
+			
+			
+			
+			
+
+			function close_sidebar(e) {
+					scroll_container.css("overflow-y", "");
+
+					close_sidebar_div.fadeOut(50,function() {
+						overlay_sidebar.removeClass('opened')
+							.find('.dropdown-toggle')
+							.removeClass('text-muted');
+						overlay_sidebar.find('.reports-dropdown')
+							.addClass('dropdown-menu');
+					});
+			}
+		});
+	},
+	
 	render_help_messages: function(help_messages) {
 		var wrapper = frappe.desktop.wrapper.find('.help-message-wrapper');
 		var $help_messages = wrapper.find('.help-messages');

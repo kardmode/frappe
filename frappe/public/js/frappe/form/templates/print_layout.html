@@ -11,17 +11,17 @@
 		<div class="col-xs-2">
 			<select class="print-letterhead-select input-sm form-control">
 			</select></div>
-		<div class="col-xs-1">
-			<div class="checkbox small" style="margin-top: 7px; margin-bottom: 0px;">
-                <label>
-                    <input type="checkbox" class="print-letterhead text-muted" style="margin-top: 1px;"/>
-                    {%= __("LetterHead") %}</label>
-            </div>
-        </div>
 		<div class="col-xs-2">
 			<select class="print-sign-select input-sm form-control">
 			</select>
 		</div>
+		<div class="col-xs-1">
+			<div class="checkbox small" style="margin-top: 7px; margin-bottom: 0px;">
+                <label>
+                    <input type="checkbox" class="print-letterhead text-muted" style="margin-top: 1px;"/>
+                    <span class="hidden-xs hidden-sm">{%= __("LetterHead") %}</span><span class="visible-xs visible-sm">{%= __("LH") %}</span></label>
+            </div>
+        </div>
 		
 		<div class="col-xs-4 text-right">
             <!-- <a class="close btn-print-close" style="margin-top: 2px; margin-left: 10px;">&times;</a> -->

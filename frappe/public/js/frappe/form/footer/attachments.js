@@ -60,6 +60,8 @@ frappe.ui.form.Attachments = Class.extend({
 		if (!file_name) {
 			file_name = file_url;
 		}
+		
+		var description = attachment.description || "";
 
 		var me = this;
 		var $attach = $(repl('<li class="attachment-row">\
@@ -68,10 +70,12 @@ frappe.ui.form.Attachments = Class.extend({
 				<a href="%(file_url)s" target="_blank" title="%(file_name)s" \
 					class="ellipsis" style="max-width: calc(100% - 43px);">\
 					<span>%(file_name)s</span></a>\
+					<p>%(description)s</p>\
 			</li>', {
 				lock_icon: attachment.is_private ? '<i class="fa fa-lock fa-fw text-warning"></i> ': "",
 				file_name: file_name,
-				file_url: frappe.urllib.get_full_url(file_url)
+				file_url: frappe.urllib.get_full_url(file_url),
+				description: description,
 			}))
 			.insertAfter(this.attachments_label.addClass("has-attachments"));
 

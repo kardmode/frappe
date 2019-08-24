@@ -20,7 +20,7 @@ body[data-route="desktop"] .navbar-default {
   height: 140px;
 }
 .case-label {
-  font-size: 12px;
+  font-size: 14px;
   font-weight: bold;
   letter-spacing: 0.4px;
   /* color: #fff; */
@@ -35,7 +35,7 @@ body[data-route="desktop"] .navbar-default {
   display: inline-block;
   margin: auto;
   text-align: center;
-  border-radius: 16px;
+  border-radius: 8px;
   cursor: pointer;
   box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.15);
 }
@@ -161,13 +161,13 @@ body[data-route="desktop"] .navbar-default {
     height: 90px;
   }
   .case-label {
-    font-size: 80%;
-    font-weight: normal;
+    /* font-size: 80%; */
+    /* font-weight: normal; */
     margin-top: 7px;
   }
   .app-icon {
     padding: 10px;
-    border-radius: 12px;
+    /* border-radius: 12px; */
   }
   .app-icon i {
     font-size: 32px;
@@ -217,6 +217,9 @@ body[data-route="desktop"] .navbar-default {
   display: none;
 }
 body[data-route=""] .navbar-set-desktop-icons,
+body[data-route^="Form"] .navbar-set-desktop-icons,
+body[data-route^="List"] .navbar-set-desktop-icons,
+body[data-route^="modules"] .navbar-set-desktop-icons,
 body[data-route="desktop"] .navbar-set-desktop-icons {
   display: block;
 }

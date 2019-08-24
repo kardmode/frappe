@@ -1,6 +1,6 @@
 /* the element that this class is applied to, should have a max width for this to work*/
 .page-container {
-  margin-top: 40px;
+  margin-top: 42px;
 }
 .page-head {
   border-bottom: 1px solid #d1d8dd;
@@ -14,21 +14,24 @@
   z-index: 101;
 }
 .sub-heading {
-  display: inline-block;
-  text-align:left;
-  margin-right: 10px;
+  /* display: inline-block; */
+  /* text-align:left; */
+  /* margin-right: 10px; */
   /* max-width: 50%; */
-  vertical-align: middle;
-  position:absolute;
-  left:0;
+  /* vertical-align: middle; */
+	position:absolute;
+	/* left:0; */
 	z-index:-1;
-
+	top:-5px;
+	width:100%;
+	text-align:center;
 }
 
 @media (min-width: 767px) {
   .page-body {
     overflow-x: hidden;
     min-height: calc(100vh - 40px);
+	overflow-y:hidden;
   }
 }
 .page-title {

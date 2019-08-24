@@ -33,7 +33,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 				(frappe.model.get_doc(":Print Settings", "Print Settings")
 					|| { with_letterhead: 1 }).with_letterhead) ? true : false);
 					
-		//////
+		////// edited by me
 		this.letter_heads = $.map(frappe.boot.letter_heads, function(i,d){
 			return d 
 		})
@@ -59,6 +59,62 @@ frappe.ui.form.PrintPreview = Class.extend({
 			.on("change", function() {
 				me.print_sel.trigger("change"); 
 			});
+			
+		this.mrp_print_sign_options = {}
+			
+		this.mrp_print_sign_btn = this.wrapper
+			.find(".btn-sign")
+			.on("click", function() {
+				
+				var dialog = new frappe.ui.Dialog({
+					title: __("Sign Document"),
+					fields: [
+						{fieldname:'sec_0', fieldtype:'Section Break'},
+						{fieldname:'repeat_on_each_page', fieldtype:'Check', label: __('Repeat On Each Page'),reqd:0},
+						{fieldname:'sec_1', fieldtype:'Section Break'},
+						{fieldname:'enable_left_side', fieldtype:'Check', label: __('Enable Left Side'),reqd:0},
+						{fieldname:'col_1', fieldtype:'Column Break'},
+						{fieldname:'enable_right_side', fieldtype:'Check', label: __('Enable Right Side'),reqd:0},
+						{fieldname:'sec_1', fieldtype:'Section Break'},
+						{fieldname:'left_stamp', fieldtype:'Check',label: __('Left Stamp'),reqd:0},
+						{fieldname:'left_sign_type', fieldtype:'Select',options: ['None','My Signature','Authorized Signature'],label: __('Left Sign'),reqd:0},
+						{fieldname:'col_1', fieldtype:'Column Break'},
+						{fieldname:'right_stamp', fieldtype:'Check',label: __('Right Stamp'),reqd:0},
+							{fieldname:'right_sign_type', fieldtype:'Select',options: ['None','My Signature','Authorized Signature'],label: __('Right Sign'),reqd:0},
+						{fieldname:'sec_1', fieldtype:'Section Break'},
+						{fieldname:'left_signoff', fieldtype:'Small Text',default:__('Authorized Signatory'), label: __('Left Signoff'),reqd:0},
+						{fieldname:'col_1', fieldtype:'Column Break'},
+						{fieldname:'right_signoff', fieldtype:'Small Text',default:__('Received By'), label: __('Right Signoff'),reqd:0},
+					]
+				});
+				
+
+				/* dialog.fields_dict["left_stamp"].$input.empty().add_options(me.letter_heads);
+				dialog.fields_dict["right_stamp"].$input.empty().add_options(me.letter_heads); */
+				
+				
+				
+				/* dialog.fields_dict["company"].get_query = function(){
+					return {
+						filters: [
+							]
+							
+						
+					};
+				}; */
+					
+				
+				dialog.set_primary_action(__("Sign"), function() {
+				
+					me.mrp_print_sign_options =  dialog.get_values();
+					dialog.hide();
+
+				
+				});
+				dialog.show();
+				
+				
+			});
 		
 		this.print_sel = this.wrapper
 			.find(".print-preview-select")
@@ -72,15 +128,25 @@ frappe.ui.form.PrintPreview = Class.extend({
 		this.language_sel = this.wrapper
 			.find(".languages")
 			.on("change", function () {
-				me.lang_code = me.language_sel.val()
-				me.multilingual_preview()
+				me.lang_code = me.language_sel.val();
+				me.multilingual_preview();
 			});
 		
 		me.orientation = "Portrait";		
 		this.orientation_sel = this.wrapper
 			.find(".orientation")
 			.on("change", function(){
-				me.orientation = me.orientation_sel.val()
+				me.orientation = me.orientation_sel.val();
+				if(me.orientation == "Landscape")
+				{
+					me.wrapper.find(".print-preview").addClass('landscape');
+					me.wrapper.find(".print-format").addClass('landscape');
+				}
+				else
+				{
+					me.wrapper.find(".print-preview").removeClass('landscape');
+					me.wrapper.find(".print-format").removeClass('landscape');
+				}
 			});
 			
 		

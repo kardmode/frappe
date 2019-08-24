@@ -18,6 +18,7 @@ frappe.upload = {
 			(opts.options && !opts.options.toLowerCase()=="public" && !opts.options.toLowerCase()=="image"))) {
 			opts.is_private = 1;
 		}
+		
 		opts.is_private = 1;
 
 		var d = null;

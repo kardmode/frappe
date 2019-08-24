@@ -32,7 +32,7 @@ def get_desktop_icons(user=None):
 
 	if not user_icons:
 		fields = ['module_name', 'hidden', 'label', 'link', 'type', 'icon', 'color',
-			'_doctype', '_report', 'idx', 'force_show', 'reverse', 'custom', 'standard', 'blocked']
+			'_doctype', '_report', 'idx', 'force_show', 'reverse', 'custom', 'standard', 'blocked','hide_in_module_sidebar']
 
 		active_domains = frappe.get_active_domains()
 
@@ -76,6 +76,8 @@ def get_desktop_icons(user=None):
 
 				elif standard_icon.force_show:
 					icon.hidden = 0
+					
+				icon.hide_in_module_sidebar = standard_icon.hide_in_module_sidebar
 
 		# add missing standard icons (added via new install apps?)
 		user_icon_names = [icon.module_name for icon in user_icons]

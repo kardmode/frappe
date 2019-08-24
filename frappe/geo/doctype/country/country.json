@@ -1,5 +1,7 @@
 {
- "add_company_abbr_to_name": 1, 
+ "add_company_abbr_to_name": 0, 
+ "add_date_to_name": 1, 
+ "add_posting_date_to_name": 0, 
  "allow_copy": 0, 
  "allow_guest_to_view": 0, 
  "allow_import": 1, 
@@ -145,7 +147,7 @@
  "istable": 0, 
  "max_attachments": 0, 
  "menu_index": 0, 
- "modified": "2018-01-11 12:51:15.247148", 
+ "modified": "2019-02-07 23:09:59.217688", 
  "modified_by": "Administrator", 
  "module": "Geo", 
  "name": "Country", 

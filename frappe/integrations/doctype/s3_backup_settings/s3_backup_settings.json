@@ -1,4 +1,7 @@
 {
+ "add_company_abbr_to_name": 0, 
+ "add_date_to_name": 1, 
+ "add_posting_date_to_name": 0, 
  "allow_copy": 0, 
  "allow_guest_to_view": 0, 
  "allow_import": 0, 
@@ -8,7 +11,7 @@
  "custom": 0, 
  "docstatus": 0, 
  "doctype": "DocType", 
- "document_type": "", 
+ "document_type": "Setup", 
  "editable_grid": 1, 
  "engine": "InnoDB", 
  "fields": [
@@ -266,7 +269,7 @@
  "issingle": 1, 
  "istable": 0, 
  "max_attachments": 0, 
- "modified": "2018-08-07 04:12:43.691760", 
+ "modified": "2019-02-07 04:33:25.598515", 
  "modified_by": "Administrator", 
  "module": "Integrations", 
  "name": "S3 Backup Settings", 

@@ -6,6 +6,7 @@ import frappe
 from frappe import _
 from frappe.boot import get_allowed_pages, get_allowed_reports
 from frappe.desk.doctype.desktop_icon.desktop_icon import set_hidden, clear_desktop_icons_cache
+from operator import itemgetter
 
 @frappe.whitelist()
 def get_modules_data(modules):
@@ -41,19 +42,34 @@ def hide_module(module):
 def get_data(module):
 	"""Get module data for the module view `desk/#Module/[name]`"""
 	doctype_info = get_doctype_info(module)
-	data = build_config_from_file(module)
+	# data = build_config_from_file(module)
 
-	if not data:
-		data = build_standard_config(module, doctype_info)
-	else:
-		add_custom_doctypes(data, doctype_info,module)
+	# if not data:
+		# data = build_standard_config(module, doctype_info)
+	# else:
+		# add_custom_doctypes(data, doctype_info,module)
 
+	data = build_standard_config(module, doctype_info)
 	
-
+	if module == "Setup":
+		if frappe.conf.get('developer_mode'):
+			doctype_info = get_doctype_info("Core")
+			data += build_standard_config("Core", doctype_info)
+			
 	data = combine_common_sections(data)
 	data = apply_permissions(data)
+	
+	
+		
 
-	#set_last_modified(data)
+	# for d in data:
+		# _items = []
+		# _items = sorted(d.get("items", []), key=itemgetter('name')) 
+
+		# d.update({ "items": _items })
+
+		
+
 
 	return data
 
@@ -91,32 +107,60 @@ def filter_by_restrict_to_domain(data):
 
 	return data
 
-def get_custom_links(data,module, doctype_info):
-	if module == "Stock":
-		add_section(data, _("Setup"), "fa fa-cog",[
-		{
-			"type": "doctype",
-			"name": "Item Group",
-			"icon": "fa fa-sitemap",
-			"label": _("Item Group"),
-			"link": "Tree/Item Group",
-		}])
-	elif module == "Accounts":
-		add_section(data, _("Setup"), "fa fa-cog",
-				[{
-					"type": "doctype",
-					"name": "Company",
-					"icon": "fa fa-building-o",
-					"description": _("Company (not Customer or Supplier) master.")
-				},
-				{
-					"type": "doctype",
-					"name": "Account",
-					"icon": "fa fa-sitemap",
-					"label": _("Chart of Accounts"),
-					"route": "Tree/Account",
-					"description": _("Tree of financial accounts."),
-				}])
+def get_custom_links(data,module):
+
+	
+
+	custom_links =  frappe.get_list("Module View Link", fields=["label","section","type","icon", "_doctype","_module","_report","_page","link"], filters=
+		{"blocked": 0, "module_name": module})
+		
+	for link in custom_links:
+	
+		section_icon, section_color,section_shown_in = frappe.db.get_value("MRP Module Section", link.section, 
+			["icon", "color","shown_in"])
+			
+		if section_shown_in != "none":
+		
+		
+			name = link.label
+			if link.type == "doctype":
+				name = link._doctype
+			elif link.type == "link":
+				name = link.label
+			elif link.type == "page":
+				name = link._page
+			elif link.type == "report":
+				name = link._report
+			elif link.type == "module" and link._module:
+				doctype_info = get_doctype_info(link._module)
+				
+				items = []
+				for d in doctype_info:
+					if d.document_type:
+						custom_shown_in = frappe.db.get_value("MRP Module Section", d.document_type, ["shown_in"])
+						if custom_shown_in != "none":
+							items.append(d)
+						
+				if items:
+					add_section(data, _(link.section), section_icon, items,section_color,section_shown_in)
+					
+						
+							
+				continue
+			
+		
+		
+		
+			add_section(data, _(link.section),section_icon,[
+			{
+				"type": link.type,
+				"name": name,
+				"icon": link.icon,
+				"label": _(link.label),
+				"link": link.link,
+			}],section_color,section_shown_in)
+	
+	
 
 def build_standard_config(module, doctype_info):
 	"""Build standard module data from DocTypes."""
@@ -126,64 +170,82 @@ def build_standard_config(module, doctype_info):
 	data = []
 	
 	
-	Documents = ["Document", "Transaction"]
-	Setup = ["Master", "Setup"]
-	Other = ["Other",""]
-	Tools = ["Tool"]
+	# Documents = ["Document", "Transaction"]
+	# Setup = ["Master", "Setup"]
+	# Other = ["Other"]
+	# Tools = ["Tool"]
 	
-	add_section(data, _("Documents"), "fa fa-file-text",
-		[d for d in doctype_info if (d.document_type in Documents)])
-
-	add_section(data, _("Starred Reports"), "fa fa-star",
-		[d for d in get_report_list(module, is_standard="Yes") if (d["favorite"])])
-
-	add_section(data, _("Starred Reports"), "fa fa-star",
-		[d for d in get_report_list(module) if (d["favorite"])])
+	custom_links =  frappe.get_list("MRP Module Section", fields=["name", "icon", "shown_in"],order_by="name")
+	for link in custom_links:
+		if link.shown_in != "none":
+			add_section(data, _(link.name), link.icon,
+				[d for d in doctype_info if (d.document_type == link.name)],link.color,link.shown_in)
+				
+	get_custom_links(data,module)
 		
-	add_section(data, _("Setup"), "fa fa-cog",
-		[d for d in doctype_info if (d.document_type in Setup)])	
-		
-	get_custom_links(data,module, doctype_info)
-	
-	add_section(data, _("Tools"), "fa fa-wrench",
-		[d for d in doctype_info if (d.document_type in Tools)])
-		
+	# add_section(data, _("Document"), "fa fa-file-text",
+		# [d for d in doctype_info if (d.document_type in Documents)],"darkred")
 		
 	add_section(data, _("Reports"), "fa fa-list",
-		[d for d in get_report_list(module, is_standard="Yes") if (not d["favorite"])])
+		[d for d in get_custom_report_list(module)],"lightblue","module_menu")
+
+
+	# add_section(data, _("Starred Reports"), "fa fa-star",
+		# [d for d in get_report_list(module, is_standard="Yes") if (d["favorite"])],"lightblue")
+
+	# add_section(data, _("Starred Reports"), "fa fa-star",
+		# [d for d in get_report_list(module) if (d["favorite"])],"lightblue")
 		
-	add_section(data, _("Reports"), "fa fa-list-alt",
-		[d for d in get_report_list(module) if (not d["favorite"])])
+	# add_section(data, _("Setup"), "fa fa-cog",
+		# [d for d in doctype_info if (d.document_type in Setup)],"darkblue")	
+		
 	
-	add_section(data, _("Other"), "fa fa-file",
-		[d for d in doctype_info if (d.document_type in Other)])	
+	
+	# add_section(data, _("Tool"), "fa fa-wrench",
+		# [d for d in doctype_info if (d.document_type in Tools)])
+		
+		
+	# add_section(data, _("Reports"), "fa fa-list",
+		# [d for d in get_report_list(module, is_standard="Yes") if (not d["favorite"])],"darkgreen","module_menu")
+		
+	# add_section(data, _("Reports"), "fa fa-list-alt",
+		# [d for d in get_report_list(module) if (not d["favorite"])],"lightgreen","module_menu")
+	
+	# add_section(data, _("Other"), "fa fa-file",
+		# [d for d in doctype_info if (d.document_type in Other)],"darkblue","module_menu")	
 
 	return data
 
-def add_section(data, label, icon, items):
+def add_section(data, label, icon, items,color="#7f8c8d",shown_in="module_view"):
 	"""Adds a section to the module data."""
 	if not items: return
 	data.append({
 		"label": label,
 		"icon": icon,
-		"items": items
+		"items": items,
+		"color":color,
+		"shown_in":shown_in
 	})
 
 
 def add_custom_doctypes(data, doctype_info,module):
-	"""Adds Custom DocTypes to modules setup via `config/desktop.py`."""
-	add_section(data, _("Documents"), "fa fa-file-text",
-		[d for d in doctype_info if ((d.custom or d.beta) and d.document_type in ("Document", "Transaction"))])
+	# """Adds Custom DocTypes to modules setup via `config/desktop.py`."""
+	# add_section(data, _("Documents"), "fa fa-file-text",
+		# [d for d in doctype_info if ((d.custom or d.beta) and d.document_type in ("Document", "Transaction"))])
 
-	add_section(data, _("Setup"), "fa fa-cog",
-		[d for d in doctype_info if ((d.custom or d.beta) and d.document_type in ("Setup", "Master", ""))])
-
-
-	add_section(data, _("Starred Reports"), "fa fa-star",
-		[d for d in get_report_list(module) if (d["favorite"])])
+	# add_section(data, _("Setup"), "fa fa-cog",
+		# [d for d in doctype_info if ((d.custom or d.beta) and d.document_type in ("Setup", "Master", ""))])
 		
-	add_section(data, _("Reports"), "fa fa-list-alt",
-		[d for d in get_report_list(module) if (not d["favorite"])])
+	custom_links =  frappe.get_list("MRP Module Section", fields=["name", "icon", "shown_in"],order_by="name")
+	for link in custom_links:
+		if link.shown_in != "none":
+			add_section(data, _(link.name), link.icon,
+				[d for d in doctype_info if (d.document_type == link.name)],link.color,link.shown_in)
+
+	get_custom_links(data,module)
+
+	add_section(data, _("Reports"), "fa fa-list",
+		[d for d in get_custom_report_list(module)],"lightblue","module_menu")
 		
 def get_doctype_info(module):
 	"""Returns list of non child DocTypes for given module."""
@@ -196,17 +258,26 @@ def get_doctype_info(module):
 		"ifnull(restrict_to_domain, '')": "",
 		"restrict_to_domain": ("in", active_domains)
 	}, fields=["'doctype' as type", "name", "description", "document_type",
-		"custom", "issingle","beta","icon"], order_by="custom asc, document_type desc, name asc")
+		"custom", "issingle","beta","icon","custom_label as label"], order_by="custom asc, document_type desc, name asc")
+		
+		
+	doctype_info += frappe.get_all("Page", filters={
+		"module": module
+	}, or_filters={
+		"ifnull(restrict_to_domain, '')": "",
+		"restrict_to_domain": ("in", active_domains)
+	}, fields=["'page' as type", "name","title as label", "description", "document_type",
+		"custom","beta","icon"], order_by="custom asc, document_type desc, name asc")
 
 
 	for d in doctype_info:
 		d.document_type = d.document_type or ""
 		d.description = _(d.description or "")
-		if ('icon' not in d):
-			d["icon"] = "fa fa-file-text"
-		elif d.icon == "" or d.icon == None:
-			d["icon"] = "fa fa-file-text"
-
+		# if ('icon' not in d):
+			# d["icon"] = "fa fa-file-text"
+		# elif d.icon == "" or d.icon == None:
+			# d["icon"] = "fa fa-file-text"
+		d["icon"] = ""
 	return doctype_info
 
 def combine_common_sections(data):
@@ -248,7 +319,8 @@ def apply_permissions(data):
 			if ((item.type=="doctype" and item.name in user.can_read)
 				or (item.type=="page" and item.name in allowed_pages)
 				or (item.type=="report" and item.name in allowed_reports)
-				or item.type=="help"):
+				or item.type=="help"
+				or item.type=="link"):
 
 				new_items.append(item)
 
@@ -271,10 +343,13 @@ def get_config(app, module):
 				continue
 			if not "label" in item:
 				item["label"] = _(item["name"])
-			if not "icon" in item:
-				item["icon"] = "fa fa-file-text"
-			elif item["icon"] == "" or item["icon"] == None:
-				item["icon"] = "fa fa-file-text"
+			# if not "icon" in item:
+				# item["icon"] = "fa fa-file-text"
+			# elif item["icon"] == "" or item["icon"] == None:
+				# item["icon"] = "fa fa-file-text"
+			item["icon"] = ""	
+		if not "shown_in" in section:
+			 section["shown_in"] = "module_view"
 	return config
 
 def add_setup_section(config, app, module, label, icon):
@@ -294,7 +369,8 @@ def get_setup_section(app, module, label, icon):
 			return {
 				"label": label,
 				"icon": icon,
-				"items": section["items"]
+				"items": section["items"],
+				"shown_in":"module_view"
 			}
 
 def set_last_modified(data):
@@ -341,6 +417,26 @@ def get_report_list(module, is_standard="No"):
 			"label": _(r.name),
 			"name": r.name,
 			"icon": "fa fa-list",
+			"favorite":r.favorite
+		})
+
+	return out
+	
+def get_custom_report_list(module):
+	"""Returns list on new style reports for modules."""
+	reports =  frappe.get_list("Report", fields=["name", "ref_doctype", "report_type","favorite"], filters=
+		{"disabled": 0, "module": module},
+		order_by="favorite desc, name")
+		
+	out = []
+	for r in reports:
+		out.append({
+			"type": "report",
+			"doctype": r.ref_doctype,
+			"is_query_report": 1 if r.report_type in ("Query Report", "Script Report") else 0,
+			"label": _(r.name),
+			"name": r.name,
+			"icon": "fa fa-star" if r.favorite == 1 else "",
 			"favorite":r.favorite
 		})
 

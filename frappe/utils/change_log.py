@@ -143,7 +143,11 @@ def check_for_update():
 
 		github_version, org_name = app_details
 		# Get local instance's current version or the app
-		instance_version = Version(apps[app]['branch_version'].split(' ')[0])
+		branch_version = apps[app]['branch_version'].split(' ')[0] if apps[app].get('branch_version', '') else ''
+		instance_version = Version(branch_version or apps[app].get('version'))
+		
+		
+		
 		# Compare and popup update message
 		for update_type in updates:
 			if github_version.__dict__[update_type] > instance_version.__dict__[update_type]:

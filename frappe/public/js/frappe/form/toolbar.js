@@ -360,8 +360,14 @@ frappe.ui.form.Toolbar = Class.extend({
 		if(this.frm.save_disabled)
 			return;
 
+		
 		if(this.frm.doc.__unsaved) {
 			this.page.set_indicator(__("Not Saved"), "orange");
+			this.page.mrp_update_primary_action(true);
+		}
+		else
+		{
+			this.page.mrp_update_primary_action(false);
 		}
 
 		$(this.frm.wrapper).attr("data-state", this.frm.doc.__unsaved ? "dirty" : "clean");

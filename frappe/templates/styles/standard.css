@@ -14,7 +14,13 @@
 
 	.print-format.landscape {
 		max-width: 11.69in;
+		min-height: 8.3in;
 		padding: 0.2in;
+	}
+	
+	.print-preview.landscape {
+		max-width:11.69in !important;
+		min-height:8.3in !important;
 	}
 
 	.page-break {

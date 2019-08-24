@@ -73,10 +73,13 @@ frappe.ui.Page = Class.extend({
 		if(this.single_column) {
 			// nesting under col-sm-12 for consistency
 			this.add_view("main", '<div class="row layout-main">\
+					<div class="always-compact layout-side-section layout-left"></div>\
+					<div class="layout-side-section layout-right"></div>\
 					<div class="col-md-12 layout-main-section-wrapper">\
 						<div class="layout-main-section"></div>\
 						<div class="layout-footer hide"></div>\
 					</div>\
+					<div class="close-sidebar" style="display: none;"></div>\
 				</div>');
 		} else {
 			
@@ -114,8 +117,9 @@ frappe.ui.Page = Class.extend({
 				this.is_module_page = true;
 				
 				this.add_view("main", '<div class="row layout-main">\
-				<div class="col-md-2 layout-side-section layout-left"></div>\
-				<div class="col-md-10 layout-main-section-wrapper">\
+				<div class="layout-side-section layout-right"></div>\
+				<div class="col-md-3 layout-side-section layout-left"></div>\
+				<div class="col-md-9 layout-main-section-wrapper">\
 					<div class="layout-main-section"></div>\
 					<div class="layout-footer hide"></div>\
 				</div>\
@@ -129,6 +133,7 @@ frappe.ui.Page = Class.extend({
 					<div class="layout-main-section"></div>\
 					<div class="layout-footer hide"></div>\
 				</div>\
+				<div class="close-sidebar" style="display: none;"></div>\
 			</div>');
 				
 			}
@@ -172,13 +177,17 @@ frappe.ui.Page = Class.extend({
 		this.page_form = $('<div class="page-form row hide"></div>').prependTo(this.main);
 		this.inner_toolbar = $('<div class="form-inner-toolbar hide"></div>').prependTo(this.main);
 		
-		this.custom_btn_group = this.page_actions.find(".toggle-rightbar");
 		this.setup_rightbar();
 		this.setup_leftbar();
 		
 		if(this.is_module_page !== true)
 		{
 			this.setup_module_sidebar();
+		}
+		else
+		{
+			
+			
 		}
 		
 		
@@ -195,15 +204,15 @@ frappe.ui.Page = Class.extend({
 		
 		this.get_page_modules = () => {
 		return frappe.get_desktop_icons(true)
-			.filter(d => d.type==='module' && !d.blocked && d.module_name !=="Learn")
+			.filter(d => d.type==='module' && !d.blocked)
 			.sort((a, b) => { return (a._label > b._label) ? 1 : -1; });
 		};
 
 		let get_module_sidebar_item = (item) => `<li class="strong module-sidebar-item">
-			<a class="module-link" data-name="${item.module_name}" href="#modules/${item.module_name}">
+			<a class="module-link`+ (item.hide_in_module_sidebar ? ' hide':'')+`" data-name="${item.module_name}" href="#modules/${item.module_name}">
 				<i class="fa fa-chevron-right pull-right" style="display: none;"></i>
-							<span class="sidebar-icon"><i class="${item.icon}"></i></span>
-				<span>${item._label}</span>
+							<span class="sidebar-icon" style="background-color: ${item.color}"><i class="${item.icon}"></i></span>
+				<span class="ellipsis">${item._label}</span>
 			</a>
 		</li>`;
 
@@ -251,6 +260,8 @@ frappe.ui.Page = Class.extend({
 			scroll_container.css("overflow-y", "hidden");
 
 			close_sidebar_div.on('click', close_sidebar);
+			close_sidebar_div.on('touchmove', function (e) { e.preventDefault(); }); 
+
 			layout_side_section.on("click", "a", close_sidebar);
 
 			function close_sidebar(e) {
@@ -268,6 +279,8 @@ frappe.ui.Page = Class.extend({
 	},
 	
 	setup_rightbar: function() {
+		this.custom_btn_group = this.page_actions.find(".toggle-rightbar");
+
 		this.custom_btn_group.on("click", function () {
 
 			var layout_side_section = $('.layout-side-section.layout-right');
@@ -299,6 +312,8 @@ frappe.ui.Page = Class.extend({
 			scroll_container.css("overflow-y", "hidden");
 
 			close_sidebar_div.on('click', close_sidebar);
+						close_sidebar_div.on('touchmove', function (e) { e.preventDefault(); }); 
+
 			layout_side_section.on("click", "a", close_sidebar);
 
 			function close_sidebar(e) {
@@ -338,6 +353,41 @@ frappe.ui.Page = Class.extend({
 	set_indicator: function(label, color) {
 		this.clear_indicator().removeClass("hide").html(`<span class='hidden-xs'>${label}</span>`).addClass(color);
 	},
+	
+	add_action_dropdown_btn: function(icon, label,parent_label, href ) {
+		
+		var lower_case = parent_label.toLowerCase();
+		var $group = this.icon_group.find('.btn-group[data-label="'+lower_case+'"]');
+		if(!$group.length) {
+			$group = $('<div class="btn-group" data-label="'+lower_case+'">\
+				<button type="button" class="btn btn-default dropdown-toggle btn-sm" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">\
+				<i class="'+icon+'"></i><span class="hidden-xs ">' + parent_label + '</span></button>\
+				<ul class="dropdown-menu" style="margin-top: -8px;"></ul></div>').appendTo(this.icon_group);
+		}
+		
+		if(!$group.length) {
+			var $group_ul = $group.find(".dropdown-menu");
+
+		
+		
+			this.icon_group.removeClass("hide")
+			this.add_dropdown_item_href(label,'#'+href, true, $group_ul);
+		
+		}
+		
+	
+	},
+	
+	add_action_btn: function(icon,label, click ) {
+		var style = '';
+		if(icon)
+			style = 'margin-left:5px;';
+		var lower_case = label.toLowerCase();
+		return $('<a class="btn btn-default btn-sm text-muted no-decoration"><i class="' + icon + '"></i><span style="'+style+'" class="hidden-xs">' + label + '</span></a>')
+			.appendTo(this.icon_group.removeClass("hide"))
+			.click(click);
+	
+	},
 
 	add_action_icon: function(icon, click) {
 		
@@ -353,7 +403,23 @@ frappe.ui.Page = Class.extend({
 	get_icon_label: function(icon, label) {
 		if(label === "Refresh")
 		{
-			return '<i class="visible-xs visible-sm ' + icon + '"></i><span class="hidden-xs hidden-sm">' + label + '</span>'
+			return '<i class="' + icon + '"></i><span class="hide">' + label + '</span>'
+		}
+		else if(label === "Submit")
+		{
+			return '<i class="' + icon + '"></i><span class="hide">' + label + '</span>'
+		}
+		else if(label === "New")
+		{
+			return '<i class="' + icon + '"></i><span class="hide">' + label + '</span>'
+		}
+		else if(label === "Delete")
+		{
+			return '<i class="' + icon + '"></i><span class="hide">' + label + '</span>'
+		}
+		else if(label === "Save")
+		{
+			return '<i class="' + icon + '"></i><span class="hide">' + label + '</span>'
 		}
 		else
 			return '<i class="visible-xs ' + icon + '"></i><span class="hidden-xs">' + label + '</span>'
@@ -362,6 +428,12 @@ frappe.ui.Page = Class.extend({
 
 	set_action: function(btn, opts) {
 		let me = this;
+		
+		if(opts.label === "Save")
+		{
+			btn.addClass("mrp_btn_not_saved")
+		}
+		
 		if (opts.icon) {
 			opts.label = this.get_icon_label(opts.icon, opts.label);
 		}
@@ -375,6 +447,8 @@ frappe.ui.Page = Class.extend({
 				let response = opts.click.apply(this);
 				me.btn_disable_enable(btn, response);
 			});
+			
+		
 
 		if (opts.working_label) {
 			btn.attr("data-working-label", opts.working_label);
@@ -423,6 +497,20 @@ frappe.ui.Page = Class.extend({
 	clear_icons: function() {
 		this.icon_group.addClass("hide").empty();
 	},
+	
+	mrp_update_primary_action: function(is_dirty) {
+		
+		
+		if(is_dirty) {
+			this.btn_primary.addClass("mrp_is_dirty");
+		}
+		else
+		{
+			this.btn_primary.removeClass("mrp_is_dirty");
+		}		
+
+		
+	},
 
 	//--- Menu --//
 
@@ -461,6 +549,37 @@ frappe.ui.Page = Class.extend({
 	},
 
 	//-- Generic --//
+	/*
+	* Add label to given drop down menu. If label, is already contained in the drop
+	* down menu, it will be ignored.
+	* @param {string} label - Text for the drop down menu
+	* @param {function} click - function to be called when `label` is clicked
+	* @param {Boolean} standard
+	* @param {object} parent - DOM object representing the parent of the drop down item lists
+	*/
+	add_dropdown_item_href: function(label, href, standard, parent) {
+		let item_selector = 'li > a.grey-link';
+
+		parent.parent().removeClass("hide");
+
+		var $li = $('<li><a class="grey-link" href="'+ href +'">'+ label +'</a></li>');
+		//var $link = $li.find("a").on("click", click);
+
+		if (this.is_in_group_button_dropdown(parent, item_selector, label)) return;
+
+		if(standard===true) {
+			$li.appendTo(parent);
+		} else {
+			this.divider = parent.find(".divider");
+			if(!this.divider.length) {
+				this.divider = $('<li class="divider user-action"></li>').prependTo(parent);
+			}
+			$li.addClass("user-action").insertBefore(this.divider);
+		}
+
+		//return $link;
+	},
+	
 
 	/*
 	* Add label to given drop down menu. If label, is already contained in the drop
@@ -475,7 +594,7 @@ frappe.ui.Page = Class.extend({
 
 		parent.parent().removeClass("hide");
 
-		var $li = $('<li><a class="grey-link">'+ label +'</a><li>'),
+		var $li = $('<li><a class="grey-link">'+ label +'</a></li>'),
 			$link = $li.find("a").on("click", click);
 
 		if (this.is_in_group_button_dropdown(parent, item_selector, label)) return;

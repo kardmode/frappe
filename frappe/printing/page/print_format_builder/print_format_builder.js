@@ -302,6 +302,7 @@ frappe.PrintFormatBuilder = Class.extend({
 		// build table columns and widths in a dict
 		// visible_columns
 		var me = this;
+
 		if(!f.visible_columns) {
 			me.init_visible_columns(f);
 		}
@@ -314,7 +315,7 @@ frappe.PrintFormatBuilder = Class.extend({
 
 				// column names set as fieldname|width
 				f.visible_columns.push({fieldname: _f.fieldname,
-					print_width: (_f.width || ""), print_hide:0,print_label: _f.label });
+					print_width: (_f.width || ""), print_hide:0,print_label: _f.label,print_parent:"",print_align:"newline" });
 			}
 		});
 	},
@@ -471,10 +472,16 @@ frappe.PrintFormatBuilder = Class.extend({
 						fieldtype:"Data"
 					},
 					{
+						label: __("Label Location"),
+						fieldname: "label_location",
+						fieldtype: "Select",
+						options: [{'label': __('Left'), 'value': 'left'}, {'label': __('Right'), 'value': 'right'}, {'label': __('Above'), 'value': 'above'}, {'label': __('Below'), 'value': 'below'}, {'label': __('Hidden'), 'value': 'hidden'}]
+					},
+					{
 						label: __("Align Value"),
 						fieldname: "align",
 						fieldtype: "Select",
-						options: [{'label': __('Left'), 'value': 'left'}, {'label': __('Right'), 'value': 'right'}]
+						options: [{'label': __('Left'), 'value': 'left'}, {'label': __('Right'), 'value': 'right'}, {'label': __('Center'), 'value': 'center'}]
 					},
 					{
 						label: __("Remove Field"),
@@ -494,6 +501,7 @@ frappe.PrintFormatBuilder = Class.extend({
 			d.set_value('label', field.attr("data-label"));
 
 			d.set_primary_action(__("Update"), function() {
+				field.attr('data-label-location', d.get_value('label_location'));
 				field.attr('data-align', d.get_value('align'));
 				field.attr('data-label', d.get_value('label'));
 				field.find('.field-label').html(d.get_value('label'));
@@ -505,6 +513,13 @@ frappe.PrintFormatBuilder = Class.extend({
 				d.set_value('align', field.attr('data-align'));
 			} else {
 				d.set_value('align', 'left');
+			}
+			
+			// set current value
+			if(field.attr('data-label-location')) {
+				d.set_value('label_location', field.attr('data-label-location'));
+			} else {
+				d.set_value('label_location', 'left');
 			}
 
 			d.show();
@@ -606,9 +621,11 @@ frappe.PrintFormatBuilder = Class.extend({
 				widths = {};
 				
 			var labels = {};	
-
+			var hide_sr = parent.attr("data-hide-sr") || 0;
 			
-
+			var print_parents = {};
+			var print_aligns = {};
+			
 			var d = new frappe.ui.Dialog({
 				title: __("Select Table Columns for {0}", [label]),
 			});
@@ -626,9 +643,11 @@ frappe.PrintFormatBuilder = Class.extend({
 
 			// add field which are in column_names first to preserve order
 			var fields = [];
+			var parent_options = [""]
 			$.each(column_names, function(i, v) {
 				if(in_list(Object.keys(docfields_by_name), v)) {
 					fields.push(docfields_by_name[v]);
+					parent_options.push(docfields_by_name[v].fieldname);
 				}
 			})
 			
@@ -637,7 +656,14 @@ frappe.PrintFormatBuilder = Class.extend({
 			$.each(columns, function(i, v) {
 				var parts = v.split("|");
 				widths[parts[0]] = parts[1] || "";
-				labels[parts[0]] = parts[2] || docfields_by_name[parts[0]].label;
+				if(parts[2] == "")
+					labels[parts[0]] = "";
+				else if (parts[2] == null)
+					labels[parts[0]] = docfields_by_name[parts[0]].label;
+				else
+					labels[parts[0]] = parts[2];
+				print_parents[parts[0]] = parts[3] || "";
+				print_aligns[parts[0]] = parts[4] || "newline";
 			});
 			
 			// add remaining fields
@@ -652,7 +678,8 @@ frappe.PrintFormatBuilder = Class.extend({
 				fields: fields,
 				column_names: column_names,
 				widths: widths,
-				labels:labels
+				labels:labels,
+				hide_sr:hide_sr
 			})).appendTo(d.body);
 
 			Sortable.create($body.find(".column-selector-list").get(0));
@@ -664,32 +691,198 @@ frappe.PrintFormatBuilder = Class.extend({
 			var get_label_input = function(fieldname) {
 				return $body.find(".column-label[data-fieldname='"+ fieldname +"']")
 			}
+			
+			var get_parent_input = function(fieldname) {
+				return $body.find(".column-parent[data-fieldname='"+ fieldname +"']")
+			}
+			
+			var get_align_input = function(fieldname) {
+				return $body.find(".column-align[data-fieldname='"+ fieldname +"']")
+			}
+			
+			// fill select options and values
+			$body.find("input:checked").each(function() {
+					var test_fieldname = $(this).attr("data-fieldname");
+					if (test_fieldname)
+					{
+						var test_align_input = get_align_input(test_fieldname);
+						test_align_input[0].value = print_aligns[test_fieldname] || "newline";						
+						
+						var test_parent_input = get_parent_input(test_fieldname);
+						test_parent_input[0].options.length = 0;
+						
+						
+						
+						var index_counter = 0;
+						for(index in parent_options) {
+							if(test_fieldname !== parent_options[index])
+							{
+								if(parent_options[index] ==="")
+								{
+									test_parent_input[0].options[index_counter] = new Option(parent_options[index], parent_options[index]);
+									index_counter++;
+								}
+								else if (print_parents[parent_options[index]] === "")
+								{
+									test_parent_input[0].options[index_counter] = new Option(parent_options[index], parent_options[index]);
+									index_counter++;
+									
+								}
+								
+							}
+						}
+						test_parent_input[0].value = print_parents[test_fieldname] || "";
+					}
+				});
 
 			// update data-columns property on update
 			d.set_primary_action(__("Update"), function() {
 				var visible_columns = [];
+				var new_hide_sr = 0;
 				$body.find("input:checked").each(function() {
 					var fieldname = $(this).attr("data-fieldname"),
 						width = get_width_input(fieldname).val() || "",
-						label = get_label_input(fieldname).val() || "";
-					visible_columns.push(fieldname + "|" + width + "|" + label);
+						label = get_label_input(fieldname).val() || "",
+						parent = get_parent_input(fieldname).val() || "",
+						align = get_align_input(fieldname).val() || "";
+					if (fieldname)
+					{
+						visible_columns.push(fieldname + "|" + width + "|" + label + "|" + parent + "|" + align);
+					}
+					else
+						new_hide_sr = 1;
 				});
 				parent.attr("data-columns", visible_columns.join(","));
+				parent.attr("data-hide-sr",new_hide_sr);
+				
 				d.hide();
 			});
 
 			// enable / disable input based on selection
 			$body.on("click", "input[type='checkbox']", function() {
+				
+				if (!$(this).attr("data-fieldname"))
+					return;
+				
+				
 				var disabled = !$(this).prop("checked"),
 					input = get_width_input($(this).attr("data-fieldname")),
-					label_input = get_label_input($(this).attr("data-fieldname"));
+					label_input = get_label_input($(this).attr("data-fieldname")),
+					parent_input = get_parent_input($(this).attr("data-fieldname"));
 
 				input.prop("disabled", disabled);
 				label_input.prop("disabled", disabled);
-				if(disabled) input.val("");
+				parent_input.prop("disabled", disabled);
+				parent_input[0].value = "";
+				if(disabled) 
+				{
+					input.val("");
+				}
+				else
+				{
+					label_input.val(docfields_by_name[$(this).attr("data-fieldname")].label);
+				}
+
+				parent_options = [''];
+				$body.find("input:checked").each(function() {
+					var test_fieldname = $(this).attr("data-fieldname");
+					if (test_fieldname)
+					{
+						var test_parent_input = get_parent_input(test_fieldname);
+						if(test_parent_input.val() === "" || test_parent_input.val() === null)
+							parent_options.push(test_fieldname);
+					}
+						
+				});
+				
+				$body.find("input:checked").each(function() {
+					var test_fieldname = $(this).attr("data-fieldname");
+					if (test_fieldname)
+					{
+						var test_parent_input = get_parent_input(test_fieldname);
+						var final_value = "";
+						
+						if (parent_options.indexOf(test_parent_input.val())>0)
+						{
+							final_value = test_parent_input.val();
+						}
+
+						test_parent_input[0].options.length = 0;
+						
+						var index_counter = 0;
+						for(index in parent_options) {
+							if(test_fieldname !== parent_options[index])
+							{
+								test_parent_input[0].options[index_counter] = new Option(parent_options[index], parent_options[index]);
+								index_counter++;
+									
+								
+							}
+						}
+
+						test_parent_input[0].value = final_value;
+					}
+				});
+				
 			});
+			
+						// enable / disable input based on selection
+			$body.on("change", "select", function() {
+
+				var changed_fieldname = $(this).attr("data-fieldname");
+				if (!changed_fieldname)
+					return;
+				
+				if(!$(this).hasClass("column-parent"))
+					return;
+					
+				parent_options = [''];
+				$body.find("input:checked").each(function() {
+					var test_fieldname = $(this).attr("data-fieldname");
+					if (test_fieldname)
+					{
+						var test_parent_input = get_parent_input(test_fieldname);
+						if(test_parent_input.val() === "" || test_parent_input.val() === null)
+							parent_options.push(test_fieldname);
+					}
+						
+				});
+				
+				
+				$body.find("input:checked").each(function() {
+					var test_fieldname = $(this).attr("data-fieldname");
+					if (test_fieldname)
+					{
+						var test_parent_input = get_parent_input(test_fieldname);
+						var final_value = "";
+												
+						if (parent_options.indexOf(test_parent_input.val())>0)
+						{
+							final_value = test_parent_input.val();
+						}
+						
+						test_parent_input[0].options.length = 0;
+						
+						var index_counter = 0;
+						for(index in parent_options) {
+							if(test_fieldname !== parent_options[index])
+							{
+								test_parent_input[0].options[index_counter] = new Option(parent_options[index], parent_options[index]);
+								index_counter++;
+									
+								
+							}
+						}
+						test_parent_input[0].value = final_value;
+					}
+				});
+				
+				
+			});
+			
 
 			d.show();
+			d.$wrapper.find('.modal-dialog').css("width", "80vw");
 
 			return false;
 		});
@@ -698,7 +891,7 @@ frappe.PrintFormatBuilder = Class.extend({
 		if(!f.visible_columns) {
 			this.init_visible_columns(f);
 		}
-		return $.map(f.visible_columns, function(v) { return v.fieldname + "|" + (v.print_width || "") + "|" + (v.print_label || "") }).join(",");
+		return $.map(f.visible_columns, function(v) { return v.fieldname + "|" + (v.print_width || "") + "|" + (v.print_label || "") + "|" + (v.print_parent || "") + "|" + (v.print_align || "newline") }).join(",");
 	},
 	get_no_content: function() {
 		return __("Edit to add content")
@@ -768,6 +961,7 @@ frappe.PrintFormatBuilder = Class.extend({
 				$(this).find(".print-format-builder-field").each(function() {
 					var $this = $(this),
 						fieldtype = $this.attr("data-fieldtype"),
+						label_location = $this.attr('data-label-location'),
 						align = $this.attr('data-align'),
 						label = $this.attr('data-label'),
 						df = {
@@ -778,6 +972,10 @@ frappe.PrintFormatBuilder = Class.extend({
 					if(align) {
 						df.align = align;
 					}
+					
+					if(label_location) {
+						df.label_location = label_location;
+					}
 
 					if(label) {
 						df.label = label;
@@ -786,15 +984,20 @@ frappe.PrintFormatBuilder = Class.extend({
 					if(fieldtype==="Table") {
 						// append the user selected columns to visible_columns
 						var columns = $this.attr("data-columns").split(",");
+						var hide_sr = $this.attr("data-hide-sr") || 0;
+						df.hide_sr = hide_sr;
 						df.visible_columns = [];
 						$.each(columns, function(i, c) {
 							var parts = c.split("|");
-							df.visible_columns.push({
-								fieldname:parts[0],
-								print_width:parts[1],
-								print_hide:0,
-								print_label:parts[2]
-							});
+							if(parts[0])
+								df.visible_columns.push({
+									fieldname:parts[0],
+									print_width:parts[1],
+									print_hide:0,
+									print_label:parts[2],
+									print_parent:parts[3],
+									print_align:parts[4]
+								});
 						});
 					}
 					if(fieldtype==="Custom HTML") {

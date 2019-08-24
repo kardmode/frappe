@@ -103,7 +103,7 @@ def get_docinfo(doc=None, doctype=None, name=None):
 	}
 
 def get_attachments(dt, dn):
-	return frappe.get_all("File", fields=["name", "file_name", "file_url", "is_private"],
+	return frappe.get_all("File", fields=["name", "file_name", "file_url", "is_private","description"],
 		filters = {"attached_to_name": dn, "attached_to_doctype": dt})
 
 def get_versions(doc):

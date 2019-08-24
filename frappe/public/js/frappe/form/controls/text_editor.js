@@ -93,7 +93,7 @@ frappe.ui.form.ControlTextEditor = frappe.ui.form.ControlCode.extend({
 								.trigger('click');
 						}
 					}
-				},
+				}/* ,
 				onPaste: function (e) {
 					var options = {cleaner: {
 							action: 'both', // both|button|paste 'button' only cleans via toolbar button, 'paste' only clean when pasting content, both does both options.
@@ -147,7 +147,7 @@ frappe.ui.form.ControlTextEditor = frappe.ui.form.ControlCode.extend({
 							} */
 						
 						// 5. remove attributes ' style="..."'
-						var bA = ['style', 'start'];
+						/* var bA = ['style', 'start'];
 						
 						for (var ii = 0; ii < bA.length; ii++ ) {
 							//var aS=new RegExp(' ('+bA[ii]+'="(.*?)")|('+bA[ii]+'=\'(.*?)\')', 'gi');
@@ -160,14 +160,14 @@ frappe.ui.form.ControlTextEditor = frappe.ui.form.ControlCode.extend({
 					};
 				
 					e.preventDefault();
-					var bufferText = e.originalEvent.clipboardData.getData('text/html');
-					var cleanText = CleanPastedHTML(bufferText,options.cleaner.newline);
-					// bufferText = me.editor.summernote('code');
-					me.editor.summernote('pasteHTML',cleanText);
-					//me.editor.summernote('pasteHTML',cleanText(bufferText,options.cleaner.newline));
+					// var bufferText = e.originalEvent.clipboardData.getData('text/html');
+					var bufferText = me.editor.summernote('code');
+					// var cleanText = CleanPastedHTML(bufferText,options.cleaner.newline);
 					
+					me.editor.summernote('pasteHTML',bufferText);
+					 */
 					
-				}
+				//} */
 			},
 			icons: {
 				'align': 'fa fa-align',

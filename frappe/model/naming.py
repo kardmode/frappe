@@ -66,39 +66,39 @@ def set_new_name(doc):
 	doc.name = validate_name(doc.doctype, doc.name, frappe.get_meta(doc.doctype).get_field("name_case"))
 
 def get_custom_naming_series(key,doc,add_date = False):
-	
-	add_company_abbr = 0 
+
+	naming_series = key
 	if doc:
 		add_company_abbr = frappe.get_meta(doc.doctype).add_company_abbr_to_name or 0
-	
-
-	if add_company_abbr and doc:
-
-		date = ""
-		date_string = ""
+		add_date_custom = frappe.get_meta(doc.doctype).add_date_to_name or 0
+		
+		
 		
 		if add_date:
+			date = ""
+			date_string = ""
 			if hasattr(doc, 'posting_date'):
 				date = doc.posting_date
 			elif hasattr(doc, 'transaction_date'):
 				date = doc.transaction_date
-
+			elif hasattr(doc, 'attendance_date'):
+				date = doc.attendance_date
 			
 			if date:
 				import datetime
 				year = (getdate(date)).year
 				date_string = str(year)
 		
-		naming_series = key + date_string
-		if hasattr(doc, 'company'):
-			if doc.company:
-				abbr = 	frappe.db.get_value("Company", doc.company, "abbr")
-				if abbr:
-					naming_series = str(abbr) + "-" + naming_series
+				naming_series = key + date_string
 		
-		return naming_series
-	else:
-		return key
+		if add_company_abbr == 1:
+			if hasattr(doc, 'company'):
+				if doc.company:
+					abbr = 	frappe.db.get_value("Company", doc.company, "abbr")
+					if abbr:
+						naming_series = str(abbr) + "-" + naming_series
+						
+	return naming_series
 
 def set_name_by_naming_series(doc):
 	"""Sets name by the `naming_series` property"""
@@ -170,6 +170,8 @@ def parse_naming_series(parts, doctype= '', doc = ''):
 				date = doc.posting_date
 			elif doc and doc.get('transaction_date'):
 				date = doc.transaction_date
+			elif doc and doc.get('attendance_date'):
+				date = doc.attendance_date
 			
 			if date:
 				import datetime
@@ -179,7 +181,7 @@ def parse_naming_series(parts, doctype= '', doc = ''):
 			part = date_string	
 			
 		
-		elif e=='CABBR':
+		elif e=='COM':
 			abbr = ''
 			if doc and doc.get('company'):
 				abbr = str(frappe.db.get_value("Company", doc.company, "abbr")) or ''
@@ -212,22 +214,27 @@ def revert_series_if_last(key, name,doc = None):
 	if ".#" in key:
 		prefix, hashes = key.rsplit(".", 1)
 		
-		if '.' in prefix:
-			prefix = parse_naming_series(prefix.split('.'),doc=doc)
-		else:
-			prefix = get_custom_naming_series(prefix,doc,add_date = False)
-			
 		if "#" not in hashes:
 			return
+			
+		prefix = get_custom_naming_series(prefix,doc,add_date = False)
+		
+		if '.' in prefix:
+			prefix = parse_naming_series(prefix.split('.'),doc=doc)
+			
+		
 	else:
-		if key == doc.naming_series:
-			prefix = get_custom_naming_series(key,doc,add_date = True)
+		
+		if hasattr(doc, 'naming_series'):
+			if key == doc.naming_series:
+				prefix = get_custom_naming_series(key,doc,add_date = True)
+			else:
+				prefix = key
 		else:
 			prefix = key
 
 	count = cint(name.replace(prefix, ""))
 	current = frappe.db.sql("select `current` from `tabSeries` where name=%s for update", (prefix,))
-
 	if current and current[0][0]==count:
 		frappe.db.sql("update tabSeries set current=current-1 where name=%s", prefix)
 
