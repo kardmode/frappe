@@ -219,8 +219,17 @@ frappe.ui.Page = Class.extend({
 		let get_sidebar_html = () => {
 			let sidebar_items_html = this.get_page_modules()
 				.map(get_module_sidebar_item.bind(this)).join("");
-
-			return `<ul class="hide module-sidebar-nav overlay-sidebar nav nav-pills nav-stacked">
+			
+			
+			
+			let sidebar_home_html = `<li class="strong module-sidebar-item">
+				<a class="module-link" href="#">
+				<span class="sidebar-icon"><i class="octicon octicon-home"></i></span>
+				<span class="ellipsis">Home</span>
+				</a></li>`;
+				
+			return `<ul class="module-sidebar-nav overlay-sidebar nav nav-pills nav-stacked">
+				${sidebar_home_html}
 				${sidebar_items_html}
 				<li class="divider"></li>
 			</ul>`;
@@ -401,28 +410,14 @@ frappe.ui.Page = Class.extend({
 	},
 
 	get_icon_label: function(icon, label) {
-		if(label === "Refresh")
+		var tests = ["Refresh", "Submit", "New", "Delete","Save", "Edit", "Update"];
+		
+		if(tests.includes(label))
 		{
-			return '<i class="' + icon + '"></i><span class="hide">' + label + '</span>'
-		}
-		else if(label === "Submit")
-		{
-			return '<i class="' + icon + '"></i><span class="hide">' + label + '</span>'
-		}
-		else if(label === "New")
-		{
-			return '<i class="' + icon + '"></i><span class="hide">' + label + '</span>'
-		}
-		else if(label === "Delete")
-		{
-			return '<i class="' + icon + '"></i><span class="hide">' + label + '</span>'
-		}
-		else if(label === "Save")
-		{
-			return '<i class="' + icon + '"></i><span class="hide">' + label + '</span>'
+			return '<i class="' + icon + '"></i><span class="hide">' + label + '</span>';
 		}
 		else
-			return '<i class="visible-xs ' + icon + '"></i><span class="hidden-xs">' + label + '</span>'
+			return '<i class="visible-xs ' + icon + '"></i><span class="hidden-xs">' + label + '</span>';
 		
 	},
 

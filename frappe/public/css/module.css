@@ -124,3 +124,25 @@
 	
 	font-size:medium;
 }
+
+.module-view-list {
+    
+	
+}
+
+span.module-view-link {
+    display: inline-block;
+    /* width: 75%; */
+	
+}
+
+.module-section .module-section-link
+{
+	display:block;
+	padding:6px 2px;
+}
+
+/* a.module-section-link:hover{
+	background-color: #eee !important;
+	text-decoration:none;
+} */

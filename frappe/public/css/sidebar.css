@@ -52,6 +52,7 @@ body[data-route^="Module"] .main-menu .form-sidebar {
 }
 .layout-side-section .sidebar-menu {
   /* padding: 10px 15px; */
+  margin:0;
 }
 .layout-side-section .sidebar-menu > li > a:hover,
 .layout-side-section .sidebar-menu > li > a:focus,
@@ -61,11 +62,11 @@ body[data-route^="Module"] .main-menu .form-sidebar {
       /* background-color: #eee; */
 }
 .sidebar-menu .badge {
-  position: absolute;
-  font-weight: normal;
-  right: 0px;
-  top: 0px;
-  padding-bottom: 4px;
+  /* position: absolute; */
+  /* font-weight: normal; */
+  /* right: 0px; */
+  /* top: 0px; */
+  /* padding-bottom: 4px; */
 }
 .sidebar-menu .octicon {
   font-size: 12px;
@@ -249,8 +250,8 @@ body[data-route^="Module"] .main-menu .form-sidebar {
     margin: 0;
   }
   .layout-side-section .overlay-sidebar .badge {
-    top: 9px;
-    right: 15px;
+    /* top: 9px;
+    right: 15px; */
   }
   .layout-side-section .overlay-sidebar .reports-dropdown {
     /* margin-top: 10px; */
@@ -355,7 +356,7 @@ body[data-route^="Module"] .main-menu .form-sidebar {
     background-color: #d8dfe5;
     opacity: 0.7;
   }
-  .layout-side-section .overlay-rightbar li:not(.divider):not(.tagit-new):not(.module-sidebar-item) {
+  .layout-side-section .overlay-rightbar li:not(.divider):not(.tagit-new):not(.module-sidebar-item):not(.list-sidebar-item) {
     padding: 10px 15px;
   }
   .layout-side-section .overlay-rightbar .modified-by,
@@ -363,8 +364,8 @@ body[data-route^="Module"] .main-menu .form-sidebar {
     margin: 0;
   }
   .layout-side-section .overlay-rightbar .badge {
-    top: 9px;
-    right: 15px;
+    /* top: 9px; */
+    /* right: 15px; */
   }
   .layout-side-section .overlay-rightbar .reports-dropdown,
   .layout-side-section .overlay-rightbar .kanban-dropdown {
@@ -435,8 +436,8 @@ li.strong.module-sidebar-item {
 	margin: 0;
 }
 .always-compact.layout-side-section .overlay-sidebar .badge {
-	top: 9px;
-	right: 15px;
+	/* top: 9px; */
+	/* right: 15px; */
 }
 .always-compact.layout-side-section .overlay-sidebar .reports-dropdown {
 	/* margin-top: 10px; */

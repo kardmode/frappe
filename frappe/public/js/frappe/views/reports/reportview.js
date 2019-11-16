@@ -116,9 +116,9 @@ frappe.views.ReportView = frappe.ui.BaseList.extend({
 
 	make_new_and_refresh: function() {
 		var me = this;
-		this.page.set_primary_action(__("Refresh"), function() {
+		this.page.set_secondary_action(__("Refresh"), function() {
 			me.run();
-		});
+		},'octicon octicon-sync');
 
 		this.page.add_menu_item(__("New {0}", [this.doctype]), function() {
 			me.make_new_doc(me.doctype);

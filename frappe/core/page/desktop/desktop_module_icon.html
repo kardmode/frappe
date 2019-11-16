@@ -1,11 +1,23 @@
-<div  class="case-wrapper"
-	data-name="{{ module_name }}" data-link="{{ link }}" title="{{ _label }}">
-	{{ app_icon }}
-	<div class="case-label ellipsis">
-		<div class="circle module-count-{{ _id }}" data-doctype="{{ _doctype }}" style="display: none;">
+<div  class="case-wrapper" data-name="{{ module_name }}" data-link="{{ link }}" title="{{ _label }}">
+	<div data-name="{{ module_name }}" data-link="{{ link }}" title="{{ _label }}" style="position:relative;display:inline-block; ">
+
+		{{ app_icon }}
+		
+		<div class="circle module-notis module-count-{{ _id }}" data-doctype="{{ _doctype }}" style="display: none;">
 			<span class="circle-text"></span>
 		</div>
+		
+		<div class="hide circle module-remove" style="background-color:#E0E0E0; color:#212121">
+			<span class="circle-text"><b>&times</b></span>
+		</div>
+	
+	</div>
+	<div class="case-label ellipsis">
+		
 		<!-- <span id="module-count-{{ _id }}" class="octicon octicon-primitive-dot circle" style="display: None"></span> -->
 		<span class="case-label-text">{{ _label }}</span>
 	</div>
+	
+
+	
 </div>

@@ -48,8 +48,16 @@ frappe.pages['modules'].on_page_load = function(wrapper) {
 	let get_sidebar_html = () => {
 		let sidebar_items_html = page.get_page_modules()
 			.map(get_module_sidebar_item.bind(this)).join("");
-
+			
+			
+		let sidebar_home_html = `<li class="strong module-sidebar-item">
+				<a class="module-link" href="#">
+				<span class="sidebar-icon"><i class="octicon octicon-home"></i></span>
+				<span class="ellipsis">Home</span>
+				</a></li>`;
+				
 		return `<ul class="module-sidebar-nav overlay-sidebar nav nav-pills nav-stacked">
+			${sidebar_home_html}
 			${sidebar_items_html}
 			<li class="divider"></li>
 		</ul>`;
@@ -151,8 +159,9 @@ frappe.pages['modules'].on_page_load = function(wrapper) {
 		var section_style = '';
 		if(icon)
 			section_style = 'margin-left:5px;';
+		section_style = 'font-size:larger;';
 		var $group = $('<div class="list-sidebar overlay-rightbar">').appendTo(layout_side_section);
-		var $groupul = $('<ul class="list-unstyled sidebar-menu standard-actions"><li><div><i class="'+icon+'"></i><span style="'+section_style+'" class="">' + title + '</span></div></li><li class="divider"></li>').appendTo($group);
+		var $groupul = $('<ul class="list-unstyled sidebar-menu standard-actions"><li><div><span style="'+section_style+'" class="">' + title + '</span></div></li><li class="divider"></li>').appendTo($group);
 		
 		
 		
@@ -161,7 +170,7 @@ frappe.pages['modules'].on_page_load = function(wrapper) {
 			var style = '';
 			if(item.icon)
 				style = 'margin-left:5px;';
-			var $li = $('<li><a class="" href="'+ "#"+item.route +'"><i class="'+item.icon+'"></i><span style="'+style+'">'+ label +'</span></a></li>');
+			var $li = $('<li class="list-sidebar-item"><a class="list-sidebar-link" href="'+ "#"+item.route +'"><i class="'+item.icon+'"></i><span style="'+style+'">'+ label +'</span></a></li>');
 			$li.appendTo($groupul);
 		});
 		

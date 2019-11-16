@@ -108,7 +108,7 @@ frappe.views.ListSidebar = Class.extend({
 							divider = true;
 						}
 
-						$('<li><a href="#'+ route + '">'
+						$('<li class="list-sidebar-item"><a class="list-sidebar-link" href="#'+ route + '">'
 							+ __(r.title || r.name)+'</a></li>').appendTo(dropdown);
 					}
 				}
@@ -139,7 +139,7 @@ frappe.views.ListSidebar = Class.extend({
 				me.get_divider().appendTo($dropdown);
 				divider = true;
 			}
-			$(`<li><a href="#${route}">
+			$(`<li class="list-sidebar-item"><a class="list-sidebar-link" href="#${route}">
 				<span>${__(board.name)}</span>
 				${board.private ? '<i class="fa fa-lock fa-fw text-warning"></i>' : ''}
 			</a></li>`).appendTo($dropdown);
@@ -289,11 +289,11 @@ frappe.views.ListSidebar = Class.extend({
 			let default_link = '';
 			if (frappe.views.calendar[this.doctype]) {
 				// has standard calendar view
-				default_link = `<li><a href="#List/${doctype}/Calendar/Default">
+				default_link = `<li class="list-sidebar-item"><a class="list-sidebar-link" href="#List/${doctype}/Calendar/Default">
 					${ __("Default") }</a></li>`;
 			}
 			const other_links = calendar_views.map(
-				calendar_view => `<li><a href="#List/${doctype}/Calendar/${calendar_view.name}">
+				calendar_view => `<li class="list-sidebar-item"><a class="list-sidebar-link" href="#List/${doctype}/Calendar/${calendar_view.name}">
 					${ __(calendar_view.name) }</a>
 				</li>`
 			).join('');
@@ -322,7 +322,7 @@ frappe.views.ListSidebar = Class.extend({
 		let divider = false;
 
 		if(has_common(frappe.user_roles, ["System Manager", "Administrator"])) {
-			$(`<li class="new-email-account"><a>${__("New Email Account")}</a></li>`)
+			$(`<li class="list-sidebar-item new-email-account"><a class="list-sidebar-link">${__("New Email Account")}</a></li>`)
 				.appendTo($dropdown)
 		}
 
@@ -334,7 +334,7 @@ frappe.views.ListSidebar = Class.extend({
 				this.get_divider().appendTo($dropdown);
 				divider = true;
 			}
-			$(`<li><a href="#${route}">${account.email_id}</a></li>`).appendTo($dropdown);
+			$(`<li class="list-sidebar-item"><a class="list-sidebar-link" href="#${route}">${account.email_id}</a></li>`).appendTo($dropdown);
 			if(account.email_id === "Sent Mail")
 				divider = false
 		});

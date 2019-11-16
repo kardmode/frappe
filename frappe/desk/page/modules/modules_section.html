@@ -9,10 +9,6 @@
 	
 		<div class="col-sm-4 module-section-column">
 			<div class="h4 section-head">
-			
-			
-			
-			
 			<!-- {% if(section.color) { %}
 					<span class="moduleview-icon" style="background-color:{{section.color || iii}}">
 			{% } else { %}
@@ -39,11 +35,11 @@
 							{% if(item.type==="help") { %}
 								data-youtube-id="{{ item.youtube_id }}"{% } %}
 							href="#{{ item.route }}" style="{{ item.style }}">
-							{{ item.label || __(item.name) }}
+							{{item.label || __(item.name)}}
 						</a></span>
 						{% if(item.type==="doctype") { %}
 						<span class="open-notification global hide"
-							data-doctype="{{ item.doctype || item.name }}"></span>
+							data-doctype="{{item.doctype || item.name}}"></span>
 						{% } %}
 					</div>
 				{% } %}

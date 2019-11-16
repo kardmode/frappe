@@ -73,23 +73,25 @@ def get_print_format_doc(print_format_name, meta):
 def add_mrp_print_templates(doc):
 	doc.mrp_print_templates = {}
 	
-	doc_details = frappe.db.sql("""
-					select t1.name , t2.print_field
-					from `tabMRP Print Templates` t1,`tabPrint Fields` t2
-					where
-					(t1.for_doctype = %s or t1.use_for_all_doctypes = 1)
-					and t2.name = t1.print_field
-					""", (doc.doctype), as_dict=True)
-	
 	# doc_details = frappe.db.sql("""
 					# select t1.name , t2.print_field
 					# from `tabMRP Print Templates` t1,
-					# `tabPrint Fields` t2, 
-					# `tabMRP Print Template Type` t3
+					# `tabPrint Fields` t2
 					# where
-					# (t1.use_for_all_doctypes = 1 or (t3.type = %s and t1.name = t3.parent))
+					# (t1.for_doctype = %s or t1.use_for_all_doctypes = 1)
 					# and t2.name = t1.print_field
 					# """, (doc.doctype), as_dict=True)
+	
+	doc_details = frappe.db.sql("""
+					select t1.name , t2.print_field
+					from `tabMRP Print Templates` t1,
+					`tabPrint Fields` t2, 
+					`tabMRP Print Template Type` t3
+					where
+					(t1.use_for_all_doctypes = 1 or (t3.type = %s and t1.name = t3.parent))
+					and t2.name = t1.print_field
+					""", (doc.doctype), as_dict=True)
+					
 	for d in doc_details:
 		doc.mrp_print_templates[d.name] = d.print_field
 		

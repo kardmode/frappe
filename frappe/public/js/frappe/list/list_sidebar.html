@@ -4,37 +4,37 @@
 <ul class="list-unstyled sidebar-menu standard-actions">
 	 {% if frappe.model.can_get_report(doctype) %}
 		<li class="divider"></li>
-		<li>
+		<li class="list-sidebar-item">
 			
 			<ul class="dropdown-menu reports-dropdown list-unstyled sidebar-menu">
 				<!-- <li><div class="text-muted">{{ __("Reports") }}</div></li> -->
-				<li><a href="#Report/{{ doctype }}">{{ __("Report") }} <i class="octicon octicon-plus" style="font-size:large; margin-left: 2px;"></i></a></li>
+				<li class="list-sidebar-item"><a class="list-sidebar-link" href="#Report/{{ doctype }}">{{ __("Report Builder") }} <i class="octicon octicon-plus" style="font-size:large; margin-left: 2px;"></i></a></li>
 				
 			</ul>
 		</li>
 	{% endif %}
 	<li class="divider"></li>
-	<li class="list-link" data-view="List">
-		<a href="#List/{%= doctype %}/List">{%= __("List") %}</a></li>
-	<li class="hide list-link" data-view="Image">
-		<a href="#List/{%= doctype %}/Image">{%= __("Images") %}</a></li>
-	<li class="hide list-link" data-view="Gantt">
-		<a href="#List/{%= doctype %}/Gantt">{%= __("Gantt") %}</a></li>
-	<li class="hide tree-link">
-		<a href="#Tree/{%= doctype %}">{%= __("Tree") %}</a></li>
-	<li class="hide list-link" data-view="Calendar">
-		<a href="#List/{%= doctype %}/Calendar">{%= __("Calendar") %}</a></li>
-			<li class="divider"></li>
+	<li class="list-sidebar-item list-link" data-view="List">
+		<a class="list-sidebar-link" href="#List/{%= doctype %}/List">{%= __("List") %}</a></li>
+	<li class="list-sidebar-item hide list-link" data-view="Image">
+		<a class="list-sidebar-link" href="#List/{%= doctype %}/Image">{%= __("Images") %}</a></li>
+	<li class="list-sidebar-item hide list-link" data-view="Gantt">
+		<a class="list-sidebar-link" href="#List/{%= doctype %}/Gantt">{%= __("Gantt") %}</a></li>
+	<li class="list-sidebar-item hide tree-link">
+		<a class="list-sidebar-link" href="#Tree/{%= doctype %}">{%= __("Tree") %}</a></li>
+	<li class="list-sidebar-item hide list-link" data-view="Calendar">
+		<a class="list-sidebar-link" href="#List/{%= doctype %}/Calendar">{%= __("Calendar") %}</a></li>
+	<li class="divider"></li>
 
-	<li class="hide list-link" data-view="Kanban">
+	<li class="list-sidebar-item hide list-link" data-view="Kanban">
 		
 			<ul class="dropdown-menu kanban-dropdown list-unstyled sidebar-menu">
 				<!-- <li><div class="text-muted">{{ __("Kanban") }}</div></li> -->
-				<li class="new-kanban-board"><a>{{ __("Kanban Board") }} <i class="octicon octicon-plus" style="font-size:large; margin-left: 2px;"></i></a></li>
+				<li class="list-sidebar-item new-kanban-board"><a class="list-sidebar-link">{{ __("Kanban Board") }} <i class="octicon octicon-plus" style="font-size:large; margin-left: 2px;"></i></a></li>
 			</ul>
 	</li>
 	<li class="divider"></li>
-	<li class="hide list-link" data-view="Inbox">
+	<li class="list-sidebar-item hide list-link" data-view="Inbox">
 		<div class="btn-group">
 			<div class="text-muted dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
 				{{ __("Email Inbox") }}
@@ -43,10 +43,10 @@
 			</ul>
 		</div>
 	</li>
-	<li class="assigned-to-me">
-		<a>{%= __("Assigned To Me") %}</a>
+	<li class="list-sidebar-item assigned-to-me">
+		<a class="list-sidebar-link">{%= __("Assigned To Me") %}</a>
 	</li>
 	{% if(frappe.help.has_help(doctype)) { %}
-	<li><a class="help-link" data-doctype="{{ doctype }}">{{ __("Help") }}</a></li>
+	<li class="list-sidebar-item"><a class="list-sidebar-link help-link" data-doctype="{{ doctype }}">{{ __("Help") }}</a></li>
 	{% } %}
 </ul>

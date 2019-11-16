@@ -65,7 +65,7 @@ frappe.views.QueryReport = Class.extend({
 	},
 	make_toolbar: function() {
 		var me = this;
-		this.page.set_secondary_action(__('Refresh'), function() { me.refresh(); });
+		this.page.set_secondary_action(__('Refresh'), function() { me.refresh(); },'octicon octicon-sync');
 
 		// Edit
 		this.page.add_menu_item(__('Edit'), function() {

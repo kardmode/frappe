@@ -10,8 +10,8 @@ ul.tree-children {
 }
 .tree-link {
   cursor: pointer;
-  display: inline-block;
-  padding: 1px;
+  /* display: inline-block;
+  padding: 1px; */
 }
 .tree-link.active i {
   color: #5e64ff !important;
