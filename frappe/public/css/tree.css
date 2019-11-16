@@ -26,6 +26,19 @@ ul.tree-children {
 .tree-link .node-leaf {
   margin-right: 5px;
 }
+.tree-link .node-parent {
+  color: #8D99A6;
+  font-size: 14px;
+  width: 10px;
+  text-align: center;
+}
+.tree-link .node-leaf {
+  color: #d1d8dd;
+}
+.tree-link .node-parent,
+.tree-link .node-leaf {
+  margin-right: 5px;
+}
 .tree-link.active i {
   color: #5e64ff;
 }

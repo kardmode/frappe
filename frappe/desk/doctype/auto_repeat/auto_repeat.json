@@ -1,7 +1,4 @@
 {
- "add_company_abbr_to_name": 0, 
- "add_date_to_name": 1, 
- "add_posting_date_to_name": 0, 
  "allow_copy": 0, 
  "allow_events_in_timeline": 0, 
  "allow_guest_to_view": 0, 
@@ -13,13 +10,8 @@
  "custom": 0, 
  "docstatus": 0, 
  "doctype": "DocType", 
-<<<<<<< HEAD:frappe/email/doctype/email_alert/email_alert.json
- "document_type": "Setup", 
- "editable_grid": 0, 
-=======
  "document_type": "", 
  "editable_grid": 1, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/desk/doctype/auto_repeat/auto_repeat.json
  "engine": "InnoDB", 
  "fields": [
   {
@@ -1010,12 +1002,7 @@
  "issingle": 0, 
  "istable": 0, 
  "max_attachments": 0, 
-<<<<<<< HEAD:frappe/email/doctype/email_alert/email_alert.json
- "menu_index": 0, 
- "modified": "2019-02-07 18:06:32.735667", 
-=======
  "modified": "2018-10-12 18:59:22.463211", 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/desk/doctype/auto_repeat/auto_repeat.json
  "modified_by": "Administrator", 
  "module": "Desk", 
  "name": "Auto Repeat", 

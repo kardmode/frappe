@@ -132,6 +132,7 @@ def get_context(context):
 
 	def send(self, doc):
 		'''Build recipients and send Notification'''
+<<<<<<< HEAD:frappe/email/doctype/notification/notification.py
 
 		context = get_context(doc)
 		context = {"doc": doc, "alert": self, "comments": None}
@@ -152,6 +153,28 @@ def get_context(context):
 			if doc.docstatus == 1 and not doc.meta.get_field(self.set_property_after_alert).allow_on_submit:
 				allow_update = False
 
+=======
+
+		context = get_context(doc)
+		context = {"doc": doc, "alert": self, "comments": None}
+		if doc.get("_comments"):
+			context["comments"] = json.loads(doc.get("_comments"))
+
+		if self.is_standard:
+			self.load_standard_properties(context)
+
+		if self.channel == 'Email':
+			self.send_an_email(doc, context)
+
+		if self.channel == 'Slack':
+			self.send_a_slack_msg(doc, context)
+
+		if self.set_property_after_alert:
+			allow_update = True
+			if doc.docstatus == 1 and not doc.meta.get_field(self.set_property_after_alert).allow_on_submit:
+				allow_update = False
+
+>>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/email/doctype/notification/notification.py
 			if allow_update:
 				frappe.db.set_value(doc.doctype, doc.name, self.set_property_after_alert,
 					self.property_value, update_modified = False)
@@ -162,6 +185,7 @@ def get_context(context):
 		subject = self.subject
 		if "{" in subject:
 			subject = frappe.render_template(self.subject, context)
+<<<<<<< HEAD:frappe/email/doctype/notification/notification.py
 
 		attachments = self.get_attachment(doc)
 		recipients, cc, bcc = self.get_list_of_recipients(doc, context)
@@ -180,6 +204,26 @@ def get_context(context):
 			print_letterhead = ((attachments
 				and attachments[0].get('print_letterhead')) or False))
 
+=======
+
+		attachments = self.get_attachment(doc)
+		recipients, cc, bcc = self.get_list_of_recipients(doc, context)
+		sender = None
+		if self.sender and self.sender_email:
+			sender = formataddr((self.sender, self.sender_email))
+		frappe.sendmail(recipients = recipients,
+			subject = subject,
+			sender = sender,
+			cc = cc,
+			bcc = bcc,
+			message = frappe.render_template(self.message, context),
+			reference_doctype = doc.doctype,
+			reference_name = doc.name,
+			attachments = attachments,
+			print_letterhead = ((attachments
+				and attachments[0].get('print_letterhead')) or False))
+
+>>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/email/doctype/notification/notification.py
 	def send_a_slack_msg(self, doc, context):
 			send_slack_message(
 				webhook_url=self.slack_webhook_url,

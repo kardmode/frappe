@@ -8,9 +8,9 @@ QUnit.test("test: DocType", function (assert) {
 	// number of asserts
 	assert.expect(1);
 
-	frappe.run_serially('DocType', [
+	frappe.run_serially([
 		// insert a new DocType
-		() => frappe.tests.make([
+		() => frappe.tests.make('DocType', [
 			// values to be set
 			{key: 'value'}
 		]),

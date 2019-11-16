@@ -1,28 +1,14 @@
 {
- "add_company_abbr_to_name": 1, 
- "add_date_to_name": 1, 
- "add_posting_date_to_name": 0, 
  "allow_copy": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
-=======
  "allow_events_in_timeline": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
  "allow_guest_to_view": 0, 
  "allow_import": 0, 
  "allow_rename": 0, 
- "append_company_abbr_to_name": "0", 
  "beta": 0, 
  "creation": "2018-02-06 11:48:51.270524", 
  "custom": 0, 
  "docstatus": 0, 
  "doctype": "DocType", 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
- "document_type": "Setup", 
- "editable_grid": 0, 
- "fields": [
-  {
-   "allow_bulk_edit": 0, 
-=======
  "document_type": "", 
  "editable_grid": 1, 
  "engine": "InnoDB", 
@@ -30,7 +16,6 @@
   {
    "allow_bulk_edit": 0, 
    "allow_in_quick_entry": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -62,10 +47,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
-=======
    "allow_in_quick_entry": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -96,10 +78,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
-=======
    "allow_in_quick_entry": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -131,10 +110,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
-=======
    "allow_in_quick_entry": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -166,10 +142,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
-=======
    "allow_in_quick_entry": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -200,10 +173,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
-=======
    "allow_in_quick_entry": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -235,10 +205,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
-=======
    "allow_in_quick_entry": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -270,10 +237,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
-=======
    "allow_in_quick_entry": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -304,10 +268,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
-=======
    "allow_in_quick_entry": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -339,10 +300,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
-=======
    "allow_in_quick_entry": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -374,10 +332,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
-=======
    "allow_in_quick_entry": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -409,10 +364,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
-=======
    "allow_in_quick_entry": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -444,10 +396,7 @@
   }, 
   {
    "allow_bulk_edit": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
-=======
    "allow_in_quick_entry": 0, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
    "allow_on_submit": 0, 
    "bold": 0, 
    "collapsible": 0, 
@@ -483,20 +432,12 @@
  "hide_toolbar": 0, 
  "idx": 0, 
  "image_view": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
- "in_create": 0, 
-=======
  "in_create": 1, 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
  "is_submittable": 0, 
  "issingle": 0, 
  "istable": 0, 
  "max_attachments": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
- "modified": "2019-02-07 04:35:08.552068", 
-=======
  "modified": "2018-12-27 15:22:34.533766", 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
  "modified_by": "Administrator", 
  "module": "Core", 
  "name": "Transaction Log", 
@@ -527,12 +468,8 @@
  "read_only": 0, 
  "read_only_onload": 0, 
  "show_name_in_global_search": 0, 
-<<<<<<< HEAD:frappe/integrations/doctype/social_login_keys/social_login_keys.json
- "sort_order": "ASC", 
-=======
  "sort_field": "modified", 
  "sort_order": "DESC", 
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91:frappe/core/doctype/transaction_log/transaction_log.json
  "track_changes": 1, 
  "track_seen": 0, 
  "track_views": 0

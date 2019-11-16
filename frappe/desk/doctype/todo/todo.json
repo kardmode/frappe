@@ -1,19 +1,15 @@
 {
- "add_company_abbr_to_name": 1, 
- "add_date_to_name": 1, 
- "add_posting_date_to_name": 0, 
  "allow_copy": 0, 
  "allow_guest_to_view": 0, 
  "allow_import": 0, 
  "allow_rename": 0, 
- "append_company_abbr_to_name": "0", 
  "autoname": "hash", 
  "beta": 0, 
  "creation": "2012-07-03 13:30:35", 
  "custom": 0, 
  "docstatus": 0, 
  "doctype": "DocType", 
- "document_type": "Documents", 
+ "document_type": "Setup", 
  "editable_grid": 0, 
  "engine": "InnoDB", 
  "fields": [
@@ -44,6 +40,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -75,6 +72,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -108,6 +106,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -136,6 +135,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -166,6 +166,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -197,6 +198,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -227,6 +229,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -257,6 +260,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -289,6 +293,7 @@
    "reqd": 1, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0, 
    "width": "300px"
   }, 
@@ -319,6 +324,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -351,6 +357,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -383,6 +390,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -411,6 +419,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -443,6 +452,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -473,6 +483,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -481,6 +492,7 @@
    "bold": 0, 
    "collapsible": 0, 
    "columns": 0, 
+   "fetch_from": "assigned_by.full_name",
    "fieldname": "assigned_by_full_name", 
    "fieldtype": "Read Only", 
    "hidden": 0, 
@@ -493,7 +505,7 @@
    "label": "Assigned By Full Name", 
    "length": 0, 
    "no_copy": 0, 
-   "options": "assigned_by.full_name", 
+   "options": "", 
    "permlevel": 0, 
    "precision": "", 
    "print_hide": 0, 
@@ -504,6 +516,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }, 
   {
@@ -534,6 +547,7 @@
    "reqd": 0, 
    "search_index": 0, 
    "set_only_once": 0, 
+   "translatable": 0,
    "unique": 0
   }
  ], 
@@ -548,7 +562,7 @@
  "issingle": 0, 
  "istable": 0, 
  "max_attachments": 0, 
- "modified": "2019-02-07 22:55:33.745039", 
+ "modified": "2018-05-16 22:43:01.858775",
  "modified_by": "Administrator", 
  "module": "Desk", 
  "name": "ToDo", 
@@ -556,7 +570,6 @@
  "permissions": [
   {
    "amend": 0, 
-   "apply_user_permissions": 0, 
    "cancel": 0, 
    "create": 1, 
    "delete": 1, 
@@ -576,10 +589,9 @@
   }, 
   {
    "amend": 0, 
-   "apply_user_permissions": 0, 
    "cancel": 0, 
    "create": 1, 
-   "delete": 1, 
+   "delete": 0, 
    "email": 1, 
    "export": 1, 
    "if_owner": 0, 

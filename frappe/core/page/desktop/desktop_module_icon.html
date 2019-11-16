@@ -1,9 +1,17 @@
+<<<<<<< HEAD
 <div  class="case-wrapper" data-name="{{ module_name }}" data-link="{{ link }}" title="{{ _label }}">
 	<div data-name="{{ module_name }}" data-link="{{ link }}" title="{{ _label }}" style="position:relative;display:inline-block; ">
 
 		{{ app_icon }}
 		
 		<div class="circle module-notis module-count-{{ _id }}" data-doctype="{{ _doctype }}" style="display: none;">
+=======
+<div  class="case-wrapper"
+	data-name="{{ module_name }}" data-link="{{ link }}" title="{{ _label }}">
+	{{ app_icon }}
+	<div class="case-label ellipsis">
+		<div class="circle module-count-{{ frappe.scrub(_id) }}" data-doctype="{{ _doctype }}" style="display: none;">
+>>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91
 			<span class="circle-text"></span>
 		</div>
 		

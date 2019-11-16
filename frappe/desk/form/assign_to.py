@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 
 import frappe
 from frappe import _
+from frappe.utils import cint
 from frappe.desk.form.load import get_docinfo
 import frappe.share
 
@@ -46,6 +47,9 @@ def add(args=None):
 
 		# if args.get("re_assign"):
 		# 	remove_from_todo_if_already_assigned(args['doctype'], args['name'])
+
+		if not args.get('description'):
+			args['description'] = _('Assignment')
 
 		d = frappe.get_doc({
 			"doctype":"ToDo",
@@ -130,14 +134,11 @@ def notify_assignment(assigned_by, owner, doc_type, doc_name, action='CLOSE',
 	if assigned_by==owner:
 		return
 
-	from frappe.boot import get_fullnames
-	user_info = get_fullnames()
-
 	# Search for email address in description -- i.e. assignee
 	from frappe.utils import get_link_to_form
 	assignment = get_link_to_form(doc_type, doc_name, label="%s: %s" % (doc_type, doc_name))
-	owner_name = user_info.get(owner, {}).get('fullname')
-	user_name = user_info.get(frappe.session.get('user'), {}).get('fullname')
+	owner_name = frappe.get_cached_value('User', owner, 'full_name')
+	user_name = frappe.get_cached_value('User', frappe.session.user, 'full_name')
 	if action=='CLOSE':
 		if owner == frappe.session.get('user'):
 			arg = {
@@ -160,7 +161,30 @@ def notify_assignment(assigned_by, owner, doc_type, doc_name, action='CLOSE',
 			'notify': notify
 		}
 
-	arg["parenttype"] = "Assignment"
+	if arg and cint(arg.get("notify")):
+		_notify(arg)
 
-	from frappe.desk.page.chat import chat
-	chat.post(**arg)
+def _notify(args):
+	from frappe.utils import get_fullname, get_url
+
+	args = frappe._dict(args)
+	contact = args.contact
+	txt = args.txt
+
+	try:
+		if not isinstance(contact, list):
+			contact = [frappe.db.get_value("User", contact, "email") or contact]
+
+		frappe.sendmail(\
+			recipients=contact,
+			sender= frappe.db.get_value("User", frappe.session.user, "email"),
+			subject=_("New message from {0}").format(get_fullname(frappe.session.user)),
+			template="new_message",
+			args={
+				"from": get_fullname(frappe.session.user),
+				"message": txt,
+				"link": get_url()
+			},
+			header=[_('New Message'), 'orange'])
+	except frappe.OutgoingEmailError:
+		pass

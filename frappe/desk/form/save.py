@@ -30,8 +30,6 @@ def savedocs(doc, action):
 		frappe.get_user().update_recent(doc.doctype, doc.name)
 		send_updated_docs(doc)
 	except Exception:
-		if not frappe.local.message_log:
-			frappe.msgprint(frappe._('Did not save'))
 		frappe.errprint(frappe.utils.get_traceback())
 		raise
 
@@ -51,7 +49,7 @@ def cancel(doctype=None, name=None, workflow_state_fieldname=None, workflow_stat
 		raise
 
 def send_updated_docs(doc):
-	from load import get_docinfo
+	from .load import get_docinfo
 	get_docinfo(doc)
 
 	d = doc.as_dict()
