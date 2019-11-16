@@ -208,12 +208,18 @@ frappe.ui.BaseList = Class.extend({
 						fieldtype = 'Data';
 						condition = 'like';
 					}
-					if(df.fieldtype == "Select" && df.options) {
+
+					if (df.fieldtype === "Select" && df.options) {
 						options = df.options.split("\n");
 						if(options.length > 0 && options[0] != "") {
 							options.unshift("");
 							options = options.join("\n");
 						}
+					}
+					
+					if (df.fieldtype === 'Data' && df.options) {
+						// don't format email / number in filters
+						options = '';
 					}
 					
 					if(df.fieldtype == "Link" && df.fieldname == "company")
@@ -241,11 +247,9 @@ frappe.ui.BaseList = Class.extend({
 							onchange: () => {me.refresh(true);}
 						});
 						
-						
 					}
 					
 					
-
 					filter_count ++;
 					if (filter_count > 3) {
 						// $(f.wrapper).addClass('hidden-sm').addClass('hidden-xs');

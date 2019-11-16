@@ -433,7 +433,7 @@ def get_custom_report_list(module):
 		out.append({
 			"type": "report",
 			"doctype": r.ref_doctype,
-			"is_query_report": 1 if r.report_type in ("Query Report", "Script Report") else 0,
+			"is_query_report": 1 if r.report_type in ("Query Report", "Script Report", "Custom Report") else 0,
 			"label": _(r.name),
 			"name": r.name,
 			"icon": "fa fa-star" if r.favorite == 1 else "",

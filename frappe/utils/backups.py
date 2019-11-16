@@ -58,9 +58,6 @@ class BackupGenerator:
 			self.backup_path_private_files = last_private_file
 
 	def set_backup_file_name(self):
-		todays_date = datetime.today().strftime("%d%m%Y_%H%M%S")
-
-
 		todays_date = now_datetime().strftime('%Y%m%d_%H%M%S')
 		site = frappe.local.site or frappe.generate_hash(length=8)
 		site = site.replace('.', '_')

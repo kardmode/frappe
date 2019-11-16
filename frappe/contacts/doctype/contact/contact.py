@@ -8,13 +8,20 @@ from frappe import _
 from frappe.model.document import Document
 from frappe.core.doctype.dynamic_link.dynamic_link import deduplicate_dynamic_links
 from six import iteritems
+from past.builtins import cmp
+from frappe.model.naming import append_number_if_name_exists
+from frappe.contacts.address_and_contact import set_link_title
 
+import functools
 
 class Contact(Document):
 	def autoname(self):
 		# concat first and last name
 		self.name = " ".join(filter(None,
 			[cstr(self.get(f)).strip() for f in ["first_name", "last_name"]]))
+
+		if frappe.db.exists("Contact", self.name):
+			self.name = append_number_if_name_exists('Contact', self.name)
 
 		# concat party name if reqd
 		for link in self.links:
@@ -25,6 +32,7 @@ class Contact(Document):
 		if self.email_id:
 			self.email_id = self.email_id.strip()
 		self.set_user()
+		set_link_title(self)
 		if self.email_id and not self.image:
 			self.image = has_gravatar(self.email_id)
 
@@ -33,10 +41,6 @@ class Contact(Document):
 	def set_user(self):
 		if not self.user and self.email_id:
 			self.user = frappe.db.get_value("User", {"email": self.email_id})
-
-	def on_trash(self):
-		frappe.db.sql("""update `tabIssue` set contact='' where contact=%s""",
-			self.name)
 
 	def get_link_for(self, link_doctype):
 		'''Return the link name, if exists for the given link DocType'''
@@ -71,7 +75,7 @@ def get_default_contact(doctype, name):
 			dl.parenttype = "Contact"''', (doctype, name))
 
 	if out:
-		return sorted(out, lambda x,y: cmp(y[1], x[1]))[0][0]
+		return sorted(out, key = functools.cmp_to_key(lambda x,y: cmp(y[1], x[1])))[0][0]
 	else:
 		return None
 
@@ -100,7 +104,7 @@ def get_contact_details(contact):
 	out = {
 		"contact_person": contact.get("name"),
 		"contact_display": " ".join(filter(None,
-			[contact.get("first_name"), contact.get("last_name")])),
+			[contact.get("salutation"), contact.get("first_name"), contact.get("last_name")])),
 		"contact_email": contact.get("email_id"),
 		"contact_mobile": contact.get("mobile_no"),
 		"contact_phone": contact.get("phone"),

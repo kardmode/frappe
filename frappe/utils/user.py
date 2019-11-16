@@ -78,7 +78,7 @@ class UserPermissions:
 		for r in get_valid_perms():
 			dt = r['parent']
 
-			if not dt in  self.perm_map:
+			if not dt in self.perm_map:
 				self.perm_map[dt] = {}
 
 			for k in frappe.permissions.rights:
@@ -96,9 +96,9 @@ class UserPermissions:
 		user_shared = frappe.share.get_shared_doctypes()
 		no_list_view_link = []
 		active_modules = get_active_modules() or []
-
 		for dt in self.doctype_map:
 			dtp = self.doctype_map[dt]
+
 			p = self.perm_map.get(dt, {})
 
 			if not p.get("read") and (dt in user_shared):
@@ -256,7 +256,7 @@ def get_system_managers(only_name=False):
 def add_role(user, role):
 	frappe.get_doc("User", user).add_roles(role)
 
-def add_system_manager(email, first_name=None, last_name=None, send_welcome_email=False):
+def add_system_manager(email, first_name=None, last_name=None, send_welcome_email=False, password=None):
 	# add user
 	user = frappe.new_doc("User")
 	user.update({
@@ -275,6 +275,10 @@ def add_system_manager(email, first_name=None, last_name=None, send_welcome_emai
 	roles = frappe.db.sql_list("""select name from `tabRole`
 		where name not in ("Administrator", "Guest", "All")""")
 	user.add_roles(*roles)
+
+	if password:
+		from frappe.utils.password import update_password
+		update_password(user=user.name, pwd=password)
 
 def get_enabled_system_users():
 	return frappe.db.sql("""select * from tabUser where
@@ -308,13 +312,15 @@ def disable_users(limits=None):
 		return
 
 	if limits.get('users'):
-		system_manager = get_system_managers(only_name=True)[-1]
-
+		system_manager = get_system_managers(only_name=True)
+		user_list = ['Administrator', 'Guest']
+		if system_manager:
+			user_list.append(system_manager[-1])
 		#exclude system manager from active user list
-		active_users =  frappe.db.sql_list("""select name from tabUser
-			where name not in ('Administrator', 'Guest', %s) and user_type = 'System User' and enabled=1
-			order by creation desc""", system_manager)
-
+		# active_users =  frappe.db.sql_list("""select name from tabUser
+		# 	where name not in ('Administrator', 'Guest', %s) and user_type = 'System User' and enabled=1
+		# 	order by creation desc""", system_manager)
+		active_users = frappe.get_all("User", filters={"user_type":"System User", "enabled":1, "name": ["not in", user_list]}, fields=["name"])
 		user_limit = cint(limits.get('users')) - 1
 
 		if len(active_users) > user_limit:

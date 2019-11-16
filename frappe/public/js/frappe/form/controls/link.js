@@ -4,6 +4,8 @@
 // link validation
 // custom queries
 // add_fetches
+import Awesomplete from 'awesomplete';
+
 frappe.ui.form.ControlLink = frappe.ui.form.ControlData.extend({
 	make_input: function() {
 		var me = this;
@@ -28,9 +30,10 @@ frappe.ui.form.ControlLink = frappe.ui.form.ControlData.extend({
 		this.$input.on("focus", function() {
 			setTimeout(function() {
 				if(me.$input.val() && me.get_options()) {
+					let doctype = me.get_options();
+					let name = me.$input.val();
 					me.$link.toggle(true);
-					me.$link_open.attr('href', '#Form/' + me.get_options() + '/' + me.$input.val());
-					
+					me.$link_open.attr('href', frappe.utils.get_form_link(doctype, name));
 					me.$link_sync.on('click', function(event) {
 						event.preventDefault();
 						
@@ -54,6 +57,7 @@ frappe.ui.form.ControlLink = frappe.ui.form.ControlData.extend({
 						// }
 					});
 					
+
 				}
 
 				if(!me.$input.val()) {
@@ -76,6 +80,10 @@ frappe.ui.form.ControlLink = frappe.ui.form.ControlData.extend({
 	},
 	get_options: function() {
 		return this.df.options;
+	},
+	get_reference_doctype() {
+		// this is used to get the context in which link field is loaded
+		return this.doctype || frappe.get_route()[0] === 'List' ? frappe.get_route()[1] : null;
 	},
 	setup_buttons: function() {
 		if(this.only_input && !this.with_link_btn) {
@@ -170,16 +178,17 @@ frappe.ui.form.ControlLink = frappe.ui.form.ControlData.extend({
 				// immediately show from cache
 				me.awesomplete.list = me.$input.cache[doctype][term];
 			}
-
 			var args = {
 				'txt': term,
 				'doctype': doctype,
+				'ignore_user_permissions': me.df.ignore_user_permissions,
+				'reference_doctype': me.get_reference_doctype()
 			};
 
 			me.set_custom_query(args);
 
 			frappe.call({
-				type: "GET",
+				type: "POST",
 				method:'frappe.desk.search.search_link',
 				no_spinner: true,
 				args: args,
@@ -189,27 +198,30 @@ frappe.ui.form.ControlLink = frappe.ui.form.ControlData.extend({
 					}
 
 					if(!me.df.only_select) {
-						if(frappe.model.can_create(doctype)
-							&& me.df.fieldtype !== "Dynamic Link") {
+						if(frappe.model.can_create(doctype)) {
 							// new item
 							r.results.push({
 								label: "<span class='text-primary link-option'>"
 									+ "<i class='fa fa-plus' style='margin-right: 5px;'></i> "
-									+ __("Create a new {0}", [__(me.df.options)])
+									+ __("Create a new {0}", [__(me.get_options())])
 									+ "</span>",
 								value: "create_new__link_option",
 								action: me.new_doc
 							});
 						}
 						// advanced search
-						r.results.push({
-							label: "<span class='text-primary link-option'>"
-								+ "<i class='fa fa-search' style='margin-right: 5px;'></i> "
-								+ __("Advanced Search")
-								+ "</span>",
-							value: "advanced_search__link_option",
-							action: me.open_advanced_search
-						});
+
+						if (locals && locals['DocType']) {
+							// not applicable in web forms
+							r.results.push({
+								label: "<span class='text-primary link-option'>"
+									+ "<i class='fa fa-search' style='margin-right: 5px;'></i> "
+									+ __("Advanced Search")
+									+ "</span>",
+								value: "advanced_search__link_option",
+								action: me.open_advanced_search
+							});
+						}
 					}
 					me.$input.cache[doctype][term] = r.results;
 					me.awesomplete.list = me.$input.cache[doctype][term];

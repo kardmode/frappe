@@ -1,9 +1,10 @@
 // Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 // MIT License. See license.txt
 
+import deep_equal from "fast-deep-equal";
 frappe.provide('frappe.utils');
 
-frappe.utils = {
+Object.assign(frappe.utils, {
 	get_random: function(len) {
 		var text = "";
 		var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -22,6 +23,9 @@ frappe.utils = {
 		} else {
 			return filename;
 		}
+	},
+	replace_newlines(t) {
+		return t?t.replace(/\n/g, '<br>'):'';
 	},
 	is_html: function(txt) {
 		if (!txt) return false;
@@ -88,6 +92,15 @@ frappe.utils = {
 	is_url: function(txt) {
 		return txt.toLowerCase().substr(0,7)=='http://'
 			|| txt.toLowerCase().substr(0,8)=='https://'
+	},
+	to_title_case: function(string, with_space=false) {
+		let titlecased_string = string.toLowerCase().replace(/(?:^|[\s-/])\w/g, function(match) {
+			return match.toUpperCase();
+		});
+
+		let replace_with = with_space ? ' ' : '';
+
+		return titlecased_string.replace(/-|_/g, replace_with);
 	},
 	toggle_blockquote: function(txt) {
 		if (!txt) return txt;
@@ -195,13 +208,11 @@ frappe.utils = {
 	},
 	set_footnote: function(footnote_area, wrapper, txt) {
 		if(!footnote_area) {
-			footnote_area = $('<div class="text-muted footnote-area">')
+			footnote_area = $('<div class="text-muted footnote-area level">')
 				.appendTo(wrapper);
 		}
 
 		if(txt) {
-			if(!txt.includes('<p>'))
-				txt = '<p>' + txt + '</p>';
 			footnote_area.html(txt);
 		} else {
 			footnote_area.remove();
@@ -545,6 +556,7 @@ frappe.utils = {
 	},
 
 	is_image_file: function(filename) {
+		if (!filename) return false;
 		// url can have query params
 		filename = filename.split('?')[0];
 		return (/\.(gif|jpg|jpeg|tiff|png|svg)$/i).test(filename);
@@ -592,6 +604,39 @@ frappe.utils = {
 			return false;
 		}
 	}(),
+	throttle: function (func, wait, options) {
+		var context, args, result;
+		var timeout = null;
+		var previous = 0;
+		if (!options) options = {};
+
+		let later = function () {
+			previous = options.leading === false ? 0 : Date.now();
+			timeout = null;
+			result = func.apply(context, args);
+			if (!timeout) context = args = null;
+		};
+
+		return function () {
+			var now = Date.now();
+			if (!previous && options.leading === false) previous = now;
+			let remaining = wait - (now - previous);
+			context = this;
+			args = arguments;
+			if (remaining <= 0 || remaining > wait) {
+				if (timeout) {
+					clearTimeout(timeout);
+					timeout = null;
+				}
+				previous = now;
+				result = func.apply(context, args);
+				if (!timeout) context = args = null;
+			} else if (!timeout && options.trailing !== false) {
+				timeout = setTimeout(later, remaining);
+			}
+			return result;
+		};
+	},
 	debounce: function(func, wait, immediate) {
 		var timeout;
 		return function() {
@@ -605,49 +650,44 @@ frappe.utils = {
 			timeout = setTimeout(later, wait);
 			if (callNow) func.apply(context, args);
 		};
-	}
-};
+	},
+	get_form_link: function(doctype, name, html = false) {
+		const display_name = name;
+		doctype = encodeURIComponent(doctype);
+		name = encodeURIComponent(name);
+		const route = ['#Form', doctype, name].join('/');
+		if (html) {
+			return `<a href="${route}">${display_name}</a>`;
+		}
+		return route;
+	},
 
-// String.prototype.includes polyfill
-// https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/String/includes
-if (!String.prototype.includes) {
-	String.prototype.includes = function (search, start) {
-		'use strict';
-		if (typeof start !== 'number') {
-			start = 0;
-		}
-		if (start + search.length > this.length) {
-			return false;
-		} else {
-			return this.indexOf(search, start) !== -1;
-		}
-	};
-}
-// Array.prototype.includes polyfill
-// https://developer.mozilla.org/en/docs/Web/JavaScript/Reference/Global_Objects/Array/includes
-if (!Array.prototype.includes) {
-	Object.defineProperty(Array.prototype, 'includes', {
-		value: function(searchElement, fromIndex) {
-			if (this == null) {
-				throw new TypeError('"this" is null or not defined');
+	report_column_total: function(values, column, type) {
+		if (values.length > 0) {
+			if (column.column.fieldtype == "Percent" || type === "mean") {
+				return values.reduce((a, b) => a + flt(b)) / values.length;
+			} else if (column.column.fieldtype == "Int") {
+				return values.reduce((a, b) => a + cint(b));
+			} else if (frappe.model.is_numeric_field(column.column.fieldtype)) {
+				return values.reduce((a, b) => a + flt(b));
+			} else {
+				return null;
 			}
-			var o = Object(this);
-			var len = o.length >>> 0;
-			if (len === 0) {
-				return false;
-			}
-			var n = fromIndex | 0;
-			var k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
-			while (k < len) {
-				if (o[k] === searchElement) {
-					return true;
-				}
-				k++;
-			}
-			return false;
 		}
-	});
-}
+		else {
+			return null;
+		}
+	},
+
+	deep_equal(a, b) {
+		return deep_equal(a, b);
+	},
+
+	is_rtl() {
+		return ["ar", "he", "fa"].includes(frappe.boot.lang);
+	}
+});
+
 // Array de duplicate
 if (!Array.prototype.uniqBy) {
 	Object.defineProperty(Array.prototype, 'uniqBy', {
@@ -656,7 +696,7 @@ if (!Array.prototype.uniqBy) {
 			return this.filter(function (item) {
 				var k = key(item);
 				return seen.hasOwnProperty(k) ? false : (seen[k] = true);
-			})
+			});
 		}
-	})
+	});
 }

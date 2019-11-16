@@ -14,6 +14,8 @@
 			+ this.footer
 */
 
+/* eslint-disable no-console */
+
 frappe.provide('_f');
 frappe.provide('frappe.ui.form');
 
@@ -49,7 +51,6 @@ _f.Frm = function(doctype, parent, in_form) {
 	this.in_form = in_form ? true : false;
 
 	// notify on rename
-	var me = this;
 	$(document).on('rename', function(event, dt, old_name, new_name) {
 		if(dt==me.doctype)
 			me.rename_notify(dt, old_name, new_name);
@@ -57,7 +58,6 @@ _f.Frm = function(doctype, parent, in_form) {
 };
 
 _f.Frm.prototype.check_doctype_conflict = function(docname) {
-	var me = this;
 	if(this.doctype=='DocType' && docname=='DocType') {
 		frappe.msgprint(__('Allowing DocType, DocType. Be careful!'));
 	} else if(this.doctype=='DocType') {
@@ -76,7 +76,6 @@ _f.Frm.prototype.check_doctype_conflict = function(docname) {
 };
 
 _f.Frm.prototype.setup = function() {
-	var me = this;
 	this.fields = [];
 	this.fields_dict = {};
 	this.state_fieldname = frappe.workflow.get_state_fieldname(this.doctype);
@@ -124,7 +123,7 @@ _f.Frm.prototype.setup = function() {
 _f.Frm.prototype.setup_drag_drop = function() {
 	var me = this;
 	this.$wrapper.on('dragenter dragover', false)
-		.on('drop', function (e) {
+		.on('drop', function(e) {
 			var dataTransfer = e.originalEvent.dataTransfer;
 			if (!(dataTransfer && dataTransfer.files && dataTransfer.files.length > 0)) {
 				return;
@@ -180,6 +179,8 @@ _f.Frm.prototype.print_doc = function() {
 
 	this.page.set_view("print");
 	this.print_preview.set_user_lang();
+	this.print_preview.set_default_print_language();
+	this.print_preview.preview();
 };
 
 _f.Frm.prototype.hide_print = function() {
@@ -314,10 +315,12 @@ _f.Frm.prototype.rename_notify = function(dt, old, name) {
 
 // SETUP
 
-_f.Frm.prototype.setup_meta = function(doctype) {
-	this.meta = frappe.get_doc('DocType',this.doctype);
+_f.Frm.prototype.setup_meta = function() {
+	this.meta = frappe.get_doc('DocType', this.doctype);
 	this.perm = frappe.perm.get_perm(this.doctype); // for create
-	if(this.meta.istable) { this.meta.in_dialog = 1; }
+	if(this.meta.istable) {
+		this.meta.in_dialog = 1;
+	}
 };
 
 _f.Frm.prototype.refresh_header = function(is_a_different_doc) {
@@ -339,11 +342,12 @@ _f.Frm.prototype.refresh_header = function(is_a_different_doc) {
 	this.document_flow.refresh();
 	this.dashboard.refresh();
 
-	if(this.meta.is_submittable &&
-		this.perm[0] && this.perm[0].submit &&
-		! this.is_dirty() &&
-		! this.is_new() &&
-		this.doc.docstatus===0) {
+	if(this.meta.is_submittable
+		&& this.perm[0] && this.perm[0].submit
+		&& !this.is_dirty()
+		&& !this.is_new()
+		&& !frappe.model.has_workflow(this.doctype) // show only if no workflow
+		&& this.doc.docstatus===0) {
 		this.dashboard.add_comment(__('Submit this document to confirm'), 'orange', true);
 	}
 
@@ -362,8 +366,9 @@ _f.Frm.prototype.show_web_link = function() {
 	}
 };
 
-_f.Frm.prototype.add_web_link = function(path) {
-	this.web_link = this.sidebar.add_user_action(__("See on Website"),
+_f.Frm.prototype.add_web_link = function(path, label) {
+	label = label || "See on Website";
+	this.web_link = this.sidebar.add_user_action(__(label),
 		function() {}).attr("href", path || this.doc.route).attr("target", "_blank");
 };
 
@@ -433,7 +438,7 @@ _f.Frm.prototype.refresh = function(docname) {
 			this.cscript.is_onload = true;
 			this.setnewdoc();
 			$(document).trigger("form-load", [this]);
-			$(this.page.wrapper).on('hide',  function(e) {
+			$(this.page.wrapper).on('hide',  function() {
 				$(document).trigger("form-unload", [me]);
 			});
 		} else {
@@ -494,29 +499,25 @@ _f.Frm.prototype.render_form = function(is_a_different_doc) {
 		// clear layout message
 		this.layout.show_message();
 
-		// header must be refreshed before client methods
-		// because add_custom_button
-		this.refresh_header(is_a_different_doc);
-
-		// call trigger
-		this.script_manager.trigger("refresh");
-
-		// trigger global trigger
-		// to use this
-		$(document).trigger('form-refresh', [this]);
-
-		// fields
-		this.refresh_fields();
-
-
-		// call onload post render for callbacks to be fired
-		if(this.cscript.is_onload) {
-			this.script_manager.trigger("onload_post_render");
-		}
-
-		// update dashboard after refresh
-		frappe.timeout(0.1).then(() => this.dashboard.after_refresh());
-
+		frappe.run_serially([
+			// header must be refreshed before client methods
+			// because add_custom_button
+			() => this.refresh_header(is_a_different_doc),
+			// trigger global trigger
+			// to use this
+			() => $(document).trigger('form-refresh', [this]),
+			// fields
+			() => this.refresh_fields(),
+			// call trigger
+			() => this.script_manager.trigger("refresh"),
+			// call onload post render for callbacks to be fired
+			() => {
+				if(this.cscript.is_onload) {
+					return this.script_manager.trigger("onload_post_render");
+				}
+			},
+			() => this.dashboard.after_refresh()
+		]);
 		// focus on first input
 
 		if(this.is_new()) {
@@ -616,7 +617,7 @@ _f.Frm.prototype.trigger_link_fields = function() {
 	// trigger link fields which have default values set
 	if (this.is_new() && this.doc.__run_link_triggers) {
 		$.each(this.fields_dict, function(fieldname, field) {
-			if (field.df.fieldtype=="Link" && this.doc[fieldname]) {
+			if (in_list(['Link', 'Dynamic Link'], field.df.fieldtype) && this.doc[fieldname]) {
 				// triggers add fetch, sets value in model and runs triggers
 				field.set_value(this.doc[fieldname]);
 			}
@@ -666,9 +667,6 @@ _f.Frm.prototype.reload_doc = function() {
 	this.check_doctype_conflict(this.docname);
 
 	var me = this;
-	var onsave = function(r, rtxt) {
-		me.refresh();
-	};
 
 	if(!me.doc.__islocal) {
 		frappe.model.remove_from_locals(me.doctype, me.docname);
@@ -694,19 +692,23 @@ Object.defineProperty(window, 'validated', {
 
 _f.Frm.prototype.save = function(save_action, callback, btn, on_error) {
 	let me = this;
-	return new Promise(resolve => {
+	return new Promise((resolve, reject) => {
 		btn && $(btn).prop("disabled", true);
 		$(document.activeElement).blur();
 
 		frappe.ui.form.close_grid_form();
 		// let any pending js process finish
 		setTimeout(function() {
-			me._save(save_action, callback, btn, on_error, resolve);
+			me._save(save_action, callback, btn, on_error, resolve, reject);
 		}, 100);
+	}).then(() => {
+		me.show_success_action();
+	}).catch((e) => {
+		console.error(e);
 	});
 };
 
-_f.Frm.prototype._save = function(save_action, callback, btn, on_error, resolve) {
+_f.Frm.prototype._save = function(save_action, callback, btn, on_error, resolve, reject) {
 	var me = this;
 	if(!save_action) save_action = "Save";
 	this.validate_form_action(save_action, resolve);
@@ -715,18 +717,25 @@ _f.Frm.prototype._save = function(save_action, callback, btn, on_error, resolve)
 		frappe.utils.scroll_to(0);
 	}
 	var after_save = function(r) {
-		if(!r.exc) {
-			if (["Save", "Update", "Amend"].indexOf(save_action)!==-1) {
+		if (!r.exc) {
+			if (["Save", "Update", "Amend"].indexOf(save_action) !== -1) {
 				frappe.utils.play_sound("click");
 			}
 
 			me.script_manager.trigger("after_save");
+			// submit comment if entered
+
+			if (me.timeline) {
+				me.timeline.comment_area.submit();
+			}
 			me.refresh();
 		} else {
-			if(on_error) {
+			if (on_error) {
 				on_error();
+				reject();
 			}
 		}
+
 		callback && callback(r);
 		resolve();
 	};
@@ -735,8 +744,8 @@ _f.Frm.prototype._save = function(save_action, callback, btn, on_error, resolve)
 		btn && $(btn).prop("disabled", false);
 		if(on_error) {
 			on_error();
+			reject();
 		}
-		resolve();
 	};
 
 	if(save_action != "Update") {
@@ -768,7 +777,7 @@ _f.Frm.prototype.savesubmit = function(btn, callback, on_error) {
 		if (on_error) {
 			on_error();
 		}
-	}
+	};
 
 	return new Promise(resolve => {
 		this.validate_form_action("Submit");
@@ -803,7 +812,7 @@ _f.Frm.prototype.savecancel = function(btn, callback, on_error) {
 		if (on_error) {
 			on_error();
 		}
-	}
+	};
 
 	this.validate_form_action('Cancel');
 	frappe.confirm(__("Permanently Cancel {0}?", [this.docname]), function() {
@@ -832,7 +841,7 @@ _f.Frm.prototype.savecancel = function(btn, callback, on_error) {
 // delete the record
 _f.Frm.prototype.savetrash = function() {
 	this.validate_form_action("Delete");
-	frappe.model.delete_doc(this.doctype, this.docname, function(r) {
+	frappe.model.delete_doc(this.doctype, this.docname, function() {
 		window.history.back();
 	});
 };
@@ -917,9 +926,8 @@ _f.Frm.prototype.get_perm = function(permlevel, access_type) {
 };
 
 
-_f.Frm.prototype.set_intro = function(txt, append) {
+_f.Frm.prototype.set_intro = function(txt) {
 	this.dashboard.set_headline_alert(txt);
-	//frappe.utils.set_intro(this, this.body, txt, append);
 };
 
 _f.Frm.prototype.set_footnote = function(txt) {
@@ -930,18 +938,20 @@ _f.Frm.prototype.set_footnote = function(txt) {
 _f.Frm.prototype.add_custom_button = function(label, fn, group,type="standard") {
 	// temp! old parameter used to be icon
 	if(group && group.indexOf("fa fa-")!==-1) group = null;
-	var btn = this.page.add_inner_button(label, fn, group);
-	
+	var btn = this.page.add_inner_button(label, fn, group);	
 	if (type === "primary")
-			{
-				btn.addClass("btn-primary");
-			}
-			else
-			{
-				btn.removeClass("btn-primary");
-			}
+	{
+		btn.addClass("btn-primary");
+	}
+	else
+	{
+		btn.removeClass("btn-primary");
+	}
 	
-	this.custom_buttons[label] = btn;
+	if(btn) {
+		this.custom_buttons[label] = btn;
+	}
+
 	return btn;
 };
 
@@ -989,7 +999,7 @@ _f.Frm.prototype.validate_form_action = function(action, resolve) {
 	// continue through the workflow states and to allow execution of functions like Duplicate.
 	if ((frappe.workflow.is_read_only(this.doctype, this.docname) && (perms["write"] ||
 		perms["create"] || perms["submit"] || perms["cancel"])) || !frappe.workflow.is_read_only(this.doctype, this.docname)) {
-		var allowed_for_workflow = true;
+		allowed_for_workflow = true;
 	}
 
 	if (!this.perm[0][perm_to_check] && !allowed_for_workflow) {
@@ -1021,4 +1031,23 @@ _f.Frm.prototype.scroll_to_element = function() {
 			frappe.utils.scroll_to(selector);
 		}
 	}
+};
+
+_f.Frm.prototype.show_success_action = function() {
+	const route = frappe.get_route();
+	if (route[0] !== 'Form') return;
+	if (this.meta.is_submittable && this.doc.docstatus !== 1) return;
+
+	const success_action = new frappe.ui.form.SuccessAction(this);
+	success_action.show();
+};
+
+_f.Frm.prototype.is_first_creation = function() {
+	let { modified, creation } = this.doc;
+
+	// strip out milliseconds
+	modified = modified.split('.')[0];
+	creation = creation.split('.')[0];
+
+	return modified === creation;
 };

@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import frappe
 from six.moves import html_parser as HTMLParser
 import smtplib, quopri, json
-from frappe import msgprint, throw, _
+from frappe import msgprint, throw, _, safe_decode
 from frappe.email.smtp import SMTPServer, get_outgoing_email_account
 from frappe.email.email_body import get_email, get_formatted_html, add_attachment
 from frappe.utils.verified_command import get_signed_params, verify_request
@@ -78,19 +78,35 @@ def send(recipients=None, sender=None, subject=None, message=None, text_content=
 		except HTMLParser.HTMLParseError:
 			text_content = "See html attachment"
 
-	if reference_doctype and reference_name:
-		unsubscribed = [d.email for d in frappe.db.get_all("Email Unsubscribe", "email",
-			{"reference_doctype": reference_doctype, "reference_name": reference_name})]
+	recipients = list(set(recipients))
+	cc = list(set(cc))
 
-		unsubscribed += [d.email for d in frappe.db.get_all("Email Unsubscribe", "email",
-			{"global_unsubscribe": 1})]
-	else:
-		unsubscribed = []
+	all_ids = recipients + cc
 
-	recipients = [r for r in list(set(recipients)) if r and r not in unsubscribed]
+	unsubscribed = frappe.db.sql_list('''
+		SELECT
+			distinct email
+		from
+			`tabEmail Unsubscribe`
+		where
+			email in %(all_ids)s
+			and (
+				(
+					reference_doctype = %(reference_doctype)s
+					and reference_name = %(reference_name)s
+				)
+				or global_unsubscribe = 1
+			)
+	''', {
+		'all_ids': all_ids,
+		'reference_doctype': reference_doctype,
+		'reference_name': reference_name,
+	})
+
+	recipients = [r for r in recipients if r and r not in unsubscribed]
 
 	if cc:
-		cc = [r for r in list(set(cc)) if r and r not in unsubscribed]
+		cc = [r for r in cc if r and r not in unsubscribed]
 
 	if not recipients and not cc:
 		# Recipients may have been unsubscribed, exit quietly
@@ -175,7 +191,8 @@ def get_email_queue(recipients, sender, subject, **kwargs):
 			if att.get('fid'):
 				_attachments.append(att)
 			elif att.get("print_format_attachment") == 1:
-				att['lang'] = frappe.local.lang
+				if not att.get('lang', None):
+					att['lang'] = frappe.local.lang
 				att['print_letterhead'] = kwargs.get('print_letterhead')
 				_attachments.append(att)
 		e.attachments = json.dumps(_attachments)
@@ -382,7 +399,7 @@ def send_one(email, smtpserver=None, auto_commit=True, now=False, from_test=Fals
 	email = frappe.db.sql('''select
 			name, status, communication, message, sender, reference_doctype,
 			reference_name, unsubscribe_param, unsubscribe_method, expose_recipients,
-			show_as_cc, add_unsubscribe_link, attachments
+			show_as_cc, add_unsubscribe_link, attachments, retry
 		from
 			`tabEmail Queue`
 		where
@@ -395,6 +412,7 @@ def send_one(email, smtpserver=None, auto_commit=True, now=False, from_test=Fals
 	if frappe.are_emails_muted():
 		frappe.msgprint(_("Emails are muted"))
 		return
+
 	if cint(frappe.defaults.get_defaults().get("hold_queue"))==1 :
 		return
 
@@ -402,7 +420,6 @@ def send_one(email, smtpserver=None, auto_commit=True, now=False, from_test=Fals
 		# rollback to release lock and return
 		frappe.db.rollback()
 		return
-
 
 	frappe.db.sql("""update `tabEmail Queue` set status='Sending', modified=%s where name=%s""",
 		(now_datetime(), email.name), auto_commit=auto_commit)
@@ -464,12 +481,16 @@ def send_one(email, smtpserver=None, auto_commit=True, now=False, from_test=Fals
 	except Exception as e:
 		frappe.db.rollback()
 
-		if any("Sent" == s.status for s in recipients_list):
-			frappe.db.sql("""update `tabEmail Queue` set status='Partially Errored', error=%s where name=%s""",
-				(text_type(e), email.name), auto_commit=auto_commit)
+		if email.retry < 3:
+			frappe.db.sql("""update `tabEmail Queue` set status='Not Sent', modified=%s, retry=retry+1 where name=%s""",
+				(now_datetime(), email.name), auto_commit=auto_commit)
 		else:
-			frappe.db.sql("""update `tabEmail Queue` set status='Error', error=%s
-where name=%s""", (text_type(e), email.name), auto_commit=auto_commit)
+			if any("Sent" == s.status for s in recipients_list):
+				frappe.db.sql("""update `tabEmail Queue` set status='Partially Errored', error=%s where name=%s""",
+					(text_type(e), email.name), auto_commit=auto_commit)
+			else:
+				frappe.db.sql("""update `tabEmail Queue` set status='Error', error=%s
+					where name=%s""", (text_type(e), email.name), auto_commit=auto_commit)
 
 		if email.communication:
 			frappe.get_doc('Communication', email.communication).set_delivery_status(commit=auto_commit)
@@ -486,6 +507,15 @@ def prepare_message(email, recipient, recipients_list):
 	message = email.message
 	if not message:
 		return ""
+
+	# Parse "Email Account" from "Email Sender"
+	email_account = get_outgoing_email_account(raise_exception_not_set=False, sender=email.sender)
+	if frappe.conf.use_ssl and email_account.track_email_status:
+		# Using SSL => Publically available domain => Email Read Reciept Possible
+		message = message.replace("<!--email open check-->", quopri.encodestring('<img src="https://{}/api/method/frappe.core.doctype.communication.email.mark_email_as_seen?name={}"/>'.format(frappe.local.site, email.communication).encode()).decode())
+	else:
+		# No SSL => No Email Read Reciept
+		message = message.replace("<!--email open check-->", quopri.encodestring("".encode()).decode())
 
 	if email.add_unsubscribe_link and email.reference_doctype: # is missing the check for unsubscribe message but will not add as there will be no unsubscribe url
 		unsubscribe_url = get_unsubcribed_url(email.reference_doctype, email.reference_name, recipient,
@@ -511,6 +541,7 @@ def prepare_message(email, recipient, recipients_list):
 		message = message.replace("<!--recipient-->", recipient)
 
 	message = (message and message.encode('utf8')) or ''
+	message = safe_decode(message)
 	if not email.attachments:
 		return message
 
