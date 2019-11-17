@@ -53,9 +53,6 @@ class DocType(Document):
 		self.check_developer_mode()
 
 		self.validate_name()
-		
-		self.add_date_to_name = 0
-			
 
 		if self.issingle:
 			self.allow_import = 0
