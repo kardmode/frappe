@@ -415,14 +415,9 @@ $.extend(frappe.desktop, {
 		if (/* frappe.dom.is_touchscreen() || */ frappe.list_desktop) {
 			return;
 		}
-<<<<<<< HEAD
 		
 		return new Sortable($("#icon-grid").get(0), {
-=======
 
-		new Sortable($("#icon-grid").get(0), {
-			animation: 150,
->>>>>>> 880d824b77d2a6392a5d8ae9ea7db22199513c91
 			onUpdate: function(event) {
 				var new_order = [];
 				$("#icon-grid .case-wrapper").each(function(i, e) {
