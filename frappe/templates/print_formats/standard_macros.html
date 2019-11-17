@@ -128,7 +128,6 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 			{% elif get_label_location(df) =="above" %}
 				<div class="print_label col-xs-{{ "12" if df.fieldtype=="Check" else "12" }}
 				{%- if doc._align_labels_right %} text-right{%- endif -%}">
-
 				{% if df.fieldtype not in ("Image","HTML","Check") and
 					doc.get(df.fieldname) != None %}
 				<label>{{ _(df.label) }}</label>

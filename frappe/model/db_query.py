@@ -36,7 +36,7 @@ class DatabaseQuery(object):
 		ignore_permissions=False, user=None, with_comment_count=False,
 		join='left join', distinct=False, start=None, page_length=None, limit=None,
 		ignore_ifnull=False, save_user_settings=False, save_user_settings_fields=False,
-		update=None, add_total_row=None, user_settings=None, reference_doctype=None):
+		update=None, add_total_row=None, user_settings=None, reference_doctype=None, strict=True):
 		if not ignore_permissions and not frappe.has_permission(self.doctype, "read", user=user):
 			frappe.flags.error_message = _('Insufficient Permission for {0}').format(frappe.bold(self.doctype))
 			raise frappe.PermissionError(self.doctype)
@@ -79,6 +79,7 @@ class DatabaseQuery(object):
 		self.user = user or frappe.session.user
 		self.update = update
 		self.user_settings_fields = copy.deepcopy(self.fields)
+		self.strict = strict
 
 		# for contextual user permission check
 		# to determine which user permission is applicable on link field of specific doctype
@@ -111,8 +112,12 @@ class DatabaseQuery(object):
 		if self.distinct:
 			args.fields = 'distinct ' + args.fields
 
-		query = """select %(fields)s from %(tables)s %(conditions)s
-			%(group_by)s %(order_by)s %(limit)s""" % args
+		query = """select %(fields)s
+			from %(tables)s
+			%(conditions)s
+			%(group_by)s
+			%(order_by)s
+			%(limit)s""" % args
 
 		return frappe.db.sql(query, as_dict=not self.as_list, debug=self.debug, update=self.update)
 
@@ -236,6 +241,12 @@ class DatabaseQuery(object):
 
 			_is_query(field)
 
+			if self.strict:
+				if re.compile(r".*/\*.*").match(field):
+					frappe.throw(_('Illegal SQL Query'))
+
+				if re.compile(r".*\s(union).*\s").match(field.lower()):
+					frappe.throw(_('Illegal SQL Query'))
 
 	def extract_tables(self):
 		"""extract tables from fields"""
@@ -402,18 +413,6 @@ class DatabaseQuery(object):
 				value = get_between_date_filter(f.value, df)
 				fallback = "'0000-00-00 00:00:00'"
 
-			elif df and df.fieldtype=="Date":
-				value = getdate(f.value).strftime("%Y-%m-%d")
-				fallback = "'0000-00-00'"
-
-			elif (df and df.fieldtype=="Datetime") or isinstance(f.value, datetime):
-				value = get_datetime(f.value).strftime("%Y-%m-%d %H:%M:%S.%f")
-				fallback = "'0000-00-00 00:00:00'"
-
-			elif df and df.fieldtype=="Time":
-				value = get_time(f.value).strftime("%H:%M:%S.%f")
-				fallback = "'00:00:00'"
-
 			elif f.operator.lower() == "is":
 				if f.value == 'set':
 					f.operator = '!='
@@ -426,6 +425,18 @@ class DatabaseQuery(object):
 
 				if 'ifnull' not in column_name:
 					column_name = 'ifnull({}, {})'.format(column_name, fallback)
+
+			elif df and df.fieldtype=="Date":
+				value = getdate(f.value).strftime("%Y-%m-%d")
+				fallback = "'0000-00-00'"
+
+			elif (df and df.fieldtype=="Datetime") or isinstance(f.value, datetime):
+				value = get_datetime(f.value).strftime("%Y-%m-%d %H:%M:%S.%f")
+				fallback = "'0000-00-00 00:00:00'"
+
+			elif df and df.fieldtype=="Time":
+				value = get_time(f.value).strftime("%H:%M:%S.%f")
+				fallback = "'00:00:00'"
 
 			elif f.operator.lower() in ("like", "not like") or (isinstance(f.value, string_types) and
 				(not df or df.fieldtype not in ["Float", "Int", "Currency", "Percent", "Check"])):
@@ -637,6 +648,8 @@ class DatabaseQuery(object):
 		if 'select' in _lower and ' from ' in _lower:
 			frappe.throw(_('Cannot use sub-query in order by'))
 
+		if re.compile(r".*[^a-z0-9-_ ,`'\"\.\(\)].*").match(_lower):
+			frappe.throw(_('Illegal SQL Query'))
 
 		for field in parameters.split(","):
 			if "." in field and field.strip().startswith("`tab"):
@@ -703,6 +716,7 @@ def get_list(doctype, *args, **kwargs):
 	'''wrapper for DatabaseQuery'''
 	kwargs.pop('cmd', None)
 	kwargs.pop('ignore_permissions', None)
+	kwargs.pop('strict', None)
 
 	# If doctype is child table
 	if frappe.is_table(doctype):

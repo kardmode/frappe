@@ -23,7 +23,7 @@ if sys.version[0] == '2':
 	reload(sys)
 	sys.setdefaultencoding("utf-8")
 
-__version__ = '11.1.44'
+__version__ = '11.1.61'
 __title__ = "Frappe Framework"
 
 local = Local()
@@ -1162,7 +1162,7 @@ def respond_as_web_page(title, html, success=None, http_status_code=None,
 	:param context: web template context
 	:param indicator_color: color of indicator in title
 	:param primary_action: route on primary button (default is `/`)
-	:param primary_label: label on primary button (defaut is "Home")
+	:param primary_label: label on primary button (default is "Home")
 	:param fullpage: hide header / footer
 	:param width: Width of message in pixels
 	:param template: Optionally pass view template
@@ -1171,6 +1171,8 @@ def respond_as_web_page(title, html, success=None, http_status_code=None,
 	local.message = html
 	local.response['type'] = 'page'
 	local.response['route'] = template
+	local.no_cache = 1
+
 	if http_status_code:
 		local.response['http_status_code'] = http_status_code
 
@@ -1413,8 +1415,9 @@ def publish_progress(*args, **kwargs):
 
 	:param percent: Percent progress
 	:param title: Title
-	:param doctype: Optional, for DocType
-	:param name: Optional, for Document name
+	:param doctype: Optional, for document type
+	:param docname: Optional, for document name
+	:param description: Optional description
 	"""
 	import frappe.realtime
 	return frappe.realtime.publish_progress(*args, **kwargs)

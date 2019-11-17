@@ -27,8 +27,7 @@ frappe.pages['modules'].on_page_load = function(wrapper) {
 		});
 	} */
 	
-	
-	
+
 	page.get_page_modules = () => {
 		return frappe.get_desktop_icons(true)
 			.filter(d => d.type==='module' && !d.blocked)
