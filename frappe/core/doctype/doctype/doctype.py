@@ -54,8 +54,8 @@ class DocType(Document):
 
 		self.validate_name()
 		
-		if self.add_date_to_name == None:
-			self.add_date_to_name = 0
+		self.add_date_to_name = 0
+			
 
 		if self.issingle:
 			self.allow_import = 0
