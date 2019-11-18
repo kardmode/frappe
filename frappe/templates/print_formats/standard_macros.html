@@ -5,11 +5,13 @@
 		<div>{{ frappe.render_template(df.options, {"doc": doc}) or "" }}</div>
 	{%- elif df.fieldtype in ("Text", "Text Editor", "Code") -%}
 		{{ render_text_field(df, doc) }}
-	{%- elif df.fieldtype in ("Image", "Attach Image", "Attach", "Signature")
+	{%- elif df.fieldtype in ("Image", "Attach Image", "Attach")
 		and (guess_mimetype(doc[df.fieldname])[0] or "").startswith("image/")  -%}
 		{{ render_image(df, doc) }}
 	{%- elif df.fieldtype=="Geolocation" -%}
 		{{ render_geolocation(df, doc) }}
+	{%- elif df.fieldtype=="Signature" -%}
+		{{ render_signature(df, doc) }}
 	{%- elif df.fieldtype=="Currency" -%}
 		{%- if doc.print_templates and doc.print_templates.get(df.fieldname) -%}
 			{% include doc.print_templates[df.fieldname] %}
@@ -152,7 +154,8 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 				<div class="print_label col-xs-{{ "12" if df.fieldtype=="Check" else "12" }}
 				{%- if doc._align_labels_right %} text-right{%- endif -%}">
 
-				{% if df.fieldtype not in ("Image","HTML","Check") and
+
+				{% if df.fieldtype not in ("Image", "HTML", "Check") and
 					doc.get(df.fieldname) != None %}
 				<label>{{ _(df.label) }}</label>
 				{% endif %}
@@ -213,13 +216,19 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{%- if df.fieldtype=="Code" %}
 		<pre class="value">{{ doc.get(df.fieldname) }}</pre>
 	{% else -%}
+		{%- if df.fieldtype=="Text Editor" -%}<div class='text-editor-print'>{%- endif -%}
 		{{ doc.get_formatted(df.fieldname, parent_doc or doc, translated=df.translatable) }}
-	{% endif -%}
+		{%- if df.fieldtype=="Text Editor" -%}</div>{%- endif -%}
+  {% endif -%}
 </div>
 {%- endif -%}
 {%- endmacro -%}
 
 {%- macro render_image(df, doc) -%}
+	{{ print_value(df, doc) }}
+{% endmacro %}
+
+{%- macro render_signature(df, doc) -%}
 	{{ print_value(df, doc) }}
 {% endmacro %}
 

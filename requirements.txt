@@ -19,7 +19,7 @@ babel==2.6.0
 ipython
 html2text==2016.9.19
 email_reply_parser
-click
+click==7.0
 num2words==0.5.5
 watchdog==0.8.0
 bleach==2.1.4
@@ -45,7 +45,7 @@ pyqrcode
 pypng
 premailer
 croniter
-googlemaps
+googlemaps==3.1.1
 braintree
 future
 passlib
@@ -56,5 +56,13 @@ google-auth-oauthlib
 faker
 stripe
 coverage
-urllib3==1.23
+urllib3
 GitPython==2.1.11
+psycopg2==2.7.5
+psycopg2-binary==2.7.5
+sqlparse==0.2.4
+Pygments==2.2.0
+frontmatter
+PyYAML==3.13
+xlrd
+RestrictedPython==5.0

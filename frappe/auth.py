@@ -8,7 +8,7 @@ from frappe import _
 import frappe
 import frappe.database
 import frappe.utils
-from frappe.utils import cint, flt, get_datetime, datetime
+from frappe.utils import cint, flt, get_datetime, datetime, date_diff, today
 import frappe.utils.user
 from frappe import conf
 from frappe.sessions import Session, clear_sessions, delete_session
@@ -64,7 +64,7 @@ class HTTPRequest:
 		check_session_stopped()
 
 	def validate_csrf_token(self):
-		if frappe.local.request and frappe.local.request.method=="POST":
+		if frappe.local.request and frappe.local.request.method in ("POST", "PUT", "DELETE"):
 			if not frappe.local.session: return
 			if not frappe.local.session.data.csrf_token \
 				or frappe.local.session.data.device=="mobile" \
@@ -91,7 +91,7 @@ class HTTPRequest:
 
 	def connect(self, ac_name = None):
 		"""connect to db, from ac_name or db_name"""
-		frappe.local.db = frappe.database.Database(user = self.get_db_name(), \
+		frappe.local.db = frappe.database.get_db(user = self.get_db_name(), \
 			password = getattr(conf, 'db_password', ''))
 
 class LoginManager:
@@ -124,6 +124,12 @@ class LoginManager:
 		frappe.clear_cache(user = frappe.form_dict.get('usr'))
 		user, pwd = get_cached_user_pass()
 		self.authenticate(user=user, pwd=pwd)
+		if self.force_user_to_reset_password():
+			doc = frappe.get_doc("User", self.user)
+			frappe.local.response["redirect_to"] = doc.reset_password(send_email=False, password_expired=True)
+			frappe.local.response["message"] = "Password Reset"
+			return False
+
 		if should_run_2fa(self.user):
 			authenticate_for_2factor(self.user)
 			if not confirm_otp_token(self):
@@ -212,6 +218,22 @@ class LoginManager:
 		self.user = self.check_password(user, pwd)
 
 
+	def force_user_to_reset_password(self):
+		if not self.user:
+			return
+
+		reset_pwd_after_days = cint(frappe.db.get_single_value("System Settings",
+			"force_user_to_reset_password"))
+
+		if reset_pwd_after_days:
+			last_password_reset_date = frappe.db.get_value("User",
+				self.user, "last_password_reset_date")  or today()
+
+			last_pwd_reset_days = date_diff(today(), last_password_reset_date)
+
+			if last_pwd_reset_days > reset_pwd_after_days:
+				return True
+
 	def check_if_enabled(self, user):
 		"""raise exception if user not enabled"""
 		doc = frappe.get_doc("System Settings")
@@ -282,27 +304,7 @@ class LoginManager:
 
 	def run_trigger(self, event='on_login'):
 		for method in frappe.get_hooks().get(event, []):
-			frappe.call(frappe.get_attr(method), login_manager=self)		
-	def validate_ban_list(self):
-		"""check if IP Address is valid"""
-		global_ban_list = frappe.db.sql("""select * from `tabBlocked Address`""", as_dict = 1)
-		max_attempts = int(frappe.db.get_value('System Settings', None, 'max_invalid_login_attempts', ignore=True) or 5)
-		max_ban_minutes = int(frappe.db.get_value('System Settings', None, 'block_ip_time') or 15)
-		
-		for ip in global_ban_list:
-			if frappe.local.request_ip.startswith(ip.ip_address):
-				if cint(ip.permanent_ban):
-					frappe.throw(_("Authentication Error"), frappe.AuthenticationError)
-				elif int(ip.login_attempts) > max_attempts:
-				
-					from datetime import datetime, timedelta
-					if datetime.now() - get_datetime(ip.posting_date) < timedelta(minutes = max_ban_minutes):
-						frappe.throw(_("Authentication Error"), frappe.AuthenticationError)
-			
-		return			
-		
-	
-
+			frappe.call(frappe.get_attr(method), login_manager=self)
 
 	def validate_hour(self):
 		"""check if user is logging in during restricted hours"""
@@ -429,36 +431,15 @@ def check_consecutive_login_attempts(user, doc):
 			delete_login_failed_cache(user)
 
 
-# def validate_ip_address(self):
-	# """check if IP Address is valid"""
-	# user = frappe.get_doc("User", self.user)
-	# ip_list = user.get_restricted_ip_list()
-	# if not ip_list:
-		# return
-
-	# bypass_restrict_ip_check = 0
-	# # check if two factor auth is enabled
-	# enabled = int(frappe.get_system_settings('enable_two_factor_auth') or 0)
-	# if enabled:
-		# #check if bypass restrict ip is enabled for all users
-		# bypass_restrict_ip_check = int(frappe.get_system_settings('bypass_restrict_ip_check_if_2fa_enabled') or 0)
-		# if not bypass_restrict_ip_check:
-			# #check if bypass restrict ip is enabled for login user
-			# bypass_restrict_ip_check = int(frappe.db.get_value('User', self.user, 'bypass_restrict_ip_check_if_2fa_enabled') or 0)
-	# for ip in ip_list:
-		# if frappe.local.request_ip.startswith(ip) or bypass_restrict_ip_check:
-			# return
-
-	# frappe.throw(_("Not allowed from this IP Address"), frappe.AuthenticationError)
-
 def validate_ip_address(user):
 	"""check if IP Address is valid"""
-	user = frappe.get_cached_doc("User", user)
+	user = frappe.get_cached_doc("User", user) if not frappe.flags.in_test else frappe.get_doc("User", user)
 	ip_list = user.get_restricted_ip_list()
 	if not ip_list:
 		return
 
-	system_settings = frappe.get_cached_doc("System Settings")
+
+	system_settings = frappe.get_cached_doc("System Settings") if not frappe.flags.in_test else frappe.get_single("System Settings")
 	# check if bypass restrict ip is enabled for all users
 	bypass_restrict_ip_check = system_settings.bypass_restrict_ip_check_if_2fa_enabled
 

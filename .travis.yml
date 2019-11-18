@@ -1,24 +1,48 @@
 language: python
 dist: trusty
-
-python:
-  - "2.7"
-  - "3.6"
+sudo: required
 
 addons:
   hosts:
     - test_site
   mariadb: 10.3
+  postgresql: 9.5
 
 git:
   depth: 1
 
 cache:
   - pip
+  - npm
+  - yarn
+
+matrix:
+  include:
+  - name: "Python 3.6 MariaDB"
+    python: 3.6
+    env: DB=mariadb TYPE=server
+    script: bench --site test_site run-tests --coverage
+
+  - name: "Python 3.6 PostgreSQL"
+    python: 3.6
+    env: DB=postgres TYPE=server
+    script: bench --site test_site run-tests --coverage
+
+  - name: "Cypress"
+    python: 3.6
+    env: DB=mariadb TYPE=ui
+    before_script: bench --site test_site execute frappe.utils.install.complete_setup_wizard
+    script: bench --site test_site run-ui-tests frappe --headless
+
+  - name: "Python 2.7 MariaDB"
+    python: 2.7
+    env: DB=mariadb TYPE=server
+    script: bench --site test_site run-tests --coverage
 
 install:
   - cd ~
-  - nvm install 10
+  - source ./.nvm/nvm.sh
+  - nvm install v8.10.0
 
   - git clone https://github.com/frappe/bench --depth 1
   - pip install -e ./bench
@@ -26,7 +50,7 @@ install:
   - bench init frappe-bench --skip-assets --python $(which python) --frappe-path $TRAVIS_BUILD_DIR
 
   - mkdir ~/frappe-bench/sites/test_site
-  - cp $TRAVIS_BUILD_DIR/.travis/site_config.json ~/frappe-bench/sites/test_site/site_config.json
+  - cp $TRAVIS_BUILD_DIR/.travis/$DB.json ~/frappe-bench/sites/test_site/site_config.json
 
   - mysql -u root -e "SET GLOBAL character_set_server = 'utf8mb4'"
   - mysql -u root -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
@@ -38,25 +62,27 @@ install:
   - mysql -u root -e "UPDATE mysql.user SET Password=PASSWORD('travis') WHERE User='root'"
   - mysql -u root -e "FLUSH PRIVILEGES"
 
+  - psql -c "CREATE DATABASE test_frappe" -U postgres
+  - psql -c "CREATE USER test_frappe WITH PASSWORD 'test_frappe'" -U postgres
+
   - wget -O /tmp/wkhtmltox.tar.xz https://github.com/frappe/wkhtmltopdf/raw/master/wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
   - tar -xf /tmp/wkhtmltox.tar.xz -C /tmp
   - sudo mv /tmp/wkhtmltox/bin/wkhtmltopdf /usr/local/bin/wkhtmltopdf
   - sudo chmod o+x /usr/local/bin/wkhtmltopdf
 
-  - cd ~/frappe-bench
-  - ./env/bin/pip install ldap3
+  - cd ./frappe-bench
 
   - sed -i 's/watch:/# watch:/g' Procfile
   - sed -i 's/schedule:/# schedule:/g' Procfile
-  - sed -i 's/socketio:/# socketio:/g' Procfile
-  - sed -i 's/redis_socketio:/# redis_socketio:/g' Procfile
+
+  - if [ $TYPE == "server" ]; then sed -i 's/socketio:/# socketio:/g' Procfile; fi
+  - if [ $TYPE == "server" ]; then sed -i 's/redis_socketio:/# redis_socketio:/g' Procfile; fi
+
+  - if [ $TYPE == "ui" ]; then bench setup requirements --node; fi
 
   - bench start &
   - bench --site test_site reinstall --yes
   - bench build --app frappe
-
-script:
-  - bench --site test_site run-tests --coverage
 
 after_script:
   - pip install python-coveralls

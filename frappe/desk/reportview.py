@@ -10,9 +10,7 @@ import frappe.permissions
 from frappe.model.db_query import DatabaseQuery
 from frappe import _
 from six import text_type, string_types, StringIO
-
-# imports - third-party imports
-import pymysql
+from frappe.core.doctype.access_log.access_log import make_access_log
 
 @frappe.whitelist()
 @frappe.read_only()
@@ -54,6 +52,8 @@ def get_form_params():
 		key = field.split(" as ")[0]
 
 		if key.startswith('count('): continue
+		if key.startswith('sum('): continue
+		if key.startswith('avg('): continue
 
 		if "." in key:
 			parenttype, fieldname = key.split(".")[0][4:-1], key.split(".")[1].strip("`")
@@ -113,10 +113,11 @@ def save_report():
 	d.report_type = "Report Builder"
 	d.json = data['json']
 	frappe.get_doc(d).save()
-	frappe.msgprint(_("{0} is saved").format(d.name))
+	frappe.msgprint(_("{0} is saved").format(d.name), alert=True)
 	return d.name
 
 @frappe.whitelist()
+@frappe.read_only()
 def export_query():
 	"""export from report builder"""
 	title = frappe.form_dict.title
@@ -143,6 +144,11 @@ def export_query():
 		si = json.loads(frappe.form_dict.get('selected_items'))
 		form_params["filters"] = {"name": ("in", si)}
 		del form_params["selected_items"]
+
+	make_access_log(doctype=doctype,
+		file_type=file_format_type,
+		report_name=form_params.report_name,
+		filters=form_params.filters)
 
 	db_query = DatabaseQuery(doctype)
 	ret = db_query.execute(**form_params)
@@ -207,6 +213,8 @@ def get_labels(fields, doctype):
 	for key in fields:
 		key = key.split(" as ")[0]
 
+		if key.startswith(('count(', 'sum(', 'avg(')): continue
+
 		if "." in key:
 			parenttype, fieldname = key.split(".")[0][4:-1], key.split(".")[1].strip("`")
 		else:
@@ -253,15 +261,20 @@ def delete_bulk(doctype, items):
 @frappe.whitelist()
 @frappe.read_only()
 def get_sidebar_stats(stats, doctype, filters=[]):
-	cat_tags = frappe.db.sql("""select tag.parent as category, tag.tag_name as tag
-		from `tabTag Doc Category` as docCat
-		INNER JOIN  tabTag as tag on tag.parent = docCat.parent
-		where docCat.tagdoc=%s
-		ORDER BY tag.parent asc,tag.idx""",doctype,as_dict=1)
 
-	return {"defined_cat":cat_tags, "stats":get_stats(stats, doctype, filters)}
+	if not frappe.cache().hget("tags_count", doctype):
+		tags = [tag.name for tag in frappe.get_list("Tag")]
+		_user_tags = []
+		for tag in tags:
+			count = frappe.db.count("Tag Link", filters={"document_type": doctype, "tag": tag})
+			if count > 0:
+				_user_tags.append([tag, count])
+		frappe.cache().hset("tags_count", doctype, _user_tags)
+
+	return {"stats": {"_user_tags": frappe.cache().hget("tags_count", doctype)}}
 
 @frappe.whitelist()
+@frappe.read_only()
 def get_stats(stats, doctype, filters=[]):
 	"""get tag info"""
 	import json
@@ -272,7 +285,7 @@ def get_stats(stats, doctype, filters=[]):
 
 	try:
 		columns = frappe.db.get_table_columns(doctype)
-	except pymysql.InternalError:
+	except frappe.db.InternalError:
 		# raised when _user_tags column is added on the fly
 		columns = []
 
@@ -291,10 +304,10 @@ def get_stats(stats, doctype, filters=[]):
 			else:
 				stats[tag] = tagcount
 
-		except frappe.SQLError:
+		except frappe.db.SQLError:
 			# does not work for child tables
 			pass
-		except pymysql.InternalError:
+		except frappe.db.InternalError:
 			# raised when _user_tags column is added on the fly
 			pass
 	return stats

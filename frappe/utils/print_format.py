@@ -4,10 +4,10 @@ import frappe, os
 from frappe import _
 
 from frappe.utils.pdf import get_pdf,cleanup
+from frappe.core.doctype.access_log.access_log import make_access_log
 from PyPDF2 import PdfFileWriter
 
 no_cache = 1
-no_sitemap = 1
 
 base_template_path = "templates/www/printview.html"
 standard_format = "templates/print_formats/standard.html"
@@ -34,7 +34,7 @@ def download_multi_pdf_with_cover(doctype, name, format=None,cover_doctype = Non
 	
 	frappe.local.response.filename = "{doctype}.pdf".format(doctype=doctype.replace(" ", "-").replace("/", "-"))
 
-def download_multi_pdf(doctype, name, format=None,orientation="Portrait",letterhead=None,sign_type=None):
+def download_multi_pdf(doctype, name, format=None, no_letterhead=0,orientation="Portrait",letterhead=None,sign_type=None):
 	"""
 	Concatenate multiple docs as PDF .
 
@@ -82,14 +82,13 @@ def download_multi_pdf(doctype, name, format=None,orientation="Portrait",letterh
 
 		# Concatenating pdf files
 		for i, ss in enumerate(result):
-			output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output,options = {"orientation": orientation},letterhead=letterhead,sign_type=sign_type)
+			output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output, no_letterhead=no_letterhead,options = {"orientation": orientation},letterhead=letterhead,sign_type=sign_type)
 		frappe.local.response.filename = "{doctype}.pdf".format(doctype=doctype.replace(" ", "-").replace("/", "-"))
 	else:
 		for doctype_name in doctype:
 			for doc_name in doctype[doctype_name]:
 				try:
-					output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output,options = {"orientation": orientation},letterhead=letterhead,sign_type=sign_type)
-
+					output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output, no_letterhead=no_letterhead,options = {"orientation": orientation},letterhead=letterhead,sign_type=sign_type)
 				except Exception:
 					frappe.log_error("Permission Error on doc {} of doctype {}".format(doc_name, doctype_name))
 		frappe.local.response.filename = "{}.pdf".format(name)
@@ -150,6 +149,7 @@ def dpdf(dt, dn, ft=None,doc=None, nl=0,lh = None,on="Portrait",sn = None):
 
 @frappe.whitelist()
 def report_to_pdf(html, orientation="Landscape"):
+	make_access_log(file_type='PDF', method='PDF', page=html)
 	frappe.local.response.filename = "report.pdf"
 	frappe.local.response.filecontent = get_pdf(html, {"orientation": orientation})
 	frappe.local.response.type = "pdf"
@@ -161,7 +161,7 @@ def print_by_server(doctype, name, print_format=None, doc=None, no_letterhead=0)
 		import cups
 	except ImportError:
 		frappe.throw(_("You need to install pycups to use this feature!"))
-		return
+
 	try:
 		cups.setServer(print_settings.server_ip)
 		cups.setPort(print_settings.port)

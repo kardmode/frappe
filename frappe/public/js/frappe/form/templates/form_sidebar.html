@@ -1,3 +1,10 @@
+<ul class="list-unstyled sidebar-menu visible-sm visible-xs">
+	<li>
+		<a class="navbar-home" href="#">
+			<img class="app-logo" src="{{ frappe.app.logo_url }}">
+		</a>
+	</li>
+</ul>
 <ul class="list-unstyled sidebar-menu user-actions hidden"></ul>
 <ul class="list-unstyled sidebar-menu sidebar-image-section <!-- hidden-xs hidden-sm --> hide">
 	<!-- <li class="divider"></li> -->
@@ -5,6 +12,15 @@
 		<div class="sidebar-image"></div>
 		<div class="sidebar-standard-image">
 			<div class="standard-image"></div>
+		</div>
+		<div class="sidebar-image-actions">
+			<div class="dropdown">
+				<a href="#" class="dropdown-toggle" data-toggle="dropdown">{{ __("Change") }}</a>
+				<ul class="dropdown-menu" role="menu">
+					<li><a class="sidebar-image-change">{{ __("Upload") }}</a></li>
+					<li><a class="sidebar-image-remove">{{ __("Remove") }}</a></li>
+				</ul>
+			</div>
 		</div>
 	</li>
 </ul>
@@ -18,7 +34,6 @@
 </div>
 {% endif %}
 <ul class="list-unstyled sidebar-menu sidebar-rating hide">
-	<li class="divider"></li>
 	<li style="position: relative;">
 		<a class="strong badge-hover">
 			<span>{%= __("Feedback") %}</span>
@@ -60,6 +75,10 @@
 		<div class="clearfix"></div>
 	</li>
 </ul>
+<ul class="list-unstyled sidebar-menu form-reviews">
+	<li class="h6 attachments-label">{%= __("Reviews") %}</li>
+	<li class="review-list"></li>
+</ul>
 <ul class="list-unstyled sidebar-menu">
 	<li class="divider"></li>
 	<li class="shared-with-label">{%= __("Shared With") %}</li>
@@ -79,6 +98,20 @@
 		</span>
 	</li>
 	<li class="divider"></li>
+</ul>
+<ul class="list-unstyled sidebar-menu followed-by-section">
+	<li class="h6 followed-by-label text-medium hidden">{%= __("Followed by") %}</li>
+	<li class="followed-by"></li>
+	<li class="document-follow">
+		<a class="badge-hover follow-document-link hidden">
+			{%= __("Follow") %}
+		</a>
+		<a class="badge-hover unfollow-document-link hidden">
+			{%= __("Unfollow") %}
+		</a>
+	</li>
+</ul>
+<ul class="list-unstyled sidebar-menu text-muted">
 	<li class="modified-by"></li>
 	<li class="divider"></li>
 	<li class="created-by"></li>
@@ -86,7 +119,4 @@
 {% if(frappe.get_form_sidebar_extension) { %}
     {{ frappe.get_form_sidebar_extension() }}
 {% } %}
-<!-- <ul class="list-unstyled visible-xs visible-sm"> -->
-	<!-- <li class="divider"></li> -->
-	<!-- <li class="close-sidebar">Close</li> -->
-<!-- </ul> -->
+

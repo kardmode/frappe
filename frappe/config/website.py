@@ -12,11 +12,13 @@ def get_data():
 					"type": "doctype",
 					"name": "Web Page",
 					"description": _("Content web page."),
+					"onboard": 1,
 				},
 				{
 					"type": "doctype",
 					"name": "Web Form",
 					"description": _("User editable form on Website."),
+					"onboard": 1,
 				},
 				{
 					"type": "doctype",
@@ -27,6 +29,11 @@ def get_data():
 					"name": "Website Slideshow",
 					"description": _("Embed image slideshows in website pages."),
 				},
+				{
+					"type": "doctype",
+					"name": "Website Route Meta",
+					"description": _("Add meta tags to your web pages"),
+				},
 			]
 		},
 		{
@@ -36,11 +43,12 @@ def get_data():
 					"type": "doctype",
 					"name": "Blog Post",
 					"description": _("Single Post (article)."),
+					"onboard": 1,
 				},
 				{
 					"type": "doctype",
-					"name": "Blog Settings",
-					"description": _("Write titles and introductions to your blog."),
+					"name": "Blogger",
+					"description": _("A user who posts blogs."),
 				},
 				{
 					"type": "doctype",
@@ -62,11 +70,13 @@ def get_data():
 					"type": "doctype",
 					"name": "Website Settings",
 					"description": _("Setup of top navigation bar, footer and logo."),
+					"onboard": 1,
 				},
 				{
 					"type": "doctype",
 					"name": "Website Theme",
 					"description": _("List of themes for Website."),
+					"onboard": 1,
 				},
 				{
 					"type": "doctype",
@@ -92,6 +102,7 @@ def get_data():
 					"type": "doctype",
 					"name": "Portal Settings",
 					"label": _("Portal Settings"),
+					"onboard": 1,
 				}
 			]
 		},
