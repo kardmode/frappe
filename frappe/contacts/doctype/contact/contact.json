@@ -4,7 +4,7 @@
  "allow_rename": 1,
  "creation": "2013-01-10 16:34:32",
  "doctype": "DocType",
- "document_type": "Setup",
+ "document_type": "Documents",
  "engine": "InnoDB",
  "field_order": [
   "contact_section",
@@ -245,7 +245,7 @@
  "icon": "fa fa-user",
  "idx": 1,
  "image_field": "image",
- "modified": "2019-10-10 22:04:41.070479",
+ "modified": "2019-11-18 21:30:23.001197",
  "modified_by": "Administrator",
  "module": "Contacts",
  "name": "Contact",

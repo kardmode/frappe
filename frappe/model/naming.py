@@ -95,9 +95,6 @@ def get_custom_naming_series(key,doc,add_date = False):
 	naming_series = key
 	if doc:
 		add_company_abbr = frappe.get_meta(doc.doctype).add_company_abbr_to_name or 0
-		add_date_custom = frappe.get_meta(doc.doctype).add_date_to_name or 0
-		
-		
 		
 		if add_date:
 			date = ""

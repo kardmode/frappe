@@ -4,7 +4,7 @@
  "creation": "2013-03-28 10:35:30",
  "description": "Page to show on the website\n",
  "doctype": "DocType",
- "document_type": "Document",
+ "document_type": "Documents",
  "engine": "InnoDB",
  "field_order": [
   "section_title",
@@ -249,7 +249,7 @@
  "idx": 1,
  "is_published_field": "published",
  "max_attachments": 20,
- "modified": "2019-10-02 13:58:50.825481",
+ "modified": "2019-11-18 21:32:10.779114",
  "modified_by": "Administrator",
  "module": "Website",
  "name": "Web Page",

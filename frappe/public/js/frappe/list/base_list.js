@@ -56,7 +56,8 @@ frappe.views.BaseList = class BaseList {
 		this.primary_action = null;
 		this.secondary_action = {
 			label: __('Refresh'),
-			action: () => this.refresh()
+			action: () => this.refresh(),
+			icon:"octicon octicon-sync",
 		};
 
 		this.menu_items = [{
@@ -166,11 +167,11 @@ frappe.views.BaseList = class BaseList {
 			this.secondary_action.action,
 			this.secondary_action.icon
 		);
-		if (!this.secondary_action.icon) {
+		/* if (!this.secondary_action.icon) {
 			$secondary_action.addClass('hidden-xs');
 		} else {
 			$secondary_action.addClass('visible-xs');
-		}
+		} */
 
 		this.menu_items.map(item => {
 			if (item.condition && item.condition() === false) {

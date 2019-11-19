@@ -4,7 +4,7 @@
  "creation": "2013-02-18 13:36:19",
  "description": "DocType is a Table / Form in the application.",
  "doctype": "DocType",
- "document_type": "Document",
+ "document_type": "Documents",
  "engine": "InnoDB",
  "field_order": [
   "sb0",
@@ -48,6 +48,7 @@
   "sort_order",
   "column_break_29",
   "document_type",
+  "add_company_abbr_to_name",
   "icon",
   "color",
   "show_preview_popup",
@@ -454,11 +455,17 @@
    "fieldname": "nsm_parent_field",
    "fieldtype": "Data",
    "label": "Parent Field (Tree)"
+  },
+  {
+   "default": "0",
+   "fieldname": "add_company_abbr_to_name",
+   "fieldtype": "Check",
+   "label": "add_company_abbr_to_name"
   }
  ],
  "icon": "fa fa-bolt",
  "idx": 6,
- "modified": "2019-11-18 03:39:14.291929",
+ "modified": "2019-11-19 13:51:14.076041",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "DocType",

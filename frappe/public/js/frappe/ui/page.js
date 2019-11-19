@@ -70,6 +70,7 @@ frappe.ui.Page = Class.extend({
 		
 		var test_page_name = frappe.get_route_str();
 		this.is_module_page = false;
+		
 		if(this.single_column) {
 			// nesting under col-sm-12 for consistency
 			this.add_view("main", '<div class="row layout-main">\
@@ -79,7 +80,7 @@ frappe.ui.Page = Class.extend({
 						<div class="layout-main-section"></div>\
 						<div class="layout-footer hide"></div>\
 					</div>\
-					<div class="close-sidebar" style="display: none;"></div>\
+					<div class="close-sidebar"></div>\
 				</div>');
 		} else {
 			
@@ -91,7 +92,7 @@ frappe.ui.Page = Class.extend({
 					<div class="layout-main-section"></div>\
 					<div class="layout-footer hide"></div>\
 				</div>\
-				<div class="close-sidebar" style="display: none;"></div>\
+				<div class="close-sidebar"></div>\
 			</div>');
 			
 				this.wrapper.find(".toggle-rightbar").removeClass('hide');
@@ -106,7 +107,7 @@ frappe.ui.Page = Class.extend({
 					<div class="layout-main-section"></div>\
 					<div class="layout-footer hide"></div>\
 				</div>\
-				<div class="close-sidebar" style="display: none;"></div>\
+				<div class="close-sidebar"></div>\
 			</div>');
 			
 				this.wrapper.find(".toggle-rightbar").removeClass('hide');
@@ -123,7 +124,7 @@ frappe.ui.Page = Class.extend({
 					<div class="layout-main-section"></div>\
 					<div class="layout-footer hide"></div>\
 				</div>\
-				<div class="close-sidebar" style="display: none;"></div>\
+				<div class="close-sidebar"></div>\
 			</div>');
 			}
 			else{
@@ -133,11 +134,10 @@ frappe.ui.Page = Class.extend({
 					<div class="layout-main-section"></div>\
 					<div class="layout-footer hide"></div>\
 				</div>\
-				<div class="close-sidebar" style="display: none;"></div>\
+				<div class="close-sidebar"></div>\
 			</div>');
 				
 			}
-			
 		}
 
 		this.setup_page();
@@ -158,8 +158,12 @@ frappe.ui.Page = Class.extend({
 			this.get_main_icon(this.icon);
 
 		this.body = this.main = this.wrapper.find(".layout-main-section");
+		
 		this.left_sidebar = this.wrapper.find(".layout-side-section.layout-left");
+		
 		this.sidebar = this.wrapper.find(".layout-side-section.layout-right");
+		
+		
 		this.footer = this.wrapper.find(".layout-footer");
 		this.indicator = this.wrapper.find(".indicator");
 
@@ -177,7 +181,7 @@ frappe.ui.Page = Class.extend({
 		this.page_form = $('<div class="page-form row hide"></div>').prependTo(this.main);
 		this.inner_toolbar = $('<div class="form-inner-toolbar hide"></div>').prependTo(this.main);
 		
-		// this.setup_rightbar();
+		this.setup_rightbar();
 		// this.setup_leftbar();
 		
 		// if(this.is_module_page !== true)
@@ -317,37 +321,34 @@ frappe.ui.Page = Class.extend({
 				.addClass('text-muted').find('.caret')
 				.addClass('hidden-xs hidden-sm');
 
-			var close_sidebar_div = $('.close-sidebar');
-			var fadespeed = 50;
-			if (close_sidebar_div.length !== 0)
+			var close_sidebar_div = $('div.close-sidebar');
+
+			if (close_sidebar_div.length == 0)
 			{
-				close_sidebar_div.hide().fadeIn(fadespeed);
-			}
-			else{
+				$('<div class="close-sidebar">').appendTo(layout_side_section);
+				close_sidebar_div = $('div.close-sidebar');
 			}
 			
-
+			close_sidebar_div.addClass('opened');
+			
 			var scroll_container = $('html');
 			scroll_container.css("overflow-y", "hidden");
 
 			close_sidebar_div.on('click', close_sidebar);
-						close_sidebar_div.on('touchmove', function (e) { e.preventDefault(); }); 
+			close_sidebar_div.on('touchmove', function (e) { e.preventDefault(); }); 
 
 			layout_side_section.on("click", "a", close_sidebar);
 
 			function close_sidebar(e) {
 				scroll_container.css("overflow-y", "");
-
-							close_sidebar_div.fadeOut(50,function() {
-					overlay_sidebar.removeClass('opened')
+				close_sidebar_div.removeClass('opened');
+				overlay_sidebar.removeClass('opened')
 						.find('.dropdown-toggle')
 						.removeClass('text-muted');
-					overlay_sidebar.find('.reports-dropdown')
-						.addClass('dropdown-menu');
-					overlay_sidebar.find('.kanban-dropdown')
-						.addClass('dropdown-menu');
-						
-				});
+				overlay_sidebar.find('.reports-dropdown')
+					.addClass('dropdown-menu');
+				overlay_sidebar.find('.kanban-dropdown')
+					.addClass('dropdown-menu');
 			}
 		});
 	},

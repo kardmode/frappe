@@ -2,6 +2,7 @@
  "autoname": "Prompt",
  "creation": "2019-09-30 11:56:57.943241",
  "doctype": "DocType",
+ "document_type": "Customize",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -73,7 +74,7 @@
    "fieldtype": "Section Break"
   }
  ],
- "modified": "2019-10-09 15:08:40.085059",
+ "modified": "2019-11-18 21:31:36.468862",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "Server Script",

@@ -4,6 +4,7 @@
  "creation": "2014-03-11 14:55:00",
  "description": "Represents a User in the system.",
  "doctype": "DocType",
+ "document_type": "Users",
  "engine": "InnoDB",
  "field_order": [
   "sb0_5",
@@ -586,7 +587,7 @@
  "idx": 413,
  "image_field": "user_image",
  "max_attachments": 5,
- "modified": "2019-10-22 14:16:34.810223",
+ "modified": "2019-11-18 21:28:14.023674",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "User",

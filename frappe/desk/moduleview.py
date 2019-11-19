@@ -10,20 +10,6 @@ from frappe.desk.doctype.desktop_icon.desktop_icon import set_hidden, clear_desk
 from operator import itemgetter
 
 @frappe.whitelist()
-def get_modules_data(modules):
-	"""Returns data (sections, list of reports, counts) to render module view in desk:
-	`/desk/#Module/[name]`."""
-	data = []
-	for module in modules:
-		data.append(get_data(module))
-
-	out = {
-		"data": data
-	}
-
-	return out
-
-@frappe.whitelist()
 def get(module):
 	"""Returns data (sections, list of reports, counts) to render module view in desk:
 	`/desk/#Module/[name]`."""
@@ -46,6 +32,13 @@ def get_data(module, build=True):
 
 	data = build_standard_config(module, doctype_info)
 	
+	if not data:
+		data = build_config_from_file(module)
+		add_custom_doctypes(data, doctype_info,module)
+		
+	
+	
+	
 	if module == "Setup":
 		if frappe.conf.get('developer_mode'):
 			doctype_info = get_doctype_info("Core")
@@ -53,43 +46,45 @@ def get_data(module, build=True):
 			
 	data = combine_common_sections(data)
 	data = apply_permissions(data)
+
+	# set_last_modified(data)
 	
 
-	# if build:
-		# exists_cache = {}
-		# def doctype_contains_a_record(name):
-			# exists = exists_cache.get(name)
-			# if not exists:
-				# if not frappe.db.get_value('DocType', name, 'issingle'):
-					# exists = frappe.db.count(name)
-				# else:
-					# exists = True
-				# exists_cache[name] = exists
-			# return exists
+	if build:
+		exists_cache = {}
+		def doctype_contains_a_record(name):
+			exists = exists_cache.get(name)
+			if not exists:
+				if not frappe.db.get_value('DocType', name, 'issingle'):
+					exists = frappe.db.count(name)
+				else:
+					exists = True
+				exists_cache[name] = exists
+			return exists
 
-		# for section in data:
-			# for item in section["items"]:
-				# # Onboarding
+		for section in data:
+			for item in section["items"]:
+				# Onboarding
 
-				# # First disable based on exists of depends_on list
-				# doctype = item.get("doctype")
-				# dependencies = item.get("dependencies") or None
-				# if not dependencies and doctype:
-					# item["dependencies"] = [doctype]
+				# First disable based on exists of depends_on list
+				doctype = item.get("doctype")
+				dependencies = item.get("dependencies") or None
+				if not dependencies and doctype:
+					item["dependencies"] = [doctype]
 
-				# dependencies = item.get("dependencies")
-				# if dependencies:
-					# incomplete_dependencies = [d for d in dependencies if not doctype_contains_a_record(d)]
-					# if len(incomplete_dependencies):
-						# item["incomplete_dependencies"] = incomplete_dependencies
+				dependencies = item.get("dependencies")
+				if dependencies:
+					incomplete_dependencies = [d for d in dependencies if not doctype_contains_a_record(d)]
+					if len(incomplete_dependencies):
+						item["incomplete_dependencies"] = incomplete_dependencies
 
-				# if item.get("onboard"):
-					# # Mark Spotlights for initial
-					# if item.get("type") == "doctype":
-						# name = item.get("name")
-						# count = doctype_contains_a_record(name)
+				if item.get("onboard"):
+					# Mark Spotlights for initial
+					if item.get("type") == "doctype":
+						name = item.get("name")
+						count = doctype_contains_a_record(name)
 
-						# item["count"] = count
+						item["count"] = count
 
 	return data
 
@@ -183,22 +178,13 @@ def get_custom_links(data,module):
 	
 
 def build_standard_config(module, doctype_info):
+	data = []
+
 	"""Build standard module data from DocTypes."""
 	if not frappe.db.get_value("Module Def", module):
-		frappe.throw(_("Module Not Found"))
+		return data
 
-	data = []
-	
-	custom_links =  frappe.get_list("MRP Module Section", fields=["name", "icon", "shown_in"],order_by="name")
-	for link in custom_links:
-		if link.shown_in != "none":
-			add_section(data, _(link.name), link.icon,
-				[d for d in doctype_info if (d.document_type == link.name)],link.color,link.shown_in)
-				
-	get_custom_links(data,module)
-		
-	add_section(data, _("Reports"), "fa fa-list",
-		[d for d in get_custom_report_list(module)],"lightblue","module_menu")
+	add_custom_doctypes(data, doctype_info,module)
 
 	return data
 
@@ -215,13 +201,6 @@ def add_section(data, label, icon, items,color="#7f8c8d",shown_in="module_view")
 
 
 def add_custom_doctypes(data, doctype_info,module):
-	# """Adds Custom DocTypes to modules setup via `config/desktop.py`."""
-	# add_section(data, _("Documents"), "fa fa-file-text",
-		# [d for d in doctype_info if ((d.custom or d.beta) and d.document_type in ("Document", "Transaction"))])
-
-	# add_section(data, _("Setup"), "fa fa-cog",
-		# [d for d in doctype_info if ((d.custom or d.beta) and d.document_type in ("Setup", "Master", ""))])
-		
 	custom_links =  frappe.get_list("MRP Module Section", fields=["name", "icon", "shown_in"],order_by="name")
 	for link in custom_links:
 		if link.shown_in != "none":
@@ -439,9 +418,10 @@ def get_desktop_settings():
 		all_links = get_links(module.app, module.module_name)
 		module_links_by_label = {}
 		for link in all_links:
-			if 'label' in link:
-				module_links_by_label[link['label']] = link
-
+			if 'label' not in link:
+				link['label'] = link['name']
+			module_links_by_label[link['label']] = link
+			
 		if module.module_name in user_saved_links_by_module:
 			user_links = frappe.parse_json(user_saved_links_by_module[module.module_name])
 			module.links = [module_links_by_label[l] for l in user_links if l in module_links_by_label]

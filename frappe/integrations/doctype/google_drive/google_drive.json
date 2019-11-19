@@ -1,6 +1,7 @@
 {
  "creation": "2019-08-13 17:24:05.470876",
  "doctype": "DocType",
+ "document_type": "Setup",
  "engine": "InnoDB",
  "field_order": [
   "enable",
@@ -100,8 +101,8 @@
   }
  ],
  "issingle": 1,
- "modified": "2019-08-21 17:33:28.516614",
- "modified_by": "qwe@qwe.com",
+ "modified": "2019-11-18 21:39:28.726579",
+ "modified_by": "Administrator",
  "module": "Integrations",
  "name": "Google Drive",
  "owner": "Administrator",

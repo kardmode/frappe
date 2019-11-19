@@ -1566,20 +1566,17 @@ pre code {
 }
 @media (min-width: 768px) {
   .container {
-    /* width: 750px; */
-    width: 100%;
+    width: 750px;
   }
 }
 @media (min-width: 992px) {
   .container {
-    /* width: 970px; */
-    width: 100%;
+    width: 970px;
   }
 }
 @media (min-width: 1200px) {
   .container {
-    /* width: 1170px; */
-    width: 100%;
+    width: 1170px;
   }
 }
 .container-fluid {
@@ -4152,8 +4149,8 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 }
 .navbar-brand {
   float: left;
-  height: 40px;
-  padding: 10px !important;
+  /* height: 40px; */
+  padding: 5px !important;
   font-size: 18px;
   /* line-height: 20px; */
 }

@@ -3,7 +3,7 @@
  "creation": "2013-01-10 16:34:01",
  "description": "Adds a custom field to a DocType",
  "doctype": "DocType",
- "document_type": "Setup",
+ "document_type": "Customize",
  "engine": "InnoDB",
  "field_order": [
   "dt",
@@ -353,7 +353,7 @@
  ],
  "icon": "fa fa-glass",
  "idx": 1,
- "modified": "2019-09-11 12:57:19.268934",
+ "modified": "2019-11-18 21:36:07.887577",
  "modified_by": "Administrator",
  "module": "Custom",
  "name": "Custom Field",

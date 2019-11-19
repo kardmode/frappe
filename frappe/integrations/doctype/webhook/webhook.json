@@ -1,6 +1,7 @@
 {
  "creation": "2017-09-08 16:16:13.060641",
  "doctype": "DocType",
+ "document_type": "Setup",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -119,7 +120,7 @@
    "label": "JSON Request Body"
   }
  ],
- "modified": "2019-08-26 00:38:14.611267",
+ "modified": "2019-11-18 21:39:12.425122",
  "modified_by": "Administrator",
  "module": "Integrations",
  "name": "Webhook",
