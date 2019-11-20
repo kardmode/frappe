@@ -432,7 +432,6 @@
    "collapsible": 1,
    "fieldname": "advanced",
    "fieldtype": "Section Break",
-   "hidden": 1,
    "label": "Advanced"
   },
   {
@@ -465,7 +464,7 @@
  ],
  "icon": "fa fa-bolt",
  "idx": 6,
- "modified": "2019-11-19 13:51:14.076041",
+ "modified": "2019-11-19 20:04:34.485572",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "DocType",

@@ -8,22 +8,20 @@ from frappe.utils import now_datetime, cint, getdate, cstr
 import re
 from six import string_types
 
-
 def set_new_name(doc):
 	"""
 	Sets the `name` property for the document based on various rules.
-
 	1. If amended doc, set suffix.
 	2. If `autoname` method is declared, then call it.
 	3. If `autoname` property is set in the DocType (`meta`), then build it using the `autoname` property.
 	4. If no rule defined, use hash.
-
 	:param doc: Document to be named.
 	"""
 
 	doc.run_method("before_naming")
 
 	autoname = frappe.get_meta(doc.doctype).autoname or ""
+
 	if autoname.lower() != "prompt" and not frappe.flags.in_import:
 		doc.name = None
 
@@ -38,31 +36,16 @@ def set_new_name(doc):
 		doc.run_method("autoname")
 
 	if not doc.name and autoname:
-		if autoname.startswith('field:'):
-			fieldname = autoname[6:]
-			key = fieldname.strip()
-			parts = key.split('.')
-			doc.name = parse_naming_series(parts, doc.doctype, doc)
-			
-			# doc.name = (doc.get(fieldname) or "").strip()
-			
-			
-			if not doc.name:
-				frappe.throw(_("{0} is required").format(doc.meta.get_label(fieldname)))
-				raise Exception('Name is required')
-		if autoname.startswith("naming_series:"):
-			set_name_by_naming_series(doc)
-		elif "#" in autoname:
-			autoname = get_custom_naming_series(autoname,doc,add_date = False)
-			doc.name = make_autoname(autoname,doc.doctype,doc=doc)
-			# doc.name = make_autoname(autoname, doc=doc)
-		elif autoname.lower()=='prompt':
-			# set from __newname in save.py
-			if not doc.name:
-				frappe.throw(_("Name not set via prompt"))
-	
+		set_name_from_naming_options(autoname, doc)
+
+	# if the autoname option is 'field:' and no name was derived, we need to
+	# notify
+	if autoname.startswith('field:') and not doc.name:
+		fieldname = autoname[6:]
+		frappe.throw(_("{0} is required").format(doc.meta.get_label(fieldname)))
+
 	# at this point, we fall back to name generation with the hash option
-	if not doc.name or autoname=='hash':
+	if not doc.name or autoname == 'hash':
 		doc.name = make_autoname('hash', doc.doctype)
 
 	doc.name = validate_name(
@@ -70,6 +53,7 @@ def set_new_name(doc):
 		doc.name,
 		frappe.get_meta(doc.doctype).get_field("name_case")
 	)
+
 
 
 def set_name_from_naming_options(autoname, doc):
@@ -88,6 +72,7 @@ def set_name_from_naming_options(autoname, doc):
 	elif _autoname.startswith('format:'):
 		doc.name = _format_autoname(autoname, doc)
 	elif '#' in autoname:
+		autoname = get_custom_naming_series(autoname,doc,add_date = False)
 		doc.name = make_autoname(autoname, doc=doc)
 
 def get_custom_naming_series(key,doc,add_date = False):
@@ -238,6 +223,7 @@ def getseries(key, digits):
 		frappe.db.sql("INSERT INTO `tabSeries` (`name`, `current`) VALUES (%s, 1)", (key,))
 		current = 1
 	return ('%0'+str(digits)+'d') % current
+	
 
 def revert_series_if_last(key, name,doc = None):
 	if ".#" in key:

@@ -49,7 +49,16 @@ def submit_cancel_or_update_docs(doctype, docnames, action='submit', data=None):
 				doc.cancel()
 				message = _('Cancelling {0}').format(doctype)
 			elif action == 'update' and doc.docstatus < 2:
-				doc.update(data)
+				custom_update =False
+				custom_data = {}
+				for key in data:
+					if data[key] == "name":
+						custom_update = True
+						custom_data[key] = doc.name	
+				if custom_update:
+					doc.update(custom_data)
+				else:
+					doc.update(data)
 				doc.save()
 				message = _('Updating {0}').format(doctype)
 			else:

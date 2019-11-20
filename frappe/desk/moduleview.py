@@ -316,11 +316,7 @@ def get_config(app, module):
 				continue
 			if not item.get("label"):
 				item["label"] = _(item["name"])
-			# if not "icon" in item:
-				# item["icon"] = "fa fa-file-text"
-			# elif item["icon"] == "" or item["icon"] == None:
-				# item["icon"] = "fa fa-file-text"
-			item["icon"] = ""	
+			items.append(item)
 		if not "shown_in" in section:
 			 section["shown_in"] = "module_view"
 	return config
@@ -418,14 +414,20 @@ def get_desktop_settings():
 		all_links = get_links(module.app, module.module_name)
 		module_links_by_label = {}
 		for link in all_links:
+			
+				
 			if 'label' not in link:
+				link['label'] = link['name']
+			elif link['label'] == None:
 				link['label'] = link['name']
 			module_links_by_label[link['label']] = link
 			
 		if module.module_name in user_saved_links_by_module:
 			user_links = frappe.parse_json(user_saved_links_by_module[module.module_name])
-			module.links = [module_links_by_label[l] for l in user_links if l in module_links_by_label]
-
+			if user_links:
+				module.links = [module_links_by_label[l] for l in user_links if l in module_links_by_label]
+		
+		
 		return module
 
 	for category in module_categories:

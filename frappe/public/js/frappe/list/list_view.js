@@ -1205,12 +1205,12 @@ frappe.views.ListView = class ListView extends frappe.views.BaseList {
 			});
 		}
 
-		items.push({
+		/* items.push({
 			label: __('Toggle Sidebar'),
 			action: () => this.toggle_side_bar(),
 			standard: true,
 			shortcut: 'Ctrl+K',
-		});
+		}); */
 
 		items.push({
 			label: __('Share URL'),

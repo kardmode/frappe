@@ -229,7 +229,7 @@ frappe.ui.form.Toolbar = Class.extend({
 
 		// delete
 		if((cint(me.frm.doc.docstatus) != 1) && !me.frm.doc.__islocal
-			&& frappe.model.can_delete(me.frm.doctype)) {
+			&& frappe.model.can_delete(me.frm.doctype) && me.frm.meta.issingle === 0) {
 			this.page.add_menu_item(__("Delete"), function() {
 				me.frm.savetrash();
 			}, true, {
@@ -252,6 +252,16 @@ frappe.ui.form.Toolbar = Class.extend({
 				}, true);
 			}
 		}
+		
+		if(frappe.user_roles.includes("System Manager") && me.frm.meta.issingle === 1) {
+			if (frappe.boot.developer_mode===1) {
+				this.page.add_menu_item(__("Edit Single"), function() {
+				// edit doctype
+					frappe.set_route('Form', 'DocType', me.frm.doctype);
+				}, true);
+			}
+		}
+		
 
 		// Auto Repeat
 		if(this.can_repeat()) {

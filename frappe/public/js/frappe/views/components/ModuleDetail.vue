@@ -1,13 +1,13 @@
 <template>
 	<div>
 		<div v-if="sections.length" class="sections-container">
-			<div v-for="section in sections"
-				:key="section.label"
+			<div v-for="(section, index) in sections"
+				:key="section.label + index"
 				class="border section-box"
 			>
 				<h4 class="h4"> {{ section.label }} </h4>
-				<module-link-item v-for="item in section.items"
-					:key="section.label + item.label"
+				<module-link-item v-for="(item, index) in section.items"
+					:key="section.label + item.label + index"
 					:data-youtube-id="item.type==='help' ? item.youtube_id : false"
 					v-bind="item"
 				>
