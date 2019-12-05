@@ -83,13 +83,8 @@
   }
  ],
  "in_create": 1,
-<<<<<<< HEAD
- "modified": "2019-11-18 21:28:35.673401",
- "modified_by": "Administrator",
-=======
  "modified": "2019-11-12 15:22:35.283678",
  "modified_by": "umair@erpnext.com",
->>>>>>> 94a211edb0129e31e924406ffa2d2d6b6df4c23f
  "module": "Desk",
  "name": "Notification Log",
  "owner": "Administrator",
