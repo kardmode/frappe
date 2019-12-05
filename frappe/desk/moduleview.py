@@ -35,56 +35,47 @@ def get_data(module, build=True):
 	if not data:
 		data = build_config_from_file(module)
 		add_custom_doctypes(data, doctype_info,module)
-		
-	
-	
-	
-	if module == "Setup":
-		if frappe.conf.get('developer_mode'):
-			doctype_info = get_doctype_info("Core")
-			data += build_standard_config("Core", doctype_info)
 			
 	data = combine_common_sections(data)
 	data = apply_permissions(data)
 
 	# set_last_modified(data)
-	
 
-	if build:
-		exists_cache = {}
-		def doctype_contains_a_record(name):
-			exists = exists_cache.get(name)
-			if not exists:
-				if not frappe.db.get_value('DocType', name, 'issingle'):
-					exists = frappe.db.count(name)
-				else:
-					exists = True
-				exists_cache[name] = exists
-			return exists
+	# if build:
+		# exists_cache = {}
+		# def doctype_contains_a_record(name):
+			# exists = exists_cache.get(name)
+			# if not exists:
+				# if not frappe.db.get_value('DocType', name, 'issingle'):
+					# exists = frappe.db.count(name)
+				# else:
+					# exists = True
+				# exists_cache[name] = exists
+			# return exists
 
-		for section in data:
-			for item in section["items"]:
-				# Onboarding
+		# for section in data:
+			# for item in section["items"]:
+				# # Onboarding
 
-				# First disable based on exists of depends_on list
-				doctype = item.get("doctype")
-				dependencies = item.get("dependencies") or None
-				if not dependencies and doctype:
-					item["dependencies"] = [doctype]
+				# # First disable based on exists of depends_on list
+				# doctype = item.get("doctype")
+				# dependencies = item.get("dependencies") or None
+				# if not dependencies and doctype:
+					# item["dependencies"] = [doctype]
 
-				dependencies = item.get("dependencies")
-				if dependencies:
-					incomplete_dependencies = [d for d in dependencies if not doctype_contains_a_record(d)]
-					if len(incomplete_dependencies):
-						item["incomplete_dependencies"] = incomplete_dependencies
+				# dependencies = item.get("dependencies")
+				# if dependencies:
+					# incomplete_dependencies = [d for d in dependencies if not doctype_contains_a_record(d)]
+					# if len(incomplete_dependencies):
+						# item["incomplete_dependencies"] = incomplete_dependencies
 
-				if item.get("onboard"):
-					# Mark Spotlights for initial
-					if item.get("type") == "doctype":
-						name = item.get("name")
-						count = doctype_contains_a_record(name)
+				# if item.get("onboard"):
+					# # Mark Spotlights for initial
+					# if item.get("type") == "doctype":
+						# name = item.get("name")
+						# count = doctype_contains_a_record(name)
 
-						item["count"] = count
+						# item["count"] = count
 
 	return data
 
@@ -122,58 +113,7 @@ def filter_by_restrict_to_domain(data):
 
 	return data
 
-def get_custom_links(data,module):
 
-	
-
-	custom_links =  frappe.get_list("Module View Link", fields=["label","section","type","icon", "_doctype","_module","_report","_page","link"], filters=
-		{"blocked": 0, "module_name": module})
-		
-	for link in custom_links:
-	
-		section_icon, section_color,section_shown_in = frappe.db.get_value("MRP Module Section", link.section, 
-			["icon", "color","shown_in"])
-			
-		if section_shown_in != "none":
-		
-		
-			name = link.label
-			if link.type == "doctype":
-				name = link._doctype
-			elif link.type == "link":
-				name = link.label
-			elif link.type == "page":
-				name = link._page
-			elif link.type == "report":
-				name = link._report
-			elif link.type == "module" and link._module:
-				doctype_info = get_doctype_info(link._module)
-				
-				items = []
-				for d in doctype_info:
-					if d.document_type:
-						custom_shown_in = frappe.db.get_value("MRP Module Section", d.document_type, ["shown_in"])
-						if custom_shown_in != "none":
-							items.append(d)
-						
-				if items:
-					add_section(data, _(link.section), section_icon, items,section_color,section_shown_in)
-					
-						
-							
-				continue
-			
-		
-		
-		
-			add_section(data, _(link.section),section_icon,[
-			{
-				"type": link.type,
-				"name": name,
-				"icon": link.icon,
-				"label": _(link.label),
-				"link": link.link,
-			}],section_color,section_shown_in)
 	
 	
 
@@ -586,6 +526,57 @@ def get_report_list(module, is_standard="No"):
 		})
 
 	return out
+	
+	
+def get_custom_links(data,module):
+	custom_links =  frappe.get_list("Module View Link", fields=["label","section","type","icon", "_doctype","_module","_report","_page","link"], filters=
+		{"blocked": 0, "module_name": module})
+		
+	for link in custom_links:
+	
+		section_icon, section_color,section_shown_in = frappe.db.get_value("MRP Module Section", link.section, 
+			["icon", "color","shown_in"])
+			
+		if section_shown_in != "none":
+		
+		
+			name = link.label
+			if link.type == "doctype":
+				name = link._doctype
+			elif link.type == "link":
+				name = link.label
+			elif link.type == "page":
+				name = link._page
+			elif link.type == "report":
+				name = link._report
+			elif link.type == "module" and link._module:
+				doctype_info = get_doctype_info(link._module)
+				
+				items = []
+				for d in doctype_info:
+					if d.document_type:
+						custom_shown_in = frappe.db.get_value("MRP Module Section", d.document_type, ["shown_in"])
+						if custom_shown_in != "none":
+							items.append(d)
+						
+				if items:
+					add_section(data, _(link.section), section_icon, items,section_color,section_shown_in)
+					
+						
+							
+				continue
+			
+		
+		
+		
+			add_section(data, _(link.section),section_icon,[
+			{
+				"type": link.type,
+				"name": name,
+				"icon": link.icon,
+				"label": _(link.label),
+				"link": link.link,
+			}],section_color,section_shown_in)
 	
 def get_custom_report_list(module):
 	"""Returns list on new style reports for modules."""

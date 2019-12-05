@@ -12,29 +12,8 @@ no_cache = 1
 base_template_path = "templates/www/printview.html"
 standard_format = "templates/print_formats/standard.html"
 
-
-
 @frappe.whitelist()
-def download_multi_pdf_with_cover(doctype, name, format=None,cover_doctype = None,cover_name=None,cover_format = None,orientation="Portrait",letterhead=None):
-	# name can include names of many docs of the same doctype.
-
-	import json
-	result = json.loads(name)
-	
-	# Concatenating pdf files
-	output = PdfFileWriter()
-	if cover_name and cover_doctype and cover_format:
-		output = frappe.get_print(cover_doctype, cover_name, cover_format, as_pdf = True, output = output,options = {"orientation": orientation},letterhead=letterhead)
-
-	
-	for i, ss in enumerate(result):
-		output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output,options = {"orientation": orientation},letterhead=letterhead)
-	
-	
-	
-	frappe.local.response.filename = "{doctype}.pdf".format(doctype=doctype.replace(" ", "-").replace("/", "-"))
-
-def download_multi_pdf(doctype, name, format=None, no_letterhead=0,orientation="Portrait",letterhead=None,sign_type=None):
+def download_multi_pdf(doctype, name, format=None, no_letterhead=0,orientation="Portrait"):
 	"""
 	Concatenate multiple docs as PDF .
 
@@ -82,43 +61,21 @@ def download_multi_pdf(doctype, name, format=None, no_letterhead=0,orientation="
 
 		# Concatenating pdf files
 		for i, ss in enumerate(result):
-			output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output, no_letterhead=no_letterhead,options = {"orientation": orientation},letterhead=letterhead,sign_type=sign_type)
+			output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output, no_letterhead=no_letterhead,options = {"orientation": orientation})
 		frappe.local.response.filename = "{doctype}.pdf".format(doctype=doctype.replace(" ", "-").replace("/", "-"))
 	else:
 		for doctype_name in doctype:
 			for doc_name in doctype[doctype_name]:
 				try:
-					output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output, no_letterhead=no_letterhead,options = {"orientation": orientation},letterhead=letterhead,sign_type=sign_type)
+					output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output, no_letterhead=no_letterhead,options = {"orientation": orientation})
 				except Exception:
 					frappe.log_error("Permission Error on doc {} of doctype {}".format(doc_name, doctype_name))
 		frappe.local.response.filename = "{}.pdf".format(name)
 
 	frappe.local.response.filename = "{doctype}.pdf".format(doctype=doctype.replace(" ", "-").replace("/", "-"))
 	frappe.local.response.filecontent = read_multi_pdf(output)
-	frappe.local.response.type = "download"
+	frappe.local.response.type = "pdf"
 	
-@frappe.whitelist()
-def download_multi_pdf_html_combined(doctype, name, format=None,cover_doctype = None,cover_name=None,cover_format = None,orientation="Portrait",letterhead=None):
-	# name can include names of many docs of the same doctype.
-
-	import json
-	result = json.loads(name)
-	
-	if cover_name and cover_doctype and cover_format:
-		html = frappe.get_print(cover_doctype, cover_name, cover_format, doc=None)
-	else:
-		html = ""
-	
-	# Concatenating pdf files
-	
-	output = ""
-	for i, ss in enumerate(result):
-		output = frappe.get_print(doctype, ss, format, doc=None)
-		html = str(html) + str(output)
-		
-	frappe.local.response.filename = "{doctype}.pdf".format(doctype=doctype.replace(" ", "-").replace("/", "-"))
-	frappe.local.response.filecontent = get_pdf(html,{"orientation": orientation})
-	frappe.local.response.type = "download"
 
 def read_multi_pdf(output):
 	# Get the content of the merged pdf files

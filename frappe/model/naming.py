@@ -78,32 +78,38 @@ def set_name_from_naming_options(autoname, doc):
 def get_custom_naming_series(key,doc,add_date = False):
 
 	naming_series = key
-	if doc:
+	if doc and doc.doctype:
 		add_company_abbr = frappe.get_meta(doc.doctype).add_company_abbr_to_name or 0
 		
 		if add_date:
-			date = ""
-			date_string = ""
-			if hasattr(doc, 'posting_date'):
-				date = doc.posting_date
-			elif hasattr(doc, 'transaction_date'):
-				date = doc.transaction_date
-			elif hasattr(doc, 'attendance_date'):
-				date = doc.attendance_date
+			if "PDY" in key:
+				naming_series = naming_series
+			else:
+				date = ""
+				date_string = ""
+				if hasattr(doc, 'posting_date'):
+					date = doc.posting_date
+				elif hasattr(doc, 'transaction_date'):
+					date = doc.transaction_date
+				elif hasattr(doc, 'attendance_date'):
+					date = doc.attendance_date
+				
+				if date:
+					import datetime
+					year = (getdate(date)).year
+					date_string = str(year)
 			
-			if date:
-				import datetime
-				year = (getdate(date)).year
-				date_string = str(year)
-		
-				naming_series = key + date_string
+					naming_series = key + date_string
 		
 		if add_company_abbr == 1:
-			if hasattr(doc, 'company'):
-				if doc.company:
-					abbr = 	frappe.db.get_value("Company", doc.company, "abbr")
-					if abbr:
-						naming_series = str(abbr) + "-" + naming_series
+			if "COM" in key:
+				naming_series = naming_series
+			else:
+				if hasattr(doc, 'company'):
+					if doc.company:
+						abbr = 	frappe.db.get_value("Company", doc.company, "abbr")
+						if abbr:
+							naming_series = str(abbr) + "-" + naming_series
 						
 	return naming_series
 

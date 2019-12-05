@@ -410,6 +410,13 @@ frappe.ui.Page = Class.extend({
 	},
 
 	add_action_icon: function(icon, click) {
+		if(icon.includes("prev-doc") || icon.includes("next-doc"))
+		{
+			return $('<a class="hidden-xs hidden-sm btn btn-default btn-sm text-muted no-decoration"><i class="'+icon+'"></i></a>')
+			.appendTo(this.icon_group.removeClass("hide"))
+			.click(click);
+			
+		}
 		
 		return $('<a class="btn btn-default btn-sm text-muted no-decoration"><i class="'+icon+'"></i></a>')
 			.appendTo(this.icon_group.removeClass("hide"))
@@ -421,7 +428,7 @@ frappe.ui.Page = Class.extend({
 	},
 
 	get_icon_label: function(icon, label) {
-		var tests = ["Refresh", "Submit", "New", "Delete","Save", "Edit", "Update"];
+		var tests = ["Actions","Refresh", "Submit", "New", "Delete","Save", "Edit", "Update"];
 		
 		if(tests.includes(label))
 		{

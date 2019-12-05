@@ -636,6 +636,8 @@ frappe.views.CommunicationComposer = Class.extend({
 			return;
 		}
 
+		// Use other print settings
+		var print_options = {};
 		
 		if(print_format) {
 			if(cur_frm){

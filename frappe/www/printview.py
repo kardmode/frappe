@@ -479,6 +479,7 @@ def make_layout(doc, meta, format_data=None):
 			placeholder_image = '/assets/frappe/images/signature-placeholder.png'
 			doc.set(df.fieldname, placeholder_image)
 
+		# if is_visible(df, doc) and has_value(df, doc):
 		if (df.fieldname == "taxes" and df.fieldtype=="Table" and is_visible(df, doc)) or (is_visible(df, doc) and has_value(df, doc)):
 			append_empty_field_dict_to_page_column(page)
 

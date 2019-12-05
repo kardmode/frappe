@@ -261,8 +261,17 @@ class DocType(Document):
 			and (not autoname.lower() in ('prompt', 'hash')) \
 			and (not autoname.startswith('naming_series:')) \
 			and (not autoname.startswith('format:')):
-
+			
 			prefix = autoname.split('.')[0]
+
+			parts = autoname.split('.')
+			for e in parts:
+				if e.startswith('{'):
+					continue
+				else:
+					prefix = e
+					break
+					
 			used_in = frappe.db.sql("""
 				SELECT `name`
 				FROM `tabDocType`

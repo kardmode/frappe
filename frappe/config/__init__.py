@@ -35,7 +35,13 @@ def get_modules_from_all_apps():
 
 def get_modules_from_app(app):
 	try:
-		modules = frappe.get_attr(app + '.config.desktop.get_data')() or {}
+		# modules_old = frappe.get_attr(app + '.config.desktop.get_data')() or {}
+		
+		fields = ['name','module_name', 'hidden', 'label', 'link', 'type', 'icon', 'color', 'description', 'category',
+			'_doctype', '_report', 'idx', 'force_show', 'reverse', 'custom', 'standard', 'blocked']
+
+		modules = frappe.db.get_all('Kard Desktop Icon',
+			fields=fields, filters={'standard': 1,'type':'module','app':app}) 
 	except ImportError:
 		return []
 
@@ -65,7 +71,10 @@ def get_modules_from_app(app):
 				to_add = False
 
 			# Check if config
-			if is_module(m) and not config_exists(app, frappe.scrub(module_name)):
+			# if is_module(m) and not config_exists(app, frappe.scrub(module_name)):
+				# to_add = False
+				
+			if not is_module(m):
 				to_add = False
 
 			if "condition" in m and not m["condition"]:

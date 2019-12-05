@@ -21,7 +21,7 @@ from frappe.utils.background_jobs import enqueue
 def make(doctype=None, name=None, content=None, subject=None, sent_or_received = "Sent",
 	sender=None, sender_full_name=None, recipients=None, communication_medium="Email", send_email=False,
 	print_html=None, print_format=None, attachments='[]', send_me_a_copy=False, cc=None, bcc=None,
-	flags=None, read_receipt=None, print_letterhead=True, email_template=None):
+	flags=None, read_receipt=None, print_letterhead=True, email_template=None,print_options=None):
 	"""Make a new communication.
 
 	:param doctype: Reference DocType.
@@ -69,7 +69,8 @@ def make(doctype=None, name=None, content=None, subject=None, sent_or_received =
 		"email_template": email_template,
 		"message_id":get_message_id().strip(" <>"),
 		"read_receipt":read_receipt,
-		"has_attachment": 1 if attachments else 0
+		"has_attachment": 1 if attachments else 0,
+		"mrp_print_options":print_options
 	}).insert(ignore_permissions=True)
 
 	comm.save(ignore_permissions=True)
@@ -269,7 +270,7 @@ def prepare_to_notify(doc, print_html=None, print_format=None, attachments=None)
 
 	if print_html or print_format:
 		doc.attachments.append({"print_format_attachment":1, "doctype":doc.reference_doctype,
-			"name":doc.reference_name, "print_format":print_format, "html":print_html})
+			"name":doc.reference_name, "print_format":print_format, "html":print_html,"print_options":doc.mrp_print_options})
 
 	if attachments:
 		if isinstance(attachments, string_types):
