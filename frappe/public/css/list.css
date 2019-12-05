@@ -33,9 +33,9 @@
 .set-filters .btn {
   margin-bottom: 10px;
 }
-.set-filters .btn-group {
-  margin-right: 10px;
-  white-space: nowrap;
+.active-tag-filters .btn-group {
+  margin-left: 10px;
+  /*white-space: nowrap;*/
   font-size: 0;
 }
 .set-filters .btn-group .btn-default {
