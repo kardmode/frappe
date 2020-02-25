@@ -2,6 +2,7 @@
  "autoname": "format:GC-{email_id}",
  "creation": "2019-06-14 00:09:39.441961",
  "doctype": "DocType",
+ "document_type": "Documents",
  "engine": "InnoDB",
  "field_order": [
   "enable",
@@ -97,8 +98,8 @@
    "label": "Push to Google Contacts"
   }
  ],
- "modified": "2019-09-13 15:53:19.569924",
- "modified_by": "himanshu@erpnext.com",
+ "modified": "2019-12-18 14:02:37.857643",
+ "modified_by": "Administrator",
  "module": "Integrations",
  "name": "Google Contacts",
  "owner": "Administrator",

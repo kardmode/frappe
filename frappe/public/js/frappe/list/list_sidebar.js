@@ -179,16 +179,13 @@ frappe.views.ListSidebar = class ListSidebar {
 				</li>`
 			).join('');
 
-			const dropdown_html = `
-				<div class="btn-group">
-					<a class="dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-						${ __("Calendar") } <span class="caret"></span>
-					</a>
-					<ul class="dropdown-menu calendar-dropdown" style="max-height: 300px; overflow-y: auto;">
-						${default_link}
-						${other_links}
+			const dropdown_html = `<ul class="calendar-dropdown list-unstyled sidebar-menu">
+					<li class="list-sidebar-item"><a class="list-sidebar-link" href="#List/${ doctype }/Calendar">
+						${ __("Calendar") }  <i class="octicon octicon-plus" style="font-size:large; margin-left: 2px;"></i>
+					</a></li>
+					${default_link}
+					${other_links}
 					</ul>
-				</div>
 			`;
 			$link_calendar.removeClass('hide');
 			$link_calendar.html(dropdown_html);

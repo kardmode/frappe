@@ -34,7 +34,7 @@
 	{%- if doc.print_templates and doc.print_templates.get(df.fieldname) -%}
 		{% include doc.print_templates[df.fieldname] %}
 	{%- elif doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname) -%}
-		{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"doc":doc}) }}		
+		{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"doc":doc,"table_meta":table_meta,"data":data}) }}		
 	{%- else -%}
 		{%- if data -%}
 		{%- set visible_columns = get_visible_columns(doc.get(df.fieldname),
@@ -314,14 +314,10 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{% endif -%}
 {%- endmacro %}
 
-{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None) -%}
+{% macro print_heading_template(doc) -%}
 	
-	<div class="letter-head">
-	{% if letter_head and not no_letterhead %}
-		{{ letter_head }}
-	{% endif %}
-	</div>
-    {% if doc.print_heading_template %}
+	
+	{% if doc.print_heading_template %}
         {{ frappe.render_template(doc.print_heading_template, {"doc":doc}) }}
     {% else %}
     <div class="print-heading">
@@ -331,8 +327,38 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 
         </h2>
     </div>
+	{% endif %}
+
+{%- endmacro %}
+
+
+{% macro get_main_prefix(doc) -%}
+	{% set am_prefix = doc.amended_from %}
+	{% if frappe.db.get_value(doc.doctype, doc.amended_from, "amended_from") %}
+		{% set am_prefix = "-".join(doc.amended_from.split("-")[:-1]) %}
+	{% endif %}
+	{{am_prefix}}
+{%- endmacro %}
+
+{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None) -%}
 	
-    {% endif %}
+	<div class="letter-head">
+	{% if letter_head and not no_letterhead %}
+		{{ letter_head }}
+	{% endif %}
+	</div>
+   
+	{% if doc.meta.is_submittable and doc.amended_from %}
+		{%- set new_doc_name = doc -%}
+		{% set test = new_doc_name.update({'name': get_main_prefix(new_doc_name)}) %}
+		{{ print_heading_template(new_doc_name) }}
+    {% else %}
+		{{ print_heading_template(doc) }}
+	{% endif %}
+
+	
+	
+	
 	{%- if doc.meta.is_submittable and doc.docstatus==0 and (print_settings==None or print_settings.add_draft_heading) -%}
 	<div class="text-center document-status" document-status="draft">
 		<h4 style="margin: 0px;">{{ _("DRAFT") }}</h4>
@@ -345,51 +371,6 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{%- endif -%}
 {%- endmacro -%}
 
-
-
-<!-- 
-{%- macro add_sign(doc) -%}
-
-	{% set signature = frappe.db.get_value("User", doc.created_by, "signature") %}
-	
-	{% set has_stamp = frappe.db.get_value("Signature Doctype", doc.doctype, "has_stamp") %}
-
-	{%- if has_stamp -%}
-		{% set stamp = frappe.db.get_value("Company Licenses", {'company':doc.company},"company_stamp") %}
-	{%- else -%}
-		{% set stamp = '' %}
-	{%- endif -%}
-	
-	
-
-
-	
-	{%- if frappe.db.get_value("System Settings", "System Settings", "allow_signature_if_not_submitted")==0-%}
-		{% set authorized_signature = '' %}
-	{%- else -%}
-	
-		{%- if stamp -%}
-			{% set authorized_signature = frappe.render_template(frappe.db.get_value("Print Fields", "Signature with Stamp", "print_field"), {"doc":doc,"authorized_signature":signature,"stamp":stamp}) %}
-		{%- else -%}
-			{% set authorized_signature = signature %}
-		{%- endif -%}
-	{%- endif -%}
-	
-	{%- if doc.meta.is_submittable and doc.docstatus==1-%}
-
-	{%- elif not doc.meta.is_submittable -%}
-
-	{%- endif -%}
-	
-	{% set signature_template_name = frappe.db.get_value("Signature Doctype", doc.doctype, "signature_doctype") %}
-
-	{%- if signature_template_name -%}
-		{{ frappe.render_template(frappe.db.get_value("Print Fields", signature_template_name, "print_field"), {"doc":doc,"authorized_signature":authorized_signature}) }}
-	{%- endif -%}
-	
-	 -->
-
-{%- endmacro -%}
 
 {%- macro add_footer(max_pages,doc,no_letterhead,footer,signature_html,print_settings=None) -%}
 	<div id="footer-html" class="hidden-pdf">

@@ -16,38 +16,39 @@
   </head>
   <body>
 	  <div class="print-format-gutter">
-		  {% if print_settings.repeat_header_footer %}
-			<div id="footer-html" class="visible-pdf">
-				{% if print_settings.letter_head && print_settings.letter_head.footer %}
-					<div class="letter-head-footer">
-						{{ print_settings.letter_head.footer }}
-					</div>
-				{% else %}
-				<div id="variables" style="display: none;"><span id="margin-bottom">25mm</span></div>
-				{% endif %}
-				<!-- <p class="text-right small page-number visible-pdf">
-					{{ __("{0} of {1}", [`<span class="page"></span>`, `<span class="topage"></span>`]) }}
-				</p> -->
-
-
-			</div>
-		  {% endif %}
+		 
 
 		  <div class="print-format {% if landscape %} landscape {% endif %}"
 				{% if columns.length > 20 %}
 					style="font-size: 4.0pt"
 				{% endif %}
 			>
-			  {% if print_settings.letter_head %}
-			  <div {% if print_settings.repeat_header_footer %} id="header-html" class="hidden-pdf" {% endif %}>
-			  <div id="variables" style="display: none;">
-				<span id="margin-top">30mm</span>
-
+			<div {% if print_settings.repeat_header_footer %} id="header-html" class="hidden-pdf" {% endif %}>
+				<div class="letter-head">
+					{% if print_settings.letter_head && print_settings.letter_head.header %}
+						{{ print_settings.letter_head.header }}
+					{% endif %}
 				</div>
-				  <div class="letter-head">{{ print_settings.letter_head.header }}</div>
-			  </div>
-			  {% endif %}
+			</div>
 	        {{ content }}
+			
+			{% if print_settings.repeat_header_footer %}
+			<div id="footer-html" class="hidden-pdf">
+				<div class="letter-head-footer">
+
+				{% if print_settings.letter_head && print_settings.letter_head.footer %}
+						{{ print_settings.letter_head.footer }}
+				{% endif %}
+				
+				</div>
+
+				<!-- <p class="text-center small page-number visible-pdf">
+					{{ __("Page {0} of {1}", [`<span class="page"></span>`, `<span class="topage"></span>`]) }}
+				</p> -->
+			</div>
+			{% endif %}
+			
+			
 		  </div>
 	  </div>
   </body>

@@ -25,6 +25,8 @@ frappe.ui.form.on("Web Page", {
 		} else {
 			frm.events.layout(frm);
 		}
+		
+		frm.trigger('render_buttons');
 	},
 	published: function (frm) {
 		// If current date is before end date,
@@ -43,5 +45,30 @@ frappe.ui.form.on("Web Page", {
 
 	set_meta_tags(frm) {
 		frappe.utils.set_meta_tag(frm.doc.route);
-	}
+	},
+	
+	render_buttons: function (frm) {
+		frm.page.clear_inner_toolbar();
+		if (!frm.is_new()) {
+			if (!frm.doc.custom_format) {
+				
+			}
+			else if (frm.doc.custom_format && !frm.doc.raw_printing) {
+				frm.set_df_property("html", "reqd", 1);
+			}
+			
+			frm.add_custom_button(__("Edit Format"), function () {
+					/* if (!frm.doc.doc_type) {
+						frappe.msgprint(__("Please select DocType first"));
+						return;
+					} */
+					frappe.set_route("webpage-format-builder", frm.doc.name);
+				});
+				
+			
+			frm.add_custom_button(__('View Website'), () => {
+				window.open('/'+frm.doc.route, '_blank');
+			});
+		}
+	},
 })

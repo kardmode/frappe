@@ -95,7 +95,7 @@ frappe.breadcrumbs = {
 
 
 				if(module_info && !module_info.blocked && frappe.visible_modules.includes(module_info.module_name)) {
-					$(repl('<li><a href="#modules/%(module)s">%(label)s</a></li>',
+					$(repl('<li class="breadcrumbs-module"><a href="#modules/%(module)s">%(label)s</a></li>',
 						{ module: breadcrumbs.module, label: __(label) }))
 						.appendTo($breadcrumbs);
 				}
@@ -113,7 +113,7 @@ frappe.breadcrumbs = {
 				} else {
 					route = 'List/' + breadcrumbs.doctype;
 				}
-				$(repl('<li><a href="#%(route)s">%(label)s</a></li>',
+				$(repl('<li class="breadcrumbs-doctype"><a href="#%(route)s">%(label)s</a></li>',
 					{route: route, label: __(breadcrumbs.doctype)}))
 					.appendTo($breadcrumbs);
 			}

@@ -428,7 +428,7 @@ frappe.ui.Page = Class.extend({
 	},
 
 	get_icon_label: function(icon, label) {
-		var tests = ["Actions","Refresh", "Submit", "New", "Delete","Save", "Edit", "Update"];
+		var tests = ["Cancel","Actions","Refresh", "Submit", "New", "Delete","Save", "Edit", "Update"];
 		
 		if(tests.includes(label))
 		{

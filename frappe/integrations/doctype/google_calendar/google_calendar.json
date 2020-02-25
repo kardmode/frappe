@@ -2,6 +2,7 @@
  "autoname": "field:calendar_name",
  "creation": "2019-07-06 17:54:09.450100",
  "doctype": "DocType",
+ "document_type": "Documents",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -108,7 +109,7 @@
    "label": "Push to Google Calendar"
   }
  ],
- "modified": "2019-08-08 15:44:15.798362",
+ "modified": "2019-12-18 14:02:47.113167",
  "modified_by": "Administrator",
  "module": "Integrations",
  "name": "Google Calendar",

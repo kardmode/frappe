@@ -46,7 +46,8 @@ def get_form_params():
 	else:
 		data["save_user_settings"] = True
 
-	fields = data["fields"]
+	# fields = data["fields"]
+	fields = data.get("fields")
 
 	for field in fields:
 		key = field.split(" as ")[0]

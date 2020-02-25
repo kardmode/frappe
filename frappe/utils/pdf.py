@@ -92,6 +92,13 @@ def prepare_options(html, options):
 		'encoding': "UTF-8",
 		#'load-error-handling': 'ignore'
 	})
+	
+	
+	# if not options.get("margin-top"):
+		# options['margin-top'] = '12.5mm'
+
+	# if not options.get("margin-bottom"):
+		# options['margin-bottom'] = '12.5mm'
 
 	if not options.get("margin-right"):
 		options['margin-right'] = '12.5mm'

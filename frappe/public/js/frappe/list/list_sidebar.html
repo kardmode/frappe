@@ -29,10 +29,13 @@
 		<a class="list-sidebar-link" href="#List/{%= doctype %}/Image">{%= __("Images") %}</a></li>
 	<li class="list-sidebar-item hide list-link" data-view="Gantt">
 		<a class="list-sidebar-link" href="#List/{%= doctype %}/Gantt">{%= __("Gantt") %}</a></li>
-	<li class="list-sidebar-item hide tree-link">
+	<li class="tree-link list-sidebar-item hide list-link" data-view="Tree">
 		<a class="list-sidebar-link" href="#Tree/{%= doctype %}">{%= __("Tree") %}</a></li>
+	
+	<li class="divider"></li>
 	<li class="list-sidebar-item hide list-link" data-view="Calendar">
-		<a class="list-sidebar-link" href="#List/{%= doctype %}/Calendar">{%= __("Calendar") %}</a></li>
+		<a class="list-sidebar-link" href="#List/{%= doctype %}/Calendar">{%= __("Calendar") %}</a>
+	</li>
 	<li class="divider"></li>
 
 	<li class="list-sidebar-item hide list-link" data-view="Kanban">
@@ -44,13 +47,11 @@
 	</li>
 	<li class="divider"></li>
 	<li class="list-sidebar-item hide list-link" data-view="Inbox">
-		<div class="btn-group">
-			<div class="text-muted dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-				{{ __("Email Inbox") }}
-			</div>
-			<ul class="dropdown-menu email-account-dropdown list-unstyled sidebar-menu">
-			</ul>
+		<div class="text-muted">
+			{{ __("Email Inbox") }}
 		</div>
+		<ul class="email-account-dropdown list-unstyled sidebar-menu">
+		</ul>
 	</li>
 	<li class="list-sidebar-item assigned-to-me">
 		<a class="list-sidebar-link">{%= __("Assigned To Me") %}</a>
@@ -60,23 +61,24 @@
 	{% } %}
 </ul>
 
-
 <ul class="list-unstyled sidebar-menu sidebar-stat">
+	<li class="divider"></li>
 	<li class="list-sidebar-item list-stats list-link">
-		<a class = "list-sidebar-link dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" href="#" onclick="return false;">
-			{{ __("Tags") }}<span class="caret"></span>
-		</a>
-		<ul class="dropdown-menu list-stats-dropdown" role="menu">
+		<li class = "list-sidebar-link">
+			{{ __("Tags") }}
+		</li>
+		<li class="list-stats-dropdown">
 			<div class="dropdown-search">
-				<input type="text" placeholder="Search" class="form-control dropdown-search-input input-xs">
+				<input type="text" placeholder={{ __("Search") }} class="form-control dropdown-search-input input-xs">
 			</div>
-		</ul>
+		</li>
 	</li>
-	<li class="list-sidebar-item list-link" style="margin-top: 10px;">
-		<a class="list-sidebar-link list-tag-preview hidden-xs text-muted">{{ __("Show tags") }}</a>
+	<li class="list-sidebar-item list-link">
+		<a class="list-sidebar-link list-tag-preview hidden-xs">{{ __("Show tags") }}</a>
 	</li>
 </ul>
 <ul class="list-unstyled sidebar-menu charts-menu hide">
+	<li class="divider"></li>
 	<li class="h6">{%= __("Charts") %}</li>
 	<li class="list-link">
 		<a class="toggle-charts">{%= __("Toggle Charts") %}</a>

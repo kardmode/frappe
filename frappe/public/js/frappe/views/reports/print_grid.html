@@ -1,12 +1,15 @@
 <!-- title -->
-{% if title %}
-<h2>{{ __(title) }}</h2>
-<hr>
-{% endif %}
-{% if subtitle %}
-{{ subtitle }}
-<hr>
-{% endif %}
+<div class="print-heading">
+	{% if title %}
+	<h2>{{ __(title) }}</h2>
+	{% endif %}
+	<small>
+	{% if subtitle %}
+	{{ subtitle }}
+	{% endif %}
+	</small>
+</div>
+
 <table class="table table-bordered">
     <!-- heading -->
     <thead>

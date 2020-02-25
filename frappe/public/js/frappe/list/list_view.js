@@ -65,8 +65,10 @@ frappe.views.ListView = class ListView extends frappe.views.BaseList {
 				}
 				return f;
 			});
+		
 		}
-
+		
+	
 		// build menu items
 		this.menu_items = this.menu_items.concat(this.get_menu_items());
 
@@ -89,6 +91,10 @@ frappe.views.ListView = class ListView extends frappe.views.BaseList {
 	}
 
 	get_list_view_settings() {
+		
+		console.log(this.filters);
+		console.log('settinsg ' + this.settings.filters);
+		
 		return frappe.call("frappe.desk.listview.get_list_settings", {doctype: this.doctype})
 			.then(doc => this.list_view_settings = doc.message || {});
 	}

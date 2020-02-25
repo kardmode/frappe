@@ -1,5 +1,134 @@
 {% extends "templates/web.html" %}
 
+{% macro get_width(df) -%}
+	{%- if df.print_width -%}	
+		{%- if "%" in (df.print_width|str) -%}
+			{{ ((df.print_width|str).replace("%", "")|trim) }}%
+		{%- elif "px" in (df.print_width|str) -%}
+			{{ ((df.print_width|str).replace("px", "")|trim) }}px
+		{%- else -%}{{ df.print_width }}%{% endif -%}
+	{%- else -%}{{ 100 }}%{% endif -%}
+{%- endmacro %}
+
+{% macro get_margin(df) -%}
+	{%- if df.print_margin -%}	
+		{{ df.print_margin }}px
+	{%- else -%}{{ 25 }}px{% endif -%}
+{%- endmacro %}
+
+
+{% macro render_field(df,doc) -%}
+	{%- if df.fieldtype=="HTML" and df.options -%}
+	<div>{{ frappe.render_template(df.options, {"doc": doc}) or "" }}</div>
+	{%- elif df.fieldtype=="Website Slideshow" and df.options -%}
+	<div>
+		{%- if df.options.type =="Slideshow" -%}
+			{{ render_slideshow(df.options) }}
+		{%- else -%}
+			{{ render_gallery(df.options) }}			
+		{%- endif -%}
+	</div>	
+	{%- endif -%}
+{%- endmacro %}
+
+{% macro render_gallery(options) -%}
+	{% set slideshow_header = options.slideshow_header %}
+	{% set slides = options.slides %}
+	{{ slideshow_header or '' }}
+	{% set gallery_columns = options.gallery_columns or '4' %}
+	{% set thumbnail_width = (100 / (gallery_columns|float) - 1) %}
+
+	<div id="the-gallery" class="gallery slide" data-ride="gallery" style="text-align:center;">
+	
+		<!-- Wrapper for slides -->
+		{% for slide in slides %}
+			<div class="item gallery-item" style="width:{{thumbnail_width or 30}}%;">
+				
+				
+				<!-- <a href="#{{ loop.index }}"><img class="d-block" src="{{ slide.image }}" /></a>
+				<a href="#" class="JesterBox">
+					<div id="{{ loop.index }}"><img src="{{ slide.image }}"></div>
+				</a> -->
+				
+				<img  class="d-block" src="{{ slide.image }}" />
+				{% if slide.heading or slide.description %}
+				<div class="carousel-caption d-none d-md-block">
+					{% if slide.heading %}<h4>{{ slide.heading }}</h4>{% endif %}
+					{% if slide.description %}<p>{{ slide.description }}</p>{% endif %}
+				</div>
+				{% endif %}
+			</div>
+		{% endfor %}
+
+	</div>
+
+	<script>
+		frappe.ready(function () {
+			<!-- $('.carousel').carousel({ -->
+				<!-- interval: 5000 -->
+			<!-- }) -->
+		});
+	</script>
+
+{%- endmacro %}
+
+
+{% macro render_slideshow(options) -%}
+	{% set slideshow_header = options.slideshow_header %}
+	{% set slides = options.slides %}
+	{{ slideshow_header or '' }}
+
+	<div id="the-carousel" class="carousel slide" data-ride="carousel">
+		{% if slides | len > 1 %}
+		<!-- Indicators -->
+		<ol class="carousel-indicators">
+			{% for slide in slides %}
+			<li data-target="#the-carousel" data-slide-to="{{ loop.index }}"
+				{%- if loop.index==0 %}class="active"{% endif %}></li>
+			{% endfor %}
+		</ol>
+		{% endif %}
+
+		<!-- Wrapper for slides -->
+		<div class="carousel-inner">
+			{% for slide in slides %}
+			<div class="{% if slide.idx==1 %}active{% endif %} item carousel-item">
+				<img style="filter: blur({{options.slideshow_blur or '0'}}px);object-fit:cover; max-height:{{ options.slideshow_height or '400'}}px;" class="d-block w-100" src="{{ slide.image }}" />
+				<div class="headerbefore" "></div>
+				{% if slide.heading or slide.description %}
+
+				<div class="carousel-caption" style="background-color: {{ options.slideshow_shade or 'rgba(33,33,33,0)'}};">
+					{% if slide.heading %}<h4>{{ slide.heading }}</h4>{% endif %}
+					{% if slide.description %}<p>{{ slide.description }}</p>{% endif %}
+				</div>
+				{% endif %}
+			</div>
+			{% endfor %}
+		</div>
+
+		<!-- Controls -->
+		{% if slides | len > 1 %}
+		<a class="carousel-control-prev" href="#the-carousel" data-slide="prev" role="button">
+			<span class="carousel-control-prev-icon" aria-hidden="true"></span>
+			<span class="sr-only">{{ _('Previous') }}</span>
+		</a>
+		<a class="carousel-control-next" href="#the-carousel" data-slide="next" role="button">
+			<span class="carousel-control-next-icon" aria-hidden="true"></span>
+			<span class="sr-only">{{ _('Next') }}</span>
+		</a>
+		{% endif %}
+	</div>
+
+	<script>
+		frappe.ready(function () {
+			$('.carousel').carousel({
+				interval: 5000
+			})
+		});
+	</script>
+
+{%- endmacro %}
+
 {%- block header -%} {{ header or "" }} {%- endblock -%}
 
 {% block meta_block %}
@@ -20,6 +149,41 @@
 	<article class="web-page-content" id="{{ name }}" {% if text_align -%}style="text-align: {{ text_align }}"{%- endif %}>
 	{{ main_section or "" }}
 	</article>
+	
+	<article class="web-page-content" id="{{ name }}" {% if text_align -%}style="text-align: {{ text_align }}"{%- endif %}>
+	{% for page in layout %}
+
+	{% for section in page %}
+	<div class="row section-break" style="width: {{ get_width(section) }}; padding: {{ get_margin(section) }}; margin: 0 auto !important;">
+		{%- if section.label and section.has_data -%}
+		<h4 class='col-sm-12'>{{ _(section.label) }}</h4>
+		{%- endif -%}
+		{% for column in section.columns %}
+			{%- if section.page_break == 1 -%}
+				<div class="column-break">
+				{% for df in column.fields %}
+					{{ render_field(df,doc)}}
+				{% endfor %}
+				</div>
+			{% else %}
+				<div class="col-xs-{{ (12 / section.columns|len)|int }} column-break">
+				{% for df in column.fields %}
+					{{ render_field(df,doc)}}
+				{% endfor %}
+				</div>
+			{%- endif -%}
+        {% endfor %}
+		
+	</div>
+
+	{%- if section.page_break == '1' -%}<hr>{%- endif -%}
+
+	
+	{% endfor %}
+	{% endfor %}
+	</article>
+	
+	
 	{% if enable_comments -%}
 	<hr class="my-5">
 	<h5>Discuss</h5>

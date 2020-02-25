@@ -2,7 +2,7 @@
 	<div class="print-toolbar row">
 		<div class="col-xs-2">
 			<select class="print-preview-select input-sm form-control"></select></div>
-		<div class="col-xs-1">
+		<div class="col-xs-2">
 			<select class="orientation input-sm form-control"><option value="Portrait" selected>Portrait</option> 
 			<option value="Landscape">Landscape</option></select></div>
 		<!-- <div class="col-xs-2"> -->
@@ -15,33 +15,35 @@
 			<select class="print-sign-select input-sm form-control">
 			</select>
 		</div>
-		<div class="col-xs-1">
-			<div class="checkbox small" style="margin-top: 7px; margin-bottom: 0px;">
-                <label>
-                    <input type="checkbox" class="print-letterhead text-muted" style="margin-top: 1px;"/>
-                    <span class="hidden-xs hidden-sm">{%= __("LetterHead") %}</span><span class="visible-xs visible-sm">{%= __("LH") %}</span></label>
-            </div>
-        </div>
+		<div class="spacer"></div>
+
 		
-		<div class="col-xs-4 text-right">
-            <!-- <a class="close btn-print-close" style="margin-top: 2px; margin-left: 10px;">&times;</a> -->
-            <div class="btn-group">
-				<a class="hide btn-sign btn-sm btn btn-default">
-                    {%= __("Sign") %}</a>
-                <a class="hide btn-print-print btn-sm btn btn-default">
-                    {%= __("Print") %}</a>
-    			<a class="btn-sm btn btn-default" href="#Form/Print Settings">
-                    <i class="octicon octicon-gear"></i></a>
-				<a class="btn-printer-setting btn-sm btn btn-default" style="display: none;">
-						{%= __("Printer Settings...") %}</a>
-    			<a class="btn-print-edit btn-sm btn btn-default">
-                    <i class="octicon octicon-pencil"></i></a>
-    			<a class="hide btn-print-preview btn-sm btn btn-default">
-                   <i class="octicon octicon-screen-full"></i></a>
-    			<a class="btn-download-pdf btn-sm btn btn-default">
-                    {%= __("PDF") %}</a>
-            </div>
+		<div class="checkbox small">
+		<label>
+			<input type="checkbox" class="print-letterhead text-muted"/>
+			<span class="btn-sm btn btn-default"><i class="octicon octicon-file-text"></i></span>
+		  <!--   <span class="hidden-xs hidden-sm">{%= __("LetterHead") %}</span>
+			<span class="visible-xs visible-sm">{%= __("LH") %}</span> -->
+		</label>
 		</div>
+		<a class="hide btn-sign btn-sm btn btn-default">
+			{%= __("Sign") %}</a>
+		<a class="hide btn-print-print btn-sm btn btn-default">
+			{%= __("Print") %}</a>
+		<a class="btn-sm btn btn-default" href="#Form/Print Settings">
+			<i class="octicon octicon-gear"></i></a>
+		<a class="hide btn-printer-setting btn-sm btn btn-default">
+				{%= __("Remote Printer Settings...") %}</a>
+		<a class="btn-print-edit btn-sm btn btn-default">
+			<i class="octicon octicon-tools"></i></a>
+		<a class="hide btn-print-preview btn-sm btn btn-default">
+		   <i class="octicon octicon-screen-full"></i></a>
+		<a class="btn-download-pdf btn-sm btn btn-default">
+			<i class="octicon octicon-file-pdf"></i></a>
+		<a class="btn-print-close btn-sm btn btn-default"><i class="octicon octicon-x"></i></a>
+
+		
+		
 	</div>
 	<div class="print-preview-wrapper">
 		<div class="print-preview">

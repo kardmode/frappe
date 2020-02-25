@@ -1,7 +1,7 @@
 {
  "creation": "2016-09-22 04:16:48.829658",
  "doctype": "DocType",
- "document_type": "System",
+ "document_type": "Setup",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -190,7 +190,7 @@
  ],
  "in_create": 1,
  "issingle": 1,
- "modified": "2019-07-15 06:48:16.562109",
+ "modified": "2019-12-18 14:02:51.408288",
  "modified_by": "Administrator",
  "module": "Integrations",
  "name": "LDAP Settings",

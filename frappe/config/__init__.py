@@ -35,15 +35,18 @@ def get_modules_from_all_apps():
 		modules_list += get_modules_from_app(app)
 	return modules_list
 
+
+@frappe.whitelist()
 def get_modules_from_app(app):
 	try:
-		# modules_old = frappe.get_attr(app + '.config.desktop.get_data')() or {}
+		# modules = frappe.get_attr(app + '.config.desktop.get_data')() or {}
 		
 		fields = ['name','module_name', 'hidden', 'label', 'link', 'type', 'icon', 'color', 'description', 'category',
 			'_doctype', '_report', 'idx', 'force_show', 'reverse', 'custom', 'standard', 'blocked']
 
 		modules = frappe.db.get_all('Kard Desktop Icon',
 			fields=fields, filters={'standard': 1,'type':'module','app':app}) 
+
 	except ImportError:
 		return []
 
@@ -70,6 +73,9 @@ def get_modules_from_app(app):
 
 			# Check Domain
 			if is_domain(m) and module_name not in active_domains:
+				to_add = False
+				
+			if not in_domains(m,active_domains):
 				to_add = False
 
 			# Check if config
@@ -118,3 +124,9 @@ def is_domain(module):
 
 def is_module(module):
 	return module.get("type") == "module"
+	
+def in_domains(module,active_domains):
+	domain = frappe.db.get_value('Module Def', module.get("module_name"), 'restrict_to_domain')
+	if domain and domain not in active_domains:
+		return False
+	return True

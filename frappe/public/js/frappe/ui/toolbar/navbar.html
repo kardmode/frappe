@@ -1,58 +1,27 @@
 <div class="navbar navbar-default navbar-fixed-top" role="navigation">
 	<div class="container">
 		<div class="navbar-header navbar-desk">
-			<!-- <a class="navbar-brand toggle-sidebar">
+			<a class="navbar-brand toggle-sidebar">
 				<i class="octicon octicon-three-bars"></i>
-			</a>  -->
-			<a class="navbar-brand navbar-home" href="#"><i class="octicon octicon-home"></i></a>
-			<ul class="nav navbar-nav" id="navbar-breadcrumbs">
-			</ul>
+			</a> 
+			<a class="navbar-brand navbar-home" href="#">
+				<i class="octicon octicon-home"></i>
+			</a>
+			<ul class="nav navbar-nav" id="navbar-breadcrumbs"></ul>
 		</div>
 		<div class="navbar-center ellipsis" style="display: none;"></div>
+		
+		
 
 		<ul class="nav navbar-nav navbar-right">
 			<li class="visible-xs">
 				<a class="navbar-search-button" href="#" data-toggle="modal" data-target="#search-modal"><i class="octicon octicon-search"></i></a>
 			</li>
-			<li class="dropdown dropdown-navbar-user dropdown-mobile">
-				<a class="dropdown-toggle" data-toggle="dropdown" href="#"
-					onclick="return false;">
-				{{ avatar }}
-                
-                <!-- <b class="caret hidden-xs hidden-sm"></b> -->
-				</a>
-				<ul class="dropdown-menu" id="toolbar-user" role="menu">
-					<li><a href="#user-profile">
-						{%= frappe.user.full_name() %}</a></li>
-					<li class="divider"></li>
-					<li><a href="#Form/User/{%= encodeURIComponent(frappe.session.user) %}">
-					<span class="ellipsis toolbar-user-fullname">
-					{%= __("My Settings") %}</span></a></li>
-					<!-- <li><a href="#" onclick="return frappe.ui.toolbar.setup_session_defaults();"> -->
-							<!-- {%= __("Session Defaults") %}</a></li> -->
-					<!-- <li><a href="#modules/Setup"><i class="octicon octicon-gear"></i><span style="margin-left:5px;">Setup</span></a></li>
-					<li class="divider"></li> -->
-					<!-- <li class="navbar-set-desktop-icons"><a href="#modules_setup">
-					    {%= __("Set Desktop Icons") %}</a></li> -->
-					<li class="navbar-reload"><a href="" onclick="return frappe.ui.toolbar.clear_cache();">
-					    {%= __("Reload") %}</a></li>
-					<li><a href="/index" target="_blank" rel="noopener noreferrer">
-						{%= __("View Website") %}</a></li>
-					<!-- <li class="navbar-toggle-full-width"> -->
-						<!-- <a href="#" onclick="return false">{%= __("Toggle Full Width") %}</a> -->
-					<!-- </li> -->
-					<li><a href="#background_jobs">
-						{%= __("Background Jobs") %}</a></li>
-					<li class="divider"></li>
-					<li><a href="#" onclick="return frappe.app.logout();">
-						{%= __("Logout") %}</a></li>
-				</ul>
-			</li>
+			
 
 			<li class="dropdown dropdown-help dropdown-mobile">
 				<a class="dropdown-toggle" data-toggle="dropdown" href="#"
 					onclick="return false;"  style="height: 40px;">
-					<!-- <span class="hidden-xs hidden-sm" style="line-height: 24px;">{{ __("Help") }} <b class="caret"></b></span> -->
 					<span class="standard-image help-icon">?</span>
 				</a>
 				<ul class="dropdown-menu" id="toolbar-help" role="menu">
@@ -86,7 +55,48 @@
 
 				</ul>
 			</li>
+			
+			<li class="dropdown dropdown-navbar-user dropdown-mobile">
+				<a class="dropdown-toggle" data-toggle="dropdown" href="#"
+					onclick="return false;">
+				{{ avatar }}
+				</a>
+				<ul class="dropdown-menu" id="toolbar-user" role="menu">
+					<li><a href="#user-profile">{%= frappe.user.full_name() %}</a></li>
+					<li class="divider"></li>
+					<li><a href="#Form/User/{%= encodeURIComponent(frappe.session.user) %}">
+					<span class="ellipsis toolbar-user-fullname">
+					{%= __("My Settings") %}</span></a></li>
+					<!-- <li><a href="#" onclick="return frappe.ui.toolbar.setup_session_defaults();"> -->
+							<!-- {%= __("Session Defaults") %}</a></li> -->
+					<!-- <li><a href="#modules/Setup"><i class="octicon octicon-gear"></i><span style="margin-left:5px;">Setup</span></a></li>
+					<li class="divider"></li> -->
+					<!-- <li class="navbar-set-desktop-icons"><a href="#modules_setup">
+					    {%= __("Set Desktop Icons") %}</a></li> -->
+					<li class="navbar-reload"><a href="" onclick="return frappe.ui.toolbar.clear_cache();">
+					    {%= __("Reload") %}</a></li>
+					<li><a href="/index" target="_blank" rel="noopener noreferrer">
+						{%= __("View Website") %}</a></li>
+					<!-- <li class="navbar-toggle-full-width"> -->
+						<!-- <a href="#" onclick="return false">{%= __("Toggle Full Width") %}</a> -->
+					<!-- </li> -->
+					<li><a href="#background_jobs">
+						{%= __("Background Jobs") %}</a></li>
+					<li class="divider"></li>
+					<li><a href="#" onclick="return frappe.app.logout();">
+						{%= __("Logout") %}</a></li>
+				</ul>
+			</li>
+			
 		</ul>
+		
+		<form class="navbar-form navbar-right hidden-xs" role="search" onsubmit="return false;">
+			  <div class="form-group form-group-sm ui-front">
+				<input id="navbar-search" type="text" class="form-control"
+					placeholder="{%= __("Search or type a command") %} {%= __("(Ctrl + G)") %}" aria-haspopup="true">
+				<span class="octicon octicon-search navbar-search-icon"></span>
+			  </div>
+		</form>
 
 		<div id="search-modal" class="modal fade" role="dialog">
 			<div class="modal-dialog" style="height: 50px;">
@@ -104,14 +114,6 @@
 			</div>
 		</div>
 
-		<div class="hidden-xs">
-			<form class="navbar-form navbar-right" role="search" onsubmit="return false;">
-			  <div class="form-group form-group-sm ui-front">
-				<input id="navbar-search" type="text" class="form-control"
-					placeholder="{%= __("Search or type a command") %} {%= __("(Ctrl + G)") %}" aria-haspopup="true">
-				<span class="octicon octicon-search navbar-search-icon"></span>
-			  </div>
-			</form>
-		</div>
+
 	</div>
 </div>

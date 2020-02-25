@@ -35,7 +35,12 @@ frappe.views.CommunicationComposer = Class.extend({
 						txt: txt,
 					},
 					callback: (r) => {
-						options = r.message;
+						$.each(r.message, function(i, f) {
+							if (!f.value || f.value =='') return;
+							
+							options.push(f);
+						});
+						
 						me.dialog.fields_dict[field].set_data(options);
 					}
 				});
@@ -528,94 +533,6 @@ frappe.views.CommunicationComposer = Class.extend({
 		}
 	},
 	
-	
-	send_email: function(btn, form_values, selected_attachments, print_html, print_format) {
-		var me = this;
-		me.dialog.hide();
-
-		if(!form_values.recipients) {
-			frappe.msgprint(__("Enter Email Recipient(s)"));
-			return;
-		}
-
-		if(!form_values.attach_document_print) {
-			print_html = null;
-			print_format = null;
-		}
-
-
-		if(cur_frm && !frappe.model.can_email(me.doc.doctype, cur_frm)) {
-			frappe.msgprint(__("You are not allowed to send emails related to this document"));
-			return;
-		}
-
-
-		return frappe.call({
-			method:"frappe.core.doctype.communication.email.make",
-			args: {
-				recipients: form_values.recipients,
-				cc: form_values.cc,
-				bcc: form_values.bcc,
-				subject: form_values.subject,
-				content: form_values.content,
-				doctype: me.doc.doctype,
-				name: me.doc.name,
-				send_email: 1,
-				print_html: print_html,
-				send_me_a_copy: form_values.send_me_a_copy,
-				print_format: print_format,
-				sender: form_values.sender,
-				sender_full_name: form_values.sender?frappe.user.full_name():undefined,
-				email_template: form_values.email_template,
-				attachments: selected_attachments,
-				_lang : me.lang_code,
-				read_receipt:form_values.send_read_receipt,
-				print_letterhead: me.is_print_letterhead_checked(),
-			},
-			btn: btn,
-			callback: function(r) {
-				if(!r.exc) {
-					frappe.utils.play_sound("email");
-
-					if(r.message["emails_not_sent_to"]) {
-						frappe.msgprint(__("Email not sent to {0} (unsubscribed / disabled)",
-							[ frappe.utils.escape_html(r.message["emails_not_sent_to"]) ]) );
-					}
-
-					if ((frappe.last_edited_communication[me.doc] || {})[me.key]) {
-						delete frappe.last_edited_communication[me.doc][me.key];
-					}
-					if (cur_frm) {
-						// clear input
-						cur_frm.timeline.input && cur_frm.timeline.input.val("");
-						cur_frm.reload_doc();
-					}
-
-					// try the success callback if it exists
-					if (me.success) {
-						try {
-							me.success(r);
-						} catch (e) {
-							console.log(e);
-						}
-					}
-
-				} else {
-					frappe.msgprint(__("There were errors while sending email. Please try again."));
-
-					// try the error callback if it exists
-					if (me.error) {
-						try {
-							me.error(r);
-						} catch (e) {
-							console.log(e);
-						}
-					}
-				}
-			}
-		});
-	},
-
 	send_email: function(btn, form_values, selected_attachments, print_html, print_format) {
 		var me = this;
 		me.dialog.hide();
@@ -641,10 +558,13 @@ frappe.views.CommunicationComposer = Class.extend({
 		
 		if(print_format) {
 			if(cur_frm){
-				print_options = {'letterhead': cur_frm.print_preview.letterhead_sel.val() || cur_frm.print_preview.letter_heads[0], 'sign_type': cur_frm.print_preview.print_sign_sel.val() || cur_frm.print_preview.print_signs[0]};
-			}			
+				print_options = {'letterhead': cur_frm.print_preview.letterhead_sel.val() || cur_frm.print_preview.letter_heads[0][0], 'sign_type': cur_frm.print_preview.print_sign_sel.val() || cur_frm.print_preview.print_signs[0][0]};
+			}
+			else
+			{
+				print_options = {'letterhead': "Default", 'sign_type': "None"};
+			}
 		}
-
 
 		return frappe.call({
 			method:"frappe.core.doctype.communication.email.make",

@@ -46,6 +46,30 @@ class WebPage(WebsiteGenerator):
 			"title": self.title,
 			"text_align": self.text_align,
 		})
+		
+
+		# set format data
+		import json
+		format_data = json.loads(self.format_data)
+		for d in format_data:
+			if 'label' in d and not d["label"] == "Website Slideshow" and d["fieldtype"] == "Website Slideshow":
+				slideshow = frappe.get_doc("Website Slideshow", d["label"])
+				
+				d["options"] =  {
+				"slides": slideshow.get({"doctype":"Website Slideshow Item"}),
+				"slideshow_header": slideshow.header or "",
+				"slideshow_height": slideshow.slideshow_height or "",
+				"slideshow_blur": slideshow.slideshow_blur or "",
+				"slideshow_shade": slideshow.slideshow_shade or "",
+				"type": slideshow.type or "",
+				"carousel_interval": slideshow.carousel_interval or "",
+				"hide_buttons": slideshow.hide_buttons or "",
+				"thumbnail_width": slideshow.thumbnail_width or "",
+				"thumbnail_height": slideshow.thumbnail_height or ""
+				}
+			
+				
+		context.update({"layout":make_layout(self, format_data)})
 
 		if not self.show_title:
 			context["no_header"] = 1
@@ -185,3 +209,88 @@ def check_broken_links():
 					cnt += 1
 
 	print("{0} links broken".format(cnt))
+
+
+def make_layout(doc, format_data=None):
+	"""Builds a hierarchical layout object from the fields list to be rendered
+	by `standard.html`
+	:param doc: Document to be rendered.
+	:param format_data: Fields sequence and properties defined by Print Format Builder."""
+	layout, page = [], []
+	layout.append(page)
+
+	def get_new_section(): return  {'columns': [], 'has_data': False}
+
+	def append_empty_field_dict_to_page_column(page):
+		""" append empty columns dict to page layout """
+		if not page[-1]['columns']:
+			page[-1]['columns'].append({'fields': []})
+
+	for df in format_data:
+		if df['fieldtype']=="Section Break" or page==[]:
+			if len(page) > 1:
+				if page[-1]['has_data']==False:
+					# truncate last section if empty
+					del page[-1]
+
+			section = get_new_section()
+			if df['fieldtype']=='Section Break':
+				section.update(df)
+				
+			page.append(section)
+
+		elif df['fieldtype']=="Column Break":
+			# if last column break and last column is not empty
+			page[-1]['columns'].append({'fields': []})
+
+		else:
+			# add a column if not yet added
+			append_empty_field_dict_to_page_column(page)
+
+		# if df['fieldtype']=="HTML" and df['options']:
+			# doc.set(df['fieldname'], True) # show this field
+		
+		if not df['fieldtype'] in ("Section Break", "Column Break", "Button"):
+		
+
+			append_empty_field_dict_to_page_column(page)
+
+			page[-1]['columns'][-1]['fields'].append(df)
+
+			# section has fields
+			page[-1]['has_data'] = True
+
+			
+
+
+	return layout
+	
+def is_visible(df, doc):
+	"""Returns True if docfield is visible in print layout and does not have print_hide set."""
+	if df.fieldtype in ("Section Break", "Column Break", "Button"):
+		return False
+
+	if hasattr(doc, "hide_in_print_layout"):
+		if df.fieldname in doc.hide_in_print_layout:
+			return False
+
+	if (df.permlevel or 0) > 0 and not doc.has_permlevel_access_to(df.fieldname, df):
+		return False
+
+	return not doc.is_print_hide(df.fieldname, df)
+
+def has_value(df, doc):
+	value = doc.get(df.fieldname)
+	if value in (None, ""):
+		return False
+
+	elif isinstance(value, string_types) and not strip_html(value).strip():
+		if df.fieldtype in ["Text", "Text Editor"]:
+			return True
+
+		return False
+
+	elif isinstance(value, list) and not len(value):
+		return False
+
+	return True

@@ -1,0 +1,62 @@
+{
+ "add_company_abbr_to_name": 1,
+ "allow_rename": 1,
+ "append_company_abbr_to_name": "0",
+ "autoname": "field:title",
+ "beta": 1,
+ "creation": "2017-01-06 22:45:20.818458",
+ "doctype": "DocType",
+ "document_type": "Printing",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "title",
+  "print_field"
+ ],
+ "fields": [
+  {
+   "fieldname": "title",
+   "fieldtype": "Data",
+   "label": "title",
+   "unique": 1
+  },
+  {
+   "fieldname": "print_field",
+   "fieldtype": "Code",
+   "label": "print field"
+  }
+ ],
+ "modified": "2020-01-05 22:18:48.621416",
+ "modified_by": "Administrator",
+ "module": "Core",
+ "name": "Print Fields",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "Admin User",
+   "share": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}
