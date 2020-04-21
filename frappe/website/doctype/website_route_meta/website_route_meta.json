@@ -1,8 +1,8 @@
 {
+ "allow_rename": 1,
  "autoname": "Prompt",
  "creation": "2019-02-16 17:37:27.918909",
  "doctype": "DocType",
- "document_type": "Setup",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -17,7 +17,7 @@
    "reqd": 1
   }
  ],
- "modified": "2019-12-15 04:53:24.385691",
+ "modified": "2019-11-28 17:26:49.068372",
  "modified_by": "Administrator",
  "module": "Website",
  "name": "Website Route Meta",

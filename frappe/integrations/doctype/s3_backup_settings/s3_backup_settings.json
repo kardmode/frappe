@@ -1,7 +1,6 @@
 {
  "creation": "2017-09-04 20:57:20.129205",
  "doctype": "DocType",
- "document_type": "Setup",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -87,7 +86,7 @@
  ],
  "hide_toolbar": 1,
  "issingle": 1,
- "modified": "2019-12-18 14:02:59.807030",
+ "modified": "2020-04-03 11:24:13.042648",
  "modified_by": "Administrator",
  "module": "Integrations",
  "name": "S3 Backup Settings",

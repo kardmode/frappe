@@ -2,7 +2,7 @@
  "allow_import": 1,
  "creation": "2017-11-18 15:36:09.676722",
  "doctype": "DocType",
- "document_type": "Documents",
+ "document_type": "Document",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -26,7 +26,8 @@
   "custom_base_url",
   "client_information",
   "api_endpoint_args",
-  "auth_url_data"
+  "auth_url_data",
+  "user_id_property"
  ],
  "fields": [
   {
@@ -148,9 +149,15 @@
    "fieldname": "auth_url_data",
    "fieldtype": "Code",
    "label": "Auth URL Data"
+  },
+  {
+   "depends_on": "eval:doc.social_login_provider===\"Custom\"",
+   "fieldname": "user_id_property",
+   "fieldtype": "Data",
+   "label": "User ID Property"
   }
  ],
- "modified": "2019-12-18 14:03:25.327754",
+ "modified": "2019-12-03 13:13:46.989099",
  "modified_by": "Administrator",
  "module": "Integrations",
  "name": "Social Login Key",

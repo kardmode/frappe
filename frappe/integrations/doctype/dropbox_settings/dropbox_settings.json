@@ -1,7 +1,7 @@
 {
  "creation": "2016-09-21 10:12:57.399174",
  "doctype": "DocType",
- "document_type": "Setup",
+ "document_type": "System",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -105,7 +105,7 @@
  ],
  "in_create": 1,
  "issingle": 1,
- "modified": "2019-12-18 14:03:12.277396",
+ "modified": "2020-04-03 11:11:54.658320",
  "modified_by": "Administrator",
  "module": "Integrations",
  "name": "Dropbox Settings",
