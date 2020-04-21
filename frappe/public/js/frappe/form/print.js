@@ -119,15 +119,34 @@ frappe.ui.form.PrintPreview = Class.extend({
 				
 				
 			});
-		
+			
+		////// edited by me
+	
 		this.print_sel = this.wrapper
 			.find(".print-preview-select")
 			.on("change", function () {
 				me.set_default_print_language();
 				me.multilingual_preview();
 			});
-			
 		
+		me.print_page_size = "A4";		
+		this.print_page_size_sel = this.wrapper
+			.find(".print-page-size-select")
+			.on("change", function () {
+				me.print_page_size = me.print_page_size_sel.val();
+				
+				/* if(me.print_page_size == "A3")
+				{
+					me.wrapper.find(".print-preview").addClass('A3');
+					me.wrapper.find(".print-format").addClass('A3');
+				}
+				else
+				{
+					me.wrapper.find(".print-preview").removeClass('A3');
+					me.wrapper.find(".print-format").removeClass('A3');
+				} */
+				
+			});
 
 		//On selection of language get code and pass it to preview method
 		this.language_sel = this.wrapper
@@ -171,27 +190,35 @@ frappe.ui.form.PrintPreview = Class.extend({
 
 
 		this.wrapper.find(".btn-download-pdf").click(function () {
-			if (!me.is_old_style()) {
+			
+			if(!me.orientation) {
+				me.orientation = "Portrait";
+			}
+
+			if(!me.print_page_size) {
+				me.print_page_size = "A4";
+			}
 				
-				if(!me.orientation) {
-					me.orientation = "Portrait";
-				}
-				
-				var w = window.open(
-					frappe.urllib.get_full_url("/api/method/frappe.utils.print_format.dpdf?"
-					+"dt="+encodeURIComponent(me.frm.doc.doctype)
-					+"&dn="+encodeURIComponent(me.frm.doc.name)
-					+"&ft="+me.selected_format()
-					+"&nl="+(me.with_letterhead() ? "0" : "1")
-					+"&lh="+ me.selected_letterhead()
-					+"&sn="+ me.selected_sign()
-					+"&on="+encodeURIComponent(me.orientation)
-					+(me.lang_code ? ("&_lang="+me.lang_code) : "")));
-				
-				if(!w) {
-					msgprint(__("Please enable pop-ups")); 
-					return;
-				}
+			var mrp_print_options = {'letterhead':me.selected_letterhead(),
+				'sign_type': me.selected_sign(),
+				'orientation':me.orientation,
+				'page_size':me.print_page_size};
+			
+			var w = window.open(
+				frappe.urllib.get_full_url("/api/method/frappe.utils.print_format.download_pdf?"
+					+ "doctype=" + encodeURIComponent(me.frm.doc.doctype)
+					+ "&name=" + encodeURIComponent(me.frm.doc.name)
+					+ "&format=" + encodeURIComponent(me.selected_format())
+					+ "&no_letterhead=" + (me.with_letterhead() ? "0" : "1")
+					+ (me.lang_code ? ("&_lang=" + me.lang_code) : "")
+					// +"&lh="+ me.selected_letterhead()
+					// +"&sn="+ me.selected_sign()
+					// +"&on="+encodeURIComponent(me.orientation)
+					+"&print_options="+encodeURIComponent(JSON.stringify(mrp_print_options))
+					)
+			);
+			if (!w) {
+				frappe.msgprint(__("Please enable pop-ups")); return;
 			}
 		});
 
@@ -442,15 +469,17 @@ frappe.ui.form.PrintPreview = Class.extend({
 		if (this._req) {
 			this._req.abort();
 		}
+		
+		var mrp_print_options = {'letterhead':this.selected_letterhead(), 'sign_type': this.selected_sign()};
+
 		this._req = frappe.call({
 			method: "frappe.www.printview.get_html_and_style",
 			args: {
 				doc: this.frm.doc,
 				print_format: this.selected_format(),
 				no_letterhead: !this.with_letterhead() ? 1 : 0,
-				letterhead: this.selected_letterhead(),
-				sign_type: this.selected_sign(),
 				_lang: this.lang_code,
+				print_options:mrp_print_options
 			},
 			callback: function (r) {
 				if (!r.exc) {

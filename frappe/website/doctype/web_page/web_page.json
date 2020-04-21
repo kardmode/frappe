@@ -1,10 +1,11 @@
 {
  "allow_guest_to_view": 1,
  "allow_import": 1,
+ "allow_rename": 1,
  "creation": "2013-03-28 10:35:30",
  "description": "Page to show on the website\n",
  "doctype": "DocType",
- "document_type": "Documents",
+ "document_type": "Document",
  "engine": "InnoDB",
  "field_order": [
   "section_title",
@@ -249,7 +250,7 @@
  "idx": 1,
  "is_published_field": "published",
  "max_attachments": 20,
- "modified": "2019-11-18 21:32:10.779114",
+ "modified": "2020-02-29 21:52:00.473728",
  "modified_by": "Administrator",
  "module": "Website",
  "name": "Web Page",

@@ -193,13 +193,12 @@
    "default": "0",
    "fieldname": "print_format_builder",
    "fieldtype": "Check",
-   "label": "Print Format Builder",
-   "read_only": 1
+   "label": "Print Format Builder"
   }
  ],
  "icon": "fa fa-print",
  "idx": 1,
- "modified": "2020-02-09 21:39:14.250416",
+ "modified": "2020-03-11 22:41:49.991985",
  "modified_by": "Administrator",
  "module": "Printing",
  "name": "Print Format",

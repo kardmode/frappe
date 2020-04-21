@@ -51,7 +51,12 @@ frappe.views.ListView = class ListView extends frappe.views.BaseList {
 		// initialize with saved order by
 		this.sort_by = this.view_user_settings.sort_by || 'modified';
 		this.sort_order = this.view_user_settings.sort_order || 'desc';
-
+		
+		if(this.view_user_settings.filters && this.view_user_settings.filters.length === 1 && this.view_user_settings.filters[0][1] === 'company')
+		{
+			this.view_user_settings.filters = [];
+		}
+		
 		// set filters from user_settings or list_settings
 		if (this.view_user_settings.filters && this.view_user_settings.filters.length) {
 			// Priority 1: user_settings
@@ -65,10 +70,8 @@ frappe.views.ListView = class ListView extends frappe.views.BaseList {
 				}
 				return f;
 			});
-		
 		}
-		
-	
+
 		// build menu items
 		this.menu_items = this.menu_items.concat(this.get_menu_items());
 
@@ -91,10 +94,6 @@ frappe.views.ListView = class ListView extends frappe.views.BaseList {
 	}
 
 	get_list_view_settings() {
-		
-		console.log(this.filters);
-		console.log('settinsg ' + this.settings.filters);
-		
 		return frappe.call("frappe.desk.listview.get_list_settings", {doctype: this.doctype})
 			.then(doc => this.list_view_settings = doc.message || {});
 	}

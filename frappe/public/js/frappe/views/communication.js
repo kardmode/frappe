@@ -554,15 +554,19 @@ frappe.views.CommunicationComposer = Class.extend({
 		}
 
 		// Use other print settings
-		var print_options = {};
+		var mrp_print_options = {};
 		
 		if(print_format) {
 			if(cur_frm){
-				print_options = {'letterhead': cur_frm.print_preview.letterhead_sel.val() || cur_frm.print_preview.letter_heads[0][0], 'sign_type': cur_frm.print_preview.print_sign_sel.val() || cur_frm.print_preview.print_signs[0][0]};
+				mrp_print_options = {'letterhead': cur_frm.print_preview.letterhead_sel.val() || cur_frm.print_preview.letter_heads[0][0], 
+				'sign_type': cur_frm.print_preview.print_sign_sel.val() || cur_frm.print_preview.print_signs[0][0],
+				'orientation': cur_frm.print_preview.orientation_sel.val() || cur_frm.print_preview.orientation,
+				'page_size': cur_frm.print_preview.print_page_size_sel.val() || cur_frm.print_preview.print_page_size
+				};
 			}
 			else
 			{
-				print_options = {'letterhead': "Default", 'sign_type': "None"};
+				mrp_print_options = {'letterhead': "Default", 'sign_type': "None","orientation":"Portrait","page_size":"A4"};
 			}
 		}
 
@@ -587,7 +591,7 @@ frappe.views.CommunicationComposer = Class.extend({
 				_lang : me.lang_code,
 				read_receipt:form_values.send_read_receipt,
 				print_letterhead: me.is_print_letterhead_checked(),
-				print_options:JSON.stringify(print_options),
+				mrp_print_options:JSON.stringify(mrp_print_options),
 			},
 			btn: btn,
 			callback: function(r) {

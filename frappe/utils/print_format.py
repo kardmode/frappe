@@ -88,19 +88,16 @@ def read_multi_pdf(output):
 	return filedata
 
 @frappe.whitelist()
-def download_pdf(doctype, name, format=None,doc=None, no_letterhead=0,letterhead = None,orientation="Portrait",sign_type = None):
-	html = frappe.get_print(doctype, name, format, doc=doc, no_letterhead=no_letterhead,letterhead=letterhead,sign_type = sign_type)
-
+def download_pdf(doctype, name, format=None, doc=None, no_letterhead=0, print_options = None):
+	html = frappe.get_print(doctype, name, format, doc=doc, no_letterhead=no_letterhead,print_options=print_options)
 	frappe.local.response.filename = "{name}.pdf".format(name=name.replace(" ", "-").replace("/", "-"))
-	frappe.local.response.filecontent = get_pdf(html, {"orientation": orientation})
-	frappe.local.response.type = "pdf"
 	
-@frappe.whitelist()
-def dpdf(dt, dn, ft=None,doc=None, nl=0,lh = None,on="Portrait",sn = None):
-	html = frappe.get_print(dt, dn, ft, doc=doc, no_letterhead=nl,letterhead=lh,sign_type=sn)
-
-	frappe.local.response.filename = "{name}.pdf".format(name=dn.replace(" ", "-").replace("/", "-"))
-	frappe.local.response.filecontent = get_pdf(html, {"orientation": on})
+	import json
+	_print_options = json.loads(print_options)
+	options = {"orientation":  _print_options.get('orientation') or "Portrait",
+		"page-size":_print_options.get('page_size') or "A4"}
+	
+	frappe.local.response.filecontent = get_pdf(html, options = options)
 	frappe.local.response.type = "pdf"
 
 

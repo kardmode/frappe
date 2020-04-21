@@ -14,7 +14,8 @@ frappe.ui.form.on('Bulk Update', {
 						field: frm.doc.field,
 						value: frm.doc.update_value,
 						condition: frm.doc.condition,
-						limit: frm.doc.limit
+						limit: frm.doc.limit,
+						force_update:frm.doc.mrp_force_update
 					},
 				}).then(r => {
 					let failed = r.message;

@@ -30,15 +30,12 @@ def get_context(context):
 	else:
 		doc = frappe.get_doc(frappe.form_dict.doctype, frappe.form_dict.name)
 
-	if frappe.form_dict.letterhead:
-		letterhead = frappe.form_dict.letterhead	
+	
+	if frappe.form_dict.print_options:
+		print_options = frappe.form_dict.print_options	
 	else:
-		letterhead = None
-		
-	if frappe.form_dict.sign_type:
-		sign_type = frappe.form_dict.sign_type	
-	else:
-		sign_type = None
+		print_options = None
+	
 		
 	meta = frappe.get_meta(doc.doctype)
 
@@ -49,7 +46,7 @@ def get_context(context):
 	return {
 		"body": get_rendered_template(doc, print_format = print_format,
 			meta=meta, trigger_print = frappe.form_dict.trigger_print,
-			no_letterhead=frappe.form_dict.no_letterhead,letterhead=letterhead,sign_type=sign_type),
+			no_letterhead=frappe.form_dict.no_letterhead,print_options=print_options),
 		"css": get_print_style(frappe.form_dict.style, print_format),
 		"comment": frappe.session.user,
 		"title": doc.get(meta.title_field) if meta.title_field else doc.name,
@@ -152,11 +149,6 @@ def add_signature(doc,letterhead,sign_type = None):
 		stamp_doc = frappe.get_doc('Company Stamps', {'company':letterhead}) or {}
 		if not stamp_doc.has_permission("read"):
 			stamp = ""
-			
-	
-	
-		
-		
 	
 	allow = frappe.db.get_single_value('System Settings', 'allow_signature_if_not_submitted')
 
@@ -186,7 +178,7 @@ def add_signature(doc,letterhead,sign_type = None):
 	return signature_html
 
 def get_rendered_template(doc, name=None, print_format=None, meta=None,
-	no_letterhead=None, trigger_print=False,letterhead=None,sign_type=None):
+	no_letterhead=None, trigger_print=False,print_options=None):
 
 	print_settings = frappe.db.get_singles_dict("Print Settings")
 
@@ -258,6 +250,15 @@ def get_rendered_template(doc, name=None, print_format=None, meta=None,
 
 	if template == "standard":
 		template = jenv.get_template(standard_format)
+		
+		
+	letterhead = None
+	sign_type = None
+	
+	if print_options:
+		print_options = json.loads(print_options)
+		sign_type = print_options.get('sign_type') or None
+		letterhead = print_options.get('letterhead') or None
 
 	letter_head = frappe._dict(get_letter_head(doc,no_letterhead,letterhead) or {})
 
@@ -301,7 +302,7 @@ def convert_markdown(doc, meta):
 
 @frappe.whitelist()
 def get_html_and_style(doc, name=None, print_format=None, meta=None,
-	no_letterhead=None, trigger_print=False, style=None,letterhead = None,sign_type=None):
+	no_letterhead=None, trigger_print=False, style=None,print_options=None):
 
 	"""Returns `html` and `style` of print format, used in PDF etc"""
 
@@ -315,7 +316,7 @@ def get_html_and_style(doc, name=None, print_format=None, meta=None,
 
 	try:
 		html = get_rendered_template(doc, name=name, print_format=print_format, meta=meta,
-			no_letterhead=no_letterhead, trigger_print=trigger_print,letterhead = letterhead,sign_type=sign_type),
+			no_letterhead=no_letterhead, trigger_print=trigger_print,print_options=print_options),
 	except frappe.TemplateNotFoundError:
 		frappe.clear_last_message()
 		html = None
@@ -359,15 +360,16 @@ def get_letter_head(doc, no_letterhead,letterhead=None):
 	if no_letterhead:
 		return {}
 	if letterhead == "Default":
-		if doc.get("letter_head"):
-			return frappe.db.get_value("Letter Head", doc.letter_head, ["content", "footer"], as_dict=True)
 		
-		elif doc.get("company"):
+		if doc.get("company"):
 			letter_head = frappe.db.get_value("Company", doc.company, "default_letter_head") or ""
 			if letter_head:
 				return frappe.db.get_value("Letter Head", letter_head, ["content", "footer"], as_dict=True)
 			else:
 				return {}
+		elif doc.get("letter_head"):
+			return frappe.db.get_value("Letter Head", doc.letter_head, ["content", "footer"], as_dict=True)
+		
 		else:
 			return frappe.db.get_value("Letter Head", {"is_default": 1}, ["content", "footer"], as_dict=True) or {}
 

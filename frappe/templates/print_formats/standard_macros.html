@@ -1,6 +1,11 @@
 {% macro render_field(df, doc) -%}
 	{%- if df.fieldtype=="Table" -%}
-		{{ render_table(df, doc) }}
+		{%- if df.fieldname=="packed_items" -%}
+			{{ render_table_custom(df, doc) }}
+		{%- else -%}
+		
+			{{ render_table(df, doc) }}
+		{%- endif -%}
 	{%- elif df.fieldtype=="HTML" and df.options -%}
 		<div>{{ frappe.render_template(df.options, {"doc": doc}) or "" }}</div>
 	{%- elif df.fieldtype in ("Text", "Text Editor", "Code") -%}
@@ -54,7 +59,7 @@
 					</tr>
 				</thead>
 				<tbody>
-					{% for d in data %}
+					{% for d in data if not d.get("print_hide") or d.print_hide == None or d.print_hide == "0" or d.print_hide == 0 %}
 					<tr>
 						{% if not df.get("hide_sr") or df.hide_sr == None or df.hide_sr == "0" or df.hide_sr == 0 %}
 							<td class="table-sr">{{ d.idx }}</td>
@@ -243,11 +248,11 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
         {% include doc.print_templates[df.fieldname] %}
 	
 	{% elif parent_doc and parent_doc.mrp_print_templates and parent_doc.mrp_print_templates.get(df.fieldname) %}
-		{{ frappe.render_template(parent_doc.mrp_print_templates[df.fieldname], {"doc":doc}) }}	
+		{{ frappe.render_template(parent_doc.mrp_print_templates[df.fieldname], {"df":df,"doc":doc}) }}	
 	
 	{% elif doc and doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname)%}
 	
-		{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"doc":doc}) }}	
+		{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"df":df,"doc":doc}) }}	
 		
 	{% elif visible_columns %}
 		{{  render_compact_fields_for_parent(df, doc, parent_doc, visible_columns) }}
@@ -271,7 +276,7 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 		{% if df.fieldtype=="Currency" %}
 			{{ doc.get_formatted(df.fieldname, doc, translated=True) }}
 		{% elif df.fieldtype =="Link" and  df.options =="Project" %}
-			{{ doc.get_formatted(df.fieldname, parent_doc or doc, translated=True)|replace("AMLS - ", "") }}
+			{{ doc.get_formatted(df.fieldname, parent_doc or doc, translated=True)|replace("AMLS - ", "")|replace("SLI - ", "") }}
 		{% else %}
 			{{ doc.get_formatted(df.fieldname, parent_doc or doc, translated=df.translatable) }}
 		{% endif %}
@@ -374,32 +379,149 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 
 {%- macro add_footer(max_pages,doc,no_letterhead,footer,signature_html,print_settings=None) -%}
 	<div id="footer-html" class="hidden-pdf">
-			<div class="letter-head-footer">
+		<div class="letter-head-footer">
 
-	{{ signature_html }}
-	
-	{% if print_settings.repeat_header_footer %}
-		
-			{% if not no_letterhead and footer %}
+			{{ signature_html }}
+			
+			{% if print_settings.repeat_header_footer %}
+				
+					{% if not no_letterhead and footer %}
 
-			{{ footer }}
+					{{ footer }}
 
+					{% endif %}
+					
+					{% if not no_letterhead %}
+
+					
+
+					{% endif %}
+					
+			<!-- {% else %}
+			 <div id="variables" style="display: none;"><span id="margin-bottom">25mm</span></div> -->
 			{% endif %}
-			
-			{% if not no_letterhead %}
-
-			
-
-			{% endif %}
-			
-	<!-- {% else %}
-	 <div id="variables" style="display: none;"><span id="margin-bottom">25mm</span></div> -->
-	{% endif %}
-	</div>
-	<!-- <p class="text-right small page-number visible-pdf">
-			{{ _("{0} of {1}").format('<span class="page"></span>', '<span class="topage"></span>') }}
-			</p> -->
+		</div>
+		<!-- <p class="text-right small page-number visible-pdf">
+		{{ _("{0} of {1}").format('<span class="page"></span>', '<span class="topage"></span>') }}
+		</p> -->
 	
 	</div>
 {%- endmacro -%}
 
+{%- macro render_table_custom(df, doc) -%}
+	
+	{%- set table_meta = frappe.get_meta(df.options) -%}
+	
+	{% for bundle_parent in doc.get("items") %}
+		{% if bundle_parent.name in doc.get("packed_items")|map(attribute="parent_detail_docname") %}
+			{%- set data = [] -%}
+			
+			
+			
+			{% for dc in doc.get("packed_items") %}
+				{% if dc.parent_detail_docname == bundle_parent.name %}
+					<div class="hide">{{ data.append(dc) }}</div>
+				{% endif %}
+			{% endfor %}
+			{%- if data -%}
+			{% set total_qty = namespace(value=0) %}
+
+
+			</div></div>
+			<div class="page-break"></div>
+			<div class="row section-break">
+			<div class="col-xs-12 column-break">
+			
+				<h4>{{ doc.get_formatted('project', translated=True)|replace("AMLS - ", "")|replace("SLI - ", "") }}
+					<br>
+					<small>
+					{{bundle_parent.item_name}} 
+					- {{ frappe.utils.strip_html(bundle_parent.description or '')}} 
+					- <b>{{bundle_parent.qty}} Nos</b>
+					</small>
+				</h4>
+
+				{%- set visible_columns = get_visible_columns(doc.get(df.fieldname),
+					table_meta, df) -%}
+				<div {{ fieldmeta(df) }}>
+					<table class="table table-bordered table-condensed">
+						<thead>
+							<tr>
+								{% if not df.get("hide_sr") or df.hide_sr == None or df.hide_sr == "0" or df.hide_sr == 0 %}
+									<th style="width: 30px" class="table-sr">{{ _("Sr") }}</th>
+								{% endif %}	
+								{% for tdf in visible_columns %}
+								{% if ((not data[0].flags.compact_item_print) or tdf.fieldname in doc.get(df.fieldname)[0].flags.compact_item_fields) and (not tdf.get("print_parent") or tdf.print_parent == "" or tdf.print_parent == None) %}
+									<th style="width: {{ get_width(tdf) }};" class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>{{print_table_label(tdf,data[0])}}</th>
+								{% endif %}
+								{% endfor %}
+							</tr>
+						</thead>
+						<tbody>
+
+							{% for d in data if not d.get("print_hide") or d.print_hide == None or d.print_hide == "0" or d.print_hide == 0 %}
+							<tr>
+								{% if not df.get("hide_sr") or df.hide_sr == None or df.hide_sr == "0" or df.hide_sr == 0 %}
+									<td class="table-sr">{{ loop.index }}</td>
+								{% endif %}	
+								
+								{% for tdf in visible_columns %}
+								{% if ((not data[0].flags.compact_item_print) or tdf.fieldname in doc.get(df.fieldname)[0].flags.compact_item_fields) and (not tdf.get("print_parent") or tdf.print_parent == "" or tdf.print_parent == None) %}
+									<td class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>
+																		
+									<div class="value">
+									{% if tdf.fieldname == "qty"%}
+										{% set total_qty.value = total_qty.value + d.qty/bundle_parent.qty %}
+										
+										<div class="value">
+										<small class="pull-left">{{d.uom}}</small>
+										{{d.qty/bundle_parent.qty}}
+									{% else %}
+										{{ print_value(tdf, d, doc, visible_columns) }}
+									{% endif %}
+									
+									</div></td>
+								{% endif %}
+								{% endfor %}
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+
+				<div class="row section-break">
+					<div class="col-xs-6 column-break">
+						<div class="row data-field" data-fieldname="total_qty" data-fieldtype="Float">
+							<div class="col-xs-4"><label>Total Qty</label></div>
+							<div class="col-xs-8 text-right">
+							{{total_qty.value}}
+							{% set total_qty.value = 0 %}
+							</div>
+						</div>
+					
+					</div>
+					<div class="col-xs-6 column-break">
+						<div class="row data-field" data-fieldname="total" data-fieldtype="Currency">
+							<div class="col-xs-4"><label>Total</label></div>
+							<div class="col-xs-8 text-right">
+							{{ frappe.utils.fmt_money(bundle_parent.amount/bundle_parent.qty, currency=doc.currency) }}
+							</div>
+						</div>
+					</div>
+				</div>
+				
+			
+			
+			{%- endif -%}
+		
+			
+			
+			
+		{% endif %}
+		
+	{% endfor %}
+
+	
+
+		
+{%- endmacro -%}

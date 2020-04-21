@@ -12,7 +12,7 @@ class BulkUpdate(Document):
 	pass
 
 @frappe.whitelist()
-def update(doctype, field, value, condition='', limit=500):
+def update(doctype, field, value, condition='', limit=500,force_update=False):
 	if not limit or cint(limit) > 500:
 		limit = 500
 
@@ -28,7 +28,11 @@ def update(doctype, field, value, condition='', limit=500):
 	data = {}
 	data[field] = value
 
-	return submit_cancel_or_update_docs(doctype, docnames, 'update', data)
+	
+	if force_update:
+		return submit_cancel_or_update_docs(doctype, docnames, 'force-update', data)
+	else:
+		return submit_cancel_or_update_docs(doctype, docnames, 'update', data)
 
 @frappe.whitelist()
 def submit_cancel_or_update_docs(doctype, docnames, action='submit', data=None):
@@ -70,6 +74,29 @@ def submit_cancel_or_update_docs(doctype, docnames, action='submit', data=None):
 					doc.update(data)
 				doc.save()
 				message = _('Updating {0}').format(doctype)
+			elif action == 'force-update' and doc.docstatus < 2:
+				custom_update = False
+				custom_data = {}
+				for key in data:
+					
+					if data[key].startswith('field:'):
+						fieldname = (data[key])[6:]
+						
+						if doc.get(fieldname):
+							field_value = doc.get(fieldname)
+						else:
+							continue
+							
+						custom_update = True
+						custom_data[key] = field_value
+				if custom_update:
+					doc.update(custom_data)
+				else:
+					doc.update(data)
+				
+				doc.flags.ignore_validate_update_after_submit = True
+				doc.save()
+				message = _('Force Updating {0}').format(doctype)
 			else:
 				failed.append(d)
 			frappe.db.commit()

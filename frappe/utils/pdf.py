@@ -92,13 +92,6 @@ def prepare_options(html, options):
 		'encoding': "UTF-8",
 		#'load-error-handling': 'ignore'
 	})
-	
-	
-	# if not options.get("margin-top"):
-		# options['margin-top'] = '12.5mm'
-
-	# if not options.get("margin-bottom"):
-		# options['margin-bottom'] = '12.5mm'
 
 	if not options.get("margin-right"):
 		options['margin-right'] = '12.5mm'
@@ -112,6 +105,25 @@ def prepare_options(html, options):
 	# cookies
 	if frappe.session and frappe.session.sid:
 		options['cookie'] = [('sid', '{0}'.format(frappe.session.sid))]
+		if frappe.session.sid == frappe.session.user:
+			sid = frappe.session.sid
+			
+			from frappe.sessions import get_sessions_to_clear
+			sids = get_sessions_to_clear()
+			if len(sids) > 0:
+				sid = sids[0]
+			else:
+				sid = frappe.session.sid
+				options['cookie'] = [('sid', '{0}'.format(sid))]
+
+				# frappe.throw(_("Failed Cookie {0}").format(options['cookie']))
+
+			options['cookie'] = [('sid', '{0}'.format(sid))]
+			# frappe.throw(_("Custom Cookie {0}").format(options['cookie']))
+
+		
+	# frappe.throw(_("Original Cookie {0}").format(options['cookie']))
+
 
 	# page size
 	if not (options.get("page-width") or options.get("page-height")) and not options.get("page-size"):
@@ -128,7 +140,13 @@ def read_options_from_html(html):
 
 	toggle_visible_pdf(soup)
 
-
+	
+	# try:
+		# for img in soup.findAll('img'):
+			# img['src'] = 'cid:' + splitext(basename(img['src']))[0]
+	# except:
+		# pass
+	
 	# use regex instead of soup-parser
 	for attr in ("margin-top", "margin-bottom", "margin-left", "margin-right", "page-size", "header-spacing","orientation", "page-size","page-width","page-height"):
 		try:
@@ -149,7 +167,12 @@ def prepare_header_footer(soup):
 
 	bootstrap = frappe.read_file(os.path.join(frappe.local.sites_path, "assets/frappe/css/bootstrap.css"))
 	fontawesome = frappe.read_file(os.path.join(frappe.local.sites_path, "assets/frappe/css/font-awesome.css"))
-
+	
+	
+	from frappe.utils.data import get_url
+	base_url = get_url()
+	
+	
 	# extract header and footer
 	for html_id in ("header-html", "footer-html"):
 		content = soup.find(id=html_id)

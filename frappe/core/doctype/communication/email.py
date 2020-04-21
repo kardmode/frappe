@@ -21,7 +21,7 @@ from frappe.utils.background_jobs import enqueue
 def make(doctype=None, name=None, content=None, subject=None, sent_or_received = "Sent",
 	sender=None, sender_full_name=None, recipients=None, communication_medium="Email", send_email=False,
 	print_html=None, print_format=None, attachments='[]', send_me_a_copy=False, cc=None, bcc=None,
-	flags=None, read_receipt=None, print_letterhead=True, email_template=None,print_options=None):
+	flags=None, read_receipt=None, print_letterhead=True, email_template=None,mrp_print_options=None):
 	"""Make a new communication.
 
 	:param doctype: Reference DocType.
@@ -70,7 +70,7 @@ def make(doctype=None, name=None, content=None, subject=None, sent_or_received =
 		"message_id":get_message_id().strip(" <>"),
 		"read_receipt":read_receipt,
 		"has_attachment": 1 if attachments else 0,
-		"mrp_print_options":print_options
+		"mrp_print_options":mrp_print_options
 	}).insert(ignore_permissions=True)
 
 	comm.save(ignore_permissions=True)

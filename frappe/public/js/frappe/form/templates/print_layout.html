@@ -2,9 +2,12 @@
 	<div class="print-toolbar row">
 		<div class="col-xs-2">
 			<select class="print-preview-select input-sm form-control"></select></div>
-		<div class="col-xs-2">
-			<select class="orientation input-sm form-control"><option value="Portrait" selected>Portrait</option> 
-			<option value="Landscape">Landscape</option></select></div>
+		<div class="col-xs-1">
+			<select class="orientation input-sm form-control">
+			<option value="Portrait" selected>Portrait</option> 
+			<option value="Landscape">Landscape</option>
+			</select>
+		</div>
 		<!-- <div class="col-xs-2"> -->
 			<!-- <select class="languages input-sm form-control" -->
 				<!-- placeholder="{{ __("Language") }}"></select></div> -->
@@ -15,21 +18,29 @@
 			<select class="print-sign-select input-sm form-control">
 			</select>
 		</div>
+		
+		<div class="col-xs-1">
+			<select class="print-page-size-select input-sm form-control">
+				<option value="A4" selected>A4</option> 
+				<option value="A3">A3</option>
+			</select>
+		</div>
+		
 		<div class="spacer"></div>
 
 		
 		<div class="checkbox small">
-		<label>
-			<input type="checkbox" class="print-letterhead text-muted"/>
-			<span class="btn-sm btn btn-default"><i class="octicon octicon-file-text"></i></span>
-		  <!--   <span class="hidden-xs hidden-sm">{%= __("LetterHead") %}</span>
-			<span class="visible-xs visible-sm">{%= __("LH") %}</span> -->
-		</label>
+			<label>
+				<input type="checkbox" class="print-letterhead text-muted"/>
+				<span class="btn-sm btn btn-default"><i class="octicon octicon-file-text"></i></span>
+			  <!--   <span class="hidden-xs hidden-sm">{%= __("LetterHead") %}</span>
+				<span class="visible-xs visible-sm">{%= __("LH") %}</span> -->
+			</label>
 		</div>
 		<a class="hide btn-sign btn-sm btn btn-default">
 			{%= __("Sign") %}</a>
-		<a class="hide btn-print-print btn-sm btn btn-default">
-			{%= __("Print") %}</a>
+		<a class="btn-print-print btn-sm btn btn-default">
+			<i class="octicon octicon-browser"></i></a>
 		<a class="btn-sm btn btn-default" href="#Form/Print Settings">
 			<i class="octicon octicon-gear"></i></a>
 		<a class="hide btn-printer-setting btn-sm btn btn-default">

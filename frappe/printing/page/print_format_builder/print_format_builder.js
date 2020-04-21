@@ -917,9 +917,23 @@ frappe.PrintFormatBuilder = Class.extend({
 			title: title,
 			fields: [
 				{
+					fieldname: "editortype",
+					fieldtype: "Select",
+					label: "Editor Type",
+					options:["HTML","Rich Text"],
+					default:"HTML"
+				},
+				{
 					fieldname: "content",
 					fieldtype: "Code",
-					label: label
+					label: label,
+					depends_on: doc => doc.editortype === "HTML"
+				},
+				{
+					fieldname: "rt_content",
+					fieldtype: "Text Editor",
+					label: "Rich Text",
+					depends_on: doc => doc.editortype === "Rich Text"
 				},
 				{
 					fieldname: "help",
@@ -936,10 +950,14 @@ frappe.PrintFormatBuilder = Class.extend({
 		var content = $content.data('content') || "";
 		if(content.indexOf(me.get_no_content())!==-1) content = "";
 		d.set_input("content", content);
+		d.set_input("rt_content", content);
 
 		d.set_primary_action(__("Update"), function() {
-			$($content[0]).data('content', d.get_value("content"));
-			$content.html(d.get_value("content"));
+			
+			let new_content = d.get_value("editortype") === "HTML" ? d.get_value("content") : d.get_value("rt_content");
+
+			$($content[0]).data('content', new_content);
+			$content.html(new_content);
 			d.hide();
 		});
 

@@ -2,8 +2,8 @@
 	 render_field, add_footer,print_date-%}
 	 
 <div {% if print_settings.repeat_header_footer %} id="header-html" class="hidden-pdf" {% endif %}>
-		{{ add_header(1, layout|len, doc, letter_head, no_letterhead, footer, print_settings) }}
-	</div>
+	{{ add_header(1, layout|len, doc, letter_head, no_letterhead, footer, print_settings) }}
+</div>
 
 {% for page in layout %}
 
@@ -33,11 +33,13 @@
     {% endfor %}
 	
 	
-
+{%- if loop.length > 1 -%}
 <div class="page-break"></div>
+{%- endif -%}
+
 {% endfor %}
 
-		{{ add_footer(layout|len, doc, no_letterhead, footer,signature_html, print_settings) }}
+{{ add_footer(layout|len, doc, no_letterhead, footer,signature_html, print_settings) }}
 
 
 

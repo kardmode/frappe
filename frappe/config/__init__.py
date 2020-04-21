@@ -36,7 +36,6 @@ def get_modules_from_all_apps():
 	return modules_list
 
 
-@frappe.whitelist()
 def get_modules_from_app(app):
 	try:
 		# modules = frappe.get_attr(app + '.config.desktop.get_data')() or {}

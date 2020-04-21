@@ -1352,7 +1352,7 @@ def format(*args, **kwargs):
 	import frappe.utils.formatters
 	return frappe.utils.formatters.format_value(*args, **kwargs)
 
-def get_print(doctype=None, name=None, print_format=None, style=None, html=None, as_pdf=False, doc=None, output = None,no_letterhead = 0, password=None,options=None,letterhead = None,sign_type=None):
+def get_print(doctype=None, name=None, print_format=None, style=None, html=None, as_pdf=False, doc=None, output = None,no_letterhead = 0, password=None,options=None,print_options=None):
 	"""Get Print Format for given document.
 
 	:param doctype: DocType of document.
@@ -1369,18 +1369,28 @@ def get_print(doctype=None, name=None, print_format=None, style=None, html=None,
 	local.form_dict.format = print_format
 	local.form_dict.style = style
 	local.form_dict.doc = doc
-	local.form_dict.letterhead = letterhead
-	local.form_dict.sign_type = sign_type
 	local.form_dict.no_letterhead = no_letterhead
+	
+	# by me
+	local.form_dict.print_options = print_options
 
-	options = None
 	if password:
 		options = {'password': password}
+		
+	
 
 	if not html:
 		html = build_page("printview")
 
 	if as_pdf:
+		_print_options = json.loads(print_options)
+		
+		if not options:
+			options = {}
+		
+		options["orientation"] = _print_options.get('orientation') or "Portrait"
+		options["page-size"] =_print_options.get('page_size') or "A4"
+
 		return get_pdf(html,options=options, output = output)
 	else:
 		return html
@@ -1400,25 +1410,17 @@ def attach_print(doctype, name, file_name=None, print_format=None, style=None, h
 	if lang: local.lang = lang
 	local.flags.ignore_print_permissions = True
 	
-	letterhead = None
-	sign_type = None
-	
-	if print_options:
-		print_options = json.loads(print_options)
-		sign_type = print_options['sign_type'] or None
-		letterhead = print_options['letterhead'] or None
-	
 	no_letterhead = not print_letterhead
 
 	if int(print_settings.send_print_as_pdf or 0):
 		out = {
 			"fname": file_name + ".pdf",
-			"fcontent": get_print(doctype, name, print_format=print_format, style=style, html=html, as_pdf=True, doc=doc,no_letterhead = no_letterhead, password=password,options=None,letterhead = letterhead,sign_type=sign_type)
+			"fcontent": get_print(doctype, name, print_format=print_format, style=style, html=html, as_pdf=True, doc=doc,no_letterhead = no_letterhead, password=password,options=None,print_options =print_options)
 		}
 	else:
 		out = {
 			"fname": file_name + ".html",
-			"fcontent": scrub_urls(get_print(doctype, name, print_format=print_format, style=style, html=html, doc=doc, no_letterhead=no_letterhead, password=password,options=None,letterhead = letterhead,sign_type=sign_type)).encode("utf-8")
+			"fcontent": scrub_urls(get_print(doctype, name, print_format=print_format, style=style, html=html, doc=doc, no_letterhead=no_letterhead, password=password,options=None,print_options =print_options)).encode("utf-8")
 		}
 
 	local.flags.ignore_print_permissions = False

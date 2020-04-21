@@ -25,14 +25,10 @@ from frappe.core.doctype.access_log.access_log import make_access_log
 
 
 def report_error(status_code):
-
-	show_traceback = False
-	if cint(frappe.db.get_system_setting('allow_error_traceback')) == 1:
-		show_traceback = True
-	if frappe.session.user == "Administrator":
-		show_traceback = True
 	'''Build error. Show traceback in developer mode'''
-	if (show_traceback and (status_code!=404 or frappe.conf.logging) and not frappe.local.flags.disable_traceback):
+	if (cint(frappe.db.get_system_setting('allow_error_traceback'))
+		and (status_code!=404 or frappe.conf.logging)
+		and not frappe.local.flags.disable_traceback):
 		frappe.errprint(frappe.utils.get_traceback())
 
 	response = build_response("json")
@@ -214,14 +210,14 @@ def send_private_file(path):
 	blacklist = ['.svg', '.html', '.htm', '.xml']
 
 	if extension.lower() in blacklist:
-		response.headers.add(b'Content-Disposition', b'attachment', filename=filename.encode("utf-8"))
+		response.headers.add('Content-Disposition', 'attachment', filename=filename.encode("utf-8"))
 
 	response.mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
 	return response
 
 def handle_session_stopped():
-	frappe.respond_as_web_page(_("Under Maintenance"),
-		_("Please refresh again after a few moments"),
+	frappe.respond_as_web_page(_("Updating"),
+		_("Your system is being updated. Please refresh again after a few moments"),
 		http_status_code=503, indicator_color='orange', fullpage = True, primary_action=None)
 	return frappe.website.render.render("message", http_status_code=503)
