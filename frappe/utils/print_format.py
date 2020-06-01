@@ -13,7 +13,7 @@ base_template_path = "templates/www/printview.html"
 standard_format = "templates/print_formats/standard.html"
 
 @frappe.whitelist()
-def download_multi_pdf(doctype, name, format=None, no_letterhead=0,orientation="Portrait"):
+def download_multi_pdf(doctype, name, format=None, no_letterhead=0,print_options=None):
 	"""
 	Concatenate multiple docs as PDF .
 
@@ -61,13 +61,13 @@ def download_multi_pdf(doctype, name, format=None, no_letterhead=0,orientation="
 
 		# Concatenating pdf files
 		for i, ss in enumerate(result):
-			output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output, no_letterhead=no_letterhead,options = {"orientation": orientation})
+			output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output, no_letterhead=no_letterhead,print_options=print_options)
 		frappe.local.response.filename = "{doctype}.pdf".format(doctype=doctype.replace(" ", "-").replace("/", "-"))
 	else:
 		for doctype_name in doctype:
 			for doc_name in doctype[doctype_name]:
 				try:
-					output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output, no_letterhead=no_letterhead,options = {"orientation": orientation})
+					output = frappe.get_print(doctype, ss, format, as_pdf = True, output = output, no_letterhead=no_letterhead,print_options=print_options)
 				except Exception:
 					frappe.log_error("Permission Error on doc {} of doctype {}".format(doc_name, doctype_name))
 		frappe.local.response.filename = "{}.pdf".format(name)

@@ -456,10 +456,8 @@ frappe.PrintFormatBuilder = Class.extend({
 		});
 	},
 	setup_field_settings: function() {
-
-		this.page.main.find(".field-settings").on("click", () => {
-			var field = $(this).parent();
-
+		this.page.main.find(".field-settings").on("click", e => {
+			const field = $(e.currentTarget).parent();
 			// new dialog
 			var d = new frappe.ui.Dialog({
 				title: "Set Properties",

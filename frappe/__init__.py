@@ -1396,13 +1396,14 @@ def get_print(doctype=None, name=None, print_format=None, style=None, html=None,
 		html = build_page("printview")
 
 	if as_pdf:
-		_print_options = json.loads(print_options)
-		
-		if not options:
-			options = {}
-		
-		options["orientation"] = _print_options.get('orientation') or "Portrait"
-		options["page-size"] =_print_options.get('page_size') or "A4"
+		if print_options:
+			_print_options = json.loads(print_options)
+			
+			if not options:
+				options = {}
+			
+			options["orientation"] = _print_options.get('orientation') or "Portrait"
+			options["page-size"] =_print_options.get('page_size') or "A4"
 
 		return get_pdf(html,options=options, output = output)
 	else:

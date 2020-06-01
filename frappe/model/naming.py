@@ -54,8 +54,6 @@ def set_new_name(doc):
 		frappe.get_meta(doc.doctype).get_field("name_case")
 	)
 
-
-
 def set_name_from_naming_options(autoname, doc):
 	"""
 	Get a name based on the autoname field option
@@ -72,46 +70,7 @@ def set_name_from_naming_options(autoname, doc):
 	elif _autoname.startswith("format:"):
 		doc.name = _format_autoname(autoname, doc)
 	elif "#" in autoname:
-		autoname = get_custom_naming_series(autoname,doc,add_date = False)	
 		doc.name = make_autoname(autoname, doc=doc)
-
-def get_custom_naming_series(key,doc,add_date = False):
-
-	naming_series = key
-	if doc and doc.doctype:
-		add_company_abbr = frappe.get_meta(doc.doctype).add_company_abbr_to_name or 0
-		
-		if add_date:
-			if "PDY" in key:
-				naming_series = naming_series
-			else:
-				date = ""
-				date_string = ""
-				if hasattr(doc, 'posting_date'):
-					date = doc.posting_date
-				elif hasattr(doc, 'transaction_date'):
-					date = doc.transaction_date
-				elif hasattr(doc, 'attendance_date'):
-					date = doc.attendance_date
-				
-				if date:
-					import datetime
-					year = (getdate(date)).year
-					date_string = str(year)
-			
-					naming_series = key + date_string
-		
-		if add_company_abbr == 1:
-			if "COM" in key:
-				naming_series = naming_series
-			else:
-				if hasattr(doc, 'company'):
-					if doc.company:
-						abbr = 	frappe.db.get_value("Company", doc.company, "abbr")
-						if abbr:
-							naming_series = str(abbr) + "-" + naming_series
-						
-	return naming_series
 
 def set_name_by_naming_series(doc):
 	"""Sets name by the `naming_series` property"""
@@ -120,9 +79,8 @@ def set_name_by_naming_series(doc):
 
 	if not doc.naming_series:
 		frappe.throw(frappe._("Naming Series mandatory"))
-
-	naming_series = get_custom_naming_series(doc.naming_series,doc,add_date = True)
-	doc.name = make_autoname(naming_series+".#####", "", doc)
+	
+	doc.name = make_autoname(doc.naming_series+".#####", "", doc)
 
 
 def make_autoname(key="", doctype="", doc=""):
@@ -150,6 +108,7 @@ def make_autoname(key="", doctype="", doc=""):
 		key = key + ".#####"
 	elif "." not in key:
 		frappe.throw(_("Invalid naming series (. missing)") + (_(" for {0}").format(doctype) if doctype else ""))
+
 	parts = key.split('.')
 	n = parse_naming_series(parts, doctype, doc)
 	return n
@@ -159,6 +118,8 @@ def parse_naming_series(parts, doctype='', doc=''):
 	n = ''
 	if isinstance(parts, string_types):
 		parts = parts.split('.')
+		
+	parts = get_custom_naming_series_by_parts(parts,doc,doctype=doctype)
 	series_set = False
 	today = now_datetime()
 	for e in parts:
@@ -237,25 +198,13 @@ def revert_series_if_last(key, name,doc = None):
 
 		if "#" not in hashes:
 			return
-			
-		prefix = get_custom_naming_series(prefix,doc,add_date = False)
-		
-		if '.' in prefix:
-			prefix = parse_naming_series(prefix.split('.'),doc=doc)
-			
-		
 	else:
+		prefix = key
 		
-		if hasattr(doc, 'naming_series'):
-			if key == doc.naming_series:
-				prefix = get_custom_naming_series(key,doc,add_date = True)
-			else:
-				prefix = key
-		else:
-			prefix = key
+	prefix = parse_naming_series(prefix.split('.'),doc=doc)
 
-	if '.' in prefix:
-		prefix = parse_naming_series(prefix.split('.'))
+	# if '.' in prefix:
+		# prefix = parse_naming_series(prefix.split('.'),doc=doc)
 
 	count = cint(name.replace(prefix, ""))
 	current = frappe.db.sql("SELECT `current` FROM `tabSeries` WHERE `name`=%s FOR UPDATE", (prefix,))
@@ -373,3 +322,32 @@ def _format_autoname(autoname, doc):
 	name = re.sub(r"(\{[\w | #]+\})", get_param_value_for_match, autoname_value)
 
 	return name
+
+def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
+
+	naming_series_parts = parts
+	if (doc and doc.doctype) or doctype:
+		date = "PDY"
+		abbr = "COM"
+		date_list = ['PDY','YYYY']
+		
+		# if not any(elem in naming_series_parts for elem in date_list):
+
+
+		if not date in naming_series_parts:
+			if len(naming_series_parts) > 0:
+				if '#' in naming_series_parts[len(naming_series_parts)-1]:
+					naming_series_parts.insert(len(naming_series_parts)-1,date)
+				else:
+					naming_series_parts.insert(len(naming_series_parts),date)
+			else:
+				naming_series_parts = ["PDY"]
+		if abbr in naming_series_parts:
+			pass
+		elif frappe.db.get_value("MRP Autoname Rule", doc.get('doctype') or doctype, "name"):
+			pass
+		else:
+			naming_series_parts.insert(0,abbr)
+			naming_series_parts.insert(1,"-")
+						
+	return naming_series_parts
