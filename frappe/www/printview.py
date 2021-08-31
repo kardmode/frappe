@@ -447,7 +447,7 @@ def make_layout(doc, meta, format_data=None):
 			section = get_new_section()
 			if df.fieldtype=='Section Break' and df.label:
 				section['label'] = df.label
-				if df.force_heading:
+				if df.get("force_heading"):
 					section['force_heading'] = df.force_heading
 				else:
 					section['force_heading'] = 0

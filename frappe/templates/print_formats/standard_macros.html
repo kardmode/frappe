@@ -100,10 +100,11 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 {% macro render_compact_fields_for_parent(df, d, parent_doc, visible_columns) -%}
 	{% for tdf in visible_columns %}
 		{% if tdf.print_parent == df.fieldname %}
-			{% if tdf.print_align == "inline-before" %}
-				<span class="pull-left">{% if tdf.print_label  -%}<strong>{{ _(tdf.print_label) }}:</strong>{% endif %}
-				{{ print_value(tdf, d, parent_doc) }}</span>
-			
+			{% if d.get(tdf.fieldname) %}
+				{% if tdf.print_align == "inline-before" %}
+					<span class="pull-left">{% if tdf.print_label  -%}<strong>{{ _(tdf.print_label) }}:</strong>{% endif %}
+					{{ print_value(tdf, d, parent_doc) }}</span>
+				{% endif %}
 			{% endif %}
 		{% endif %}
 	{% endfor %}
@@ -112,12 +113,14 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	
 	{% for tdf in visible_columns %}
 		{% if tdf.print_parent == df.fieldname %}
-			{% if tdf.print_align == "inline" %}
-				<span>{% if tdf.print_label  -%}<strong>{{ _(tdf.print_label) }}:</strong>{% endif %}
-				{{ print_value(tdf, d, parent_doc) }}</span>
-			{%- elif tdf.print_align != "inline-before" %}
-				<div>{% if tdf.print_label  -%}<strong>{{ _(tdf.print_label) }}:</strong>{% endif %}
-				{{ print_value(tdf, d, parent_doc) }}</div>
+			{% if d.get(tdf.fieldname) %}
+				{% if tdf.print_align == "inline" %}
+					<span>{% if tdf.print_label  -%}<strong>{{ _(tdf.print_label) }}:</strong>{% endif %}
+					{{ print_value(tdf, d, parent_doc) }}</span>
+				{%- elif tdf.print_align != "inline-before" %}
+					<div>{% if tdf.print_label  -%}<strong>{{ _(tdf.print_label) }}:</strong>{% endif %}
+					{{ print_value(tdf, d, parent_doc) }}</div>
+				{% endif %}
 			{% endif %}
 		{% endif %}
 	{% endfor %}
@@ -241,9 +244,13 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{{ "" }}
 {%- endmacro -%}
 
+{%- macro custom_print_value(fieldname, doc, parent_doc=None, visible_columns=None) -%}
+	{%- set df = doc.meta.get_field(fieldname) -%}
+	{{ print_value(df, doc) }}
+{%- endmacro -%}
+
+
 {%- macro print_value(df, doc, parent_doc=None, visible_columns=None) -%}
-	
-	
 	{% if doc.print_templates and doc.print_templates.get(df.fieldname) %}
         {% include doc.print_templates[df.fieldname] %}
 	
@@ -277,8 +284,6 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{% else %}
 		{% if df.fieldtype=="Currency" %}
 			{{ doc.get_formatted(df.fieldname, doc, translated=True) }}
-		{% elif df.fieldtype =="Link" and  df.options =="Project" %}
-			{{ doc.get_formatted(df.fieldname, parent_doc or doc, translated=True)|replace("AMLS - ", "")|replace("SLI - ", "") }}
 		{% else %}
 			{{ doc.get_formatted(df.fieldname, parent_doc or doc, translated=df.translatable) }}
 		{% endif %}
@@ -443,8 +448,10 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 			<div class="page-break"></div>
 			<div class="row section-break">
 			<div class="col-xs-12 column-break">
-			
-				<h4>{{ doc.get_formatted('project', translated=True)|replace("AMLS - ", "")|replace("SLI - ", "") }}
+				
+				
+
+				<h4>{{ custom_print_value('project', doc) }}
 					<br>
 					<small>
 					{{bundle_parent.item_name}} 
