@@ -50,7 +50,15 @@ frappe.form.formatters = {
 		return frappe.form.formatters._right(value==null ? "" : cint(value), options)
 	},
 	Percent: function(value, docfield, options) {
-		return frappe.form.formatters._right(flt(value, 2) + "%", options)
+		const precision = (
+			docfield.precision
+			|| cint(
+				frappe.boot.sysdefaults
+				&& frappe.boot.sysdefaults.float_precision
+			)
+			|| 2
+		);
+		return frappe.form.formatters._right(flt(value, precision) + "%", options);
 	},
 	Rating: function(value) {
 		return `<span class="rating">
@@ -70,7 +78,10 @@ frappe.form.formatters = {
 
 			if ( decimals.length < 3 || decimals.length < precision ) {
 				const fraction = frappe.model.get_value(":Currency", currency, "fraction_units") || 100; // if not set, minimum 2.
-				precision      = cstr(fraction).length - 1;
+
+				if (decimals.length < cstr(fraction).length) {
+					precision = cstr(fraction).length - 1;
+				}
 			}
 		}
 		

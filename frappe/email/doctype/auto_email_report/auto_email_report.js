@@ -66,14 +66,16 @@ frappe.ui.form.on('Auto Email Report', {
 
 			var filters = JSON.parse(frm.doc.filters || '{}');
 
-			let report_filters;
+			let report_filters, report_name;
 
 			if (frm.doc.report_type === 'Custom Report'
 				&& frappe.query_reports[frm.doc.reference_report]
 				&& frappe.query_reports[frm.doc.reference_report].filters) {
 				report_filters = frappe.query_reports[frm.doc.reference_report].filters;
+				report_name = frm.doc.reference_report;
 			} else {
 				report_filters = frappe.query_reports[frm.doc.report].filters;
+				report_name = frm.doc.report;
 			}
 
 			if(report_filters && report_filters.length > 0) {
@@ -92,9 +94,18 @@ frappe.ui.form.on('Auto Email Report', {
 			})
 			report_filters = report_filters_list;
 
-			report_filters.forEach(function(f) {
-				$('<tr><td>' + f.label + '</td><td>'+ frappe.format(filters[f.fieldname], f) +'</td></tr>')
-					.appendTo(table.find('tbody'));
+			const mandatory_css = {
+				"background-color": "#fffdf4",
+				"font-weight": "bold"
+			};
+
+			report_filters.forEach(f => {
+				const css = f.reqd ? mandatory_css : {};
+				const row = $("<tr></tr>").appendTo(table.find("tbody"));
+				$("<td>" + f.label + "</td>").appendTo(row);
+				$("<td>" + frappe.format(filters[f.fieldname], f) +"</td>")
+					.css(css)
+					.appendTo(row);
 			});
 
 			table.on('click', function() {
@@ -110,6 +121,10 @@ frappe.ui.form.on('Auto Email Report', {
 					}
 				});
 				dialog.show();
+
+				//Set query report object so that it can be used while fetching filter values in the report
+				frappe.query_report = new frappe.views.QueryReport({'filters': dialog.fields_list});
+				frappe.query_reports[report_name].onload && frappe.query_reports[report_name].onload(frappe.query_report);
 				dialog.set_values(filters);
 			})
 

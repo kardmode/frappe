@@ -13,6 +13,8 @@ from frappe.utils import cstr, getdate, split_emails, add_days, today, get_last_
 from frappe.model.document import Document
 from frappe.core.doctype.communication.email import make
 from frappe.utils.background_jobs import get_jobs
+from frappe.contacts.doctype.contact.contact import get_contacts_linked_from
+from frappe.contacts.doctype.contact.contact import get_contacts_linking_to
 
 month_map = {'Monthly': 1, 'Quarterly': 3, 'Half-yearly': 6, 'Yearly': 12}
 
@@ -243,13 +245,8 @@ class AutoRepeat(Document):
 
 	def fetch_linked_contacts(self):
 		if self.reference_doctype and self.reference_document:
-			res = frappe.db.get_all('Contact',
-				fields=['email_id'],
-				filters=[
-					['Dynamic Link', 'link_doctype', '=', self.reference_doctype],
-					['Dynamic Link', 'link_name', '=', self.reference_document]
-				])
-
+			res = get_contacts_linking_to(self.reference_doctype, self.reference_document, fields=['email_id'])
+			res += get_contacts_linked_from(self.reference_doctype, self.reference_document, fields=['email_id'])
 			email_ids = list(set([d.email_id for d in res]))
 			if not email_ids:
 				frappe.msgprint(_('No contacts linked to document'), alert=True)
@@ -299,16 +296,19 @@ def get_next_schedule_date(schedule_date, frequency, start_date, repeat_on_day=N
 		next_date = get_next_date(start_date, month_count)
 	else:
 		days = 7 if frequency == 'Weekly' else 1
-		next_date = add_days(start_date, days)
+		next_date = add_days(schedule_date, days)
 
 	# next schedule date should be after or on current date
 	if not for_full_schedule:
 		while getdate(next_date) < getdate(today()):
 			if month_count:
 				month_count += month_map.get(frequency)
-			next_date = get_next_date(start_date, month_count, day_count)
+				next_date = get_next_date(start_date, month_count, day_count)
+			elif days:
+				next_date = add_days(next_date, days)
 
 	return next_date
+
 
 def get_next_date(dt, mcount, day=None):
 	dt = getdate(dt)
@@ -369,7 +369,9 @@ def make_auto_repeat(doctype, docname, frequency = 'Daily', start_date = None, e
 	doc.save()
 	return doc
 
-#method for reference_doctype filter
+# method for reference_doctype filter
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
 def get_auto_repeat_doctypes(doctype, txt, searchfield, start, page_len, filters):
 	res = frappe.db.get_all('Property Setter', {
 		'property': 'allow_auto_repeat',

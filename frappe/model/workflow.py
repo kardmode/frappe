@@ -29,6 +29,8 @@ def get_transitions(doc, workflow = None, raise_exception=False):
 	if doc.is_new():
 		return []
 
+	doc.load_from_db()
+
 	frappe.has_permission(doc, 'read', throw=True)
 	roles = frappe.get_roles()
 
@@ -299,6 +301,7 @@ def set_workflow_state_on_action(doc, workflow_name, action):
 			return
 
 	action_map = {
+		'update_after_submit': '1',
 		'submit': '1',
 		'cancel': '2'
 	}

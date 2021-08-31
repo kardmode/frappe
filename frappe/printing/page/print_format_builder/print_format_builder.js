@@ -478,9 +478,9 @@ frappe.PrintFormatBuilder = Class.extend({
 				title: "Set Properties",
 				fields: [
 					{
-						label:__("Label"),
-						fieldname:"label",
-						fieldtype:"Data"
+						label: __("Label"),
+						fieldname: "label",
+						fieldtype: "Data"
 					},
 					{
 						label: __("Label Location"),
@@ -520,7 +520,7 @@ frappe.PrintFormatBuilder = Class.extend({
 			});
 
 			// set current value
-			if(field.attr('data-align')) {
+			if (field.attr('data-align')) {
 				d.set_value('align', field.attr('data-align'));
 			} else {
 				d.set_value('align', 'left');

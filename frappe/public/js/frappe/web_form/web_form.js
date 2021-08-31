@@ -30,6 +30,7 @@ export default class WebForm extends frappe.ui.FieldGroup {
 		// webform client script
 		frappe.init_client_script && frappe.init_client_script();
 		frappe.web_form.events.trigger('after_load');
+		this.after_load && this.after_load();
 	}
 
 	on(fieldname, handler) {
@@ -86,11 +87,13 @@ export default class WebForm extends frappe.ui.FieldGroup {
 	}
 
 	setup_delete_button() {
-		this.add_button_to_header(
-			'<i class="fa fa-trash" aria-hidden="true"></i>',
-			"light",
-			() => this.delete()
-		);
+		frappe.has_permission(this.doc_type, "", "delete", () => {
+			this.add_button_to_header(
+				'<i class="fa fa-trash" aria-hidden="true"></i>',
+				"light",
+				() => this.delete()
+			);
+		});
 	}
 
 	setup_print_button() {
@@ -102,16 +105,20 @@ export default class WebForm extends frappe.ui.FieldGroup {
 	}
 
 	save() {
-		this.validate && this.validate();
+		let is_new = this.is_new;
+		if (this.validate && !this.validate()) {
+			frappe.throw(__("Couldn't save, please check the data you have entered"), __("Validation Error"));
+		}
 
 		// validation hack: get_values will check for missing data
-		let isvalid = super.get_values(this.allow_incomplete);
+		let doc_values = super.get_values(this.allow_incomplete);
 
-		if (!isvalid) return;
+		if (!doc_values) return;
 
 		if (window.saving) return;
 		let for_payment = Boolean(this.accept_payment && !this.doc.paid);
 
+		Object.assign(this.doc, doc_values);
 		this.doc.doctype = this.doc_type;
 		this.doc.web_form_name = this.name;
 
@@ -134,6 +141,19 @@ export default class WebForm extends frappe.ui.FieldGroup {
 					// Success
 					this.handle_success(response.message);
 					frappe.web_form.events.trigger('after_save');
+					this.after_save && this.after_save();
+					// args doctype and docname added to link doctype in file manager
+					if (is_new) {
+						frappe.call({
+							type: 'POST',
+							method: "frappe.handler.upload_file",
+							args: {
+								file_url: response.message.attachment,
+								doctype: response.message.doctype,
+								docname: response.message.name
+							}
+						});
+					}
 				}
 			},
 			always: function() {

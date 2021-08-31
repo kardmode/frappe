@@ -8,7 +8,7 @@ from frappe import _
 
 from frappe.modules import get_doc_path
 from frappe.core.doctype.access_log.access_log import make_access_log
-from frappe.utils import cint, strip_html
+from frappe.utils import cint, sanitize_html, strip_html
 from six import string_types
 
 no_cache = 1
@@ -20,9 +20,9 @@ def get_context(context):
 	"""Build context for print"""
 	if not ((frappe.form_dict.doctype and frappe.form_dict.name) or frappe.form_dict.doc):
 		return {
-			"body": """<h1>Error</h1>
+			"body": sanitize_html("""<h1>Error</h1>
 				<p>Parameters doctype and name required</p>
-				<pre>%s</pre>""" % repr(frappe.form_dict)
+				<pre>%s</pre>""" % repr(frappe.form_dict))
 		}
 
 	if frappe.form_dict.doc:
@@ -207,6 +207,7 @@ def get_rendered_template(doc, name=None, print_format=None, meta=None,
 		doc.print_section_headings = print_format.show_section_headings
 		doc.print_line_breaks = print_format.line_breaks
 		doc.align_labels_right = print_format.align_labels_right
+		doc.absolute_value = print_format.absolute_value
 
 		def get_template_from_string():
 			return jenv.from_string(get_print_format(doc.doctype,
