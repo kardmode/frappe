@@ -436,7 +436,15 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 					default: defaults.chart_type ?
 						frappe.utils.to_title_case(defaults.chart_type) :
 						'Bar'
+				},
+				{
+					label: __('More Info Fields'),
+					fieldtype: 'MultiSelect',
+					fieldname: 'more_info',
+					options: x_fields,
+					default: defaults.x_axis
 				}
+				
 			],
 			primary_action: (data) => {
 				data.y_axes = data.y_axes.split(',').map(d => d.trim()).filter(Boolean);

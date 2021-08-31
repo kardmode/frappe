@@ -42,6 +42,9 @@ def clear_cache(context):
 	import frappe.sessions
 	import frappe.website.render
 	from frappe.desk.notifications import clear_notifications
+	
+	context.sites = frappe.utils.get_sites()
+	
 	for site in context.sites:
 		try:
 			frappe.connect(site)
@@ -56,6 +59,10 @@ def clear_cache(context):
 def clear_website_cache(context):
 	"Clear website cache"
 	import frappe.website.render
+	
+	context.sites = frappe.utils.get_sites()
+
+	
 	for site in context.sites:
 		try:
 			frappe.init(site=site)

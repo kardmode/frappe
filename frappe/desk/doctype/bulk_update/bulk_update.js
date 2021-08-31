@@ -24,12 +24,17 @@ frappe.ui.form.on('Bulk Update', {
 						value: frm.doc.update_value,
 						condition: frm.doc.condition,
 						limit: frm.doc.limit,
-						force_update:frm.doc.mrp_force_update
+						force_update:frm.doc.mrp_force_update,
+						only_list:frm.doc.mrp_only_list
 					},
 				}).then(r => {
-					let failed = r.message;
+					let failed = r.message[0];
+					let docnames = r.message[1];
+					
 					if (!failed) failed = [];
-
+					let docnames_pretty = docnames.map(f => f.bold ? f.bold(): f).join(', ');
+					frm.set_value("mrp_log",docnames_pretty);
+					
 					if (failed.length && !r._server_messages) {
 						frappe.throw(__('Cannot update {0}', [failed.map(f => f.bold ? f.bold(): f).join(', ')]));
 					} else {

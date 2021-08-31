@@ -598,7 +598,9 @@ class FilterArea {
 				onchange: () => this.refresh_list_view()
 			}
 		];
-
+		
+		var add_docstatus = true;
+		
 		if(this.list_view.custom_filter_configs) {
 			this.list_view.custom_filter_configs.forEach(config => {
 				config.onchange = () => this.refresh_list_view();
@@ -616,6 +618,12 @@ class FilterArea {
 			let options = df.options;
 			let condition = '=';
 			let fieldtype = df.fieldtype;
+			
+			if (df.fieldname == "status")
+			{
+				add_docstatus = false;
+			}
+			
 			if (['Text', 'Small Text', 'Text Editor', 'HTML Editor', 'Data', 'Code', 'Read Only'].includes(fieldtype)) {
 				fieldtype = 'Data';
 				condition = 'like';
@@ -643,8 +651,32 @@ class FilterArea {
 				is_filter: 1,
 			};
 		}));
-
+		
+		var is_submittable = frappe.model.is_submittable(this.list_view.doctype)
+		if(is_submittable && add_docstatus === true)
+		{
+			
+			fields.unshift(
+				{
+					fieldtype: 'Select',
+					label: 'Docstatus',
+					options: [
+						{ "value": "", "label": "All"},
+						{ "value": "0", "label": __("Draft") },
+						{ "value": "1", "label": __("Submitted") },
+						{ "value": "2", "label": __("Cancelled") }
+					],
+					condition: '=',
+					default: "0",
+					fieldname: 'docstatus',
+					onchange: () => this.refresh_list_view()
+				}
+			);
+			
+		}
+		
 		fields.map(df => this.list_view.page.add_field(df));
+
 	}
 
 	get_standard_filters() {

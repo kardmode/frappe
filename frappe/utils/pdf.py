@@ -154,12 +154,17 @@ def read_options_from_html(html):
 		# pass
 	
 	# use regex instead of soup-parser
-	for attr in ("margin-top", "margin-bottom", "margin-left", "margin-right", "page-size", "header-spacing","orientation", "page-size","page-width","page-height"):
+	for attr in ("margin-top", "margin-bottom", "margin-left", "margin-right", "orientation", "page-size", "page-width", "page-height", "header-spacing"):
 		try:
-			pattern = re.compile(r"(\.print-format)([\S|\s][^}]*?)(" + str(attr) + r":)(.+)(mm;)")
-			match = pattern.findall(html)
-			if match:
-				options[attr] = str(match[-1][3]).strip()
+		
+			tag = soup.find(id=attr)
+			if tag and tag.contents:
+				options[attr] = tag.contents
+		
+			# pattern = re.compile(r"(\.print-format)([\S|\s][^}]*?)(" + str(attr) + r":)(.+)(mm;)")
+			# match = pattern.findall(html)
+			# if match:
+				# options[attr] = str(match[-1][3]).strip()
 		except:
 			pass
 

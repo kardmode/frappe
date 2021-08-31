@@ -8,9 +8,11 @@
   "document_type",
   "field",
   "update_value",
+  "mrp_only_list",
   "mrp_force_update",
   "condition",
-  "limit"
+  "limit",
+  "mrp_log"
  ],
  "fields": [
   {
@@ -55,10 +57,22 @@
    "fieldname": "mrp_force_update",
    "fieldtype": "Check",
    "label": "MRP Force Update"
+  },
+  {
+   "fieldname": "mrp_log",
+   "fieldtype": "Long Text",
+   "label": "MRP Log",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "mrp_only_list",
+   "fieldtype": "Check",
+   "label": "MRP Only List"
   }
  ],
  "issingle": 1,
- "modified": "2020-04-17 22:33:39.215353",
+ "modified": "2021-07-31 19:37:50.946253",
  "modified_by": "Administrator",
  "module": "Desk",
  "name": "Bulk Update",
@@ -77,6 +91,5 @@
  ],
  "quick_entry": 1,
  "sort_field": "modified",
- "sort_order": "DESC",
- "track_changes": 1
+ "sort_order": "DESC"
 }

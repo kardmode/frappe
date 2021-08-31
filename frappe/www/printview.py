@@ -71,17 +71,8 @@ def get_print_format_doc(print_format_name, meta):
 def add_mrp_print_templates(doc):
 	doc.mrp_print_templates = {}
 	
-	# doc_details = frappe.db.sql("""
-					# select t1.name , t2.print_field
-					# from `tabMRP Print Templates` t1,
-					# `tabPrint Fields` t2
-					# where
-					# (t1.for_doctype = %s or t1.use_for_all_doctypes = 1)
-					# and t2.name = t1.print_field
-					# """, (doc.doctype), as_dict=True)
-	
 	doc_details = frappe.db.sql("""
-					select t1.name , t2.print_field
+					select t1.template_name , t2.print_field
 					from `tabMRP Print Templates` t1,
 					`tabPrint Fields` t2, 
 					`tabMRP Print Template Type` t3
@@ -91,7 +82,7 @@ def add_mrp_print_templates(doc):
 					""", (doc.doctype), as_dict=True)
 					
 	for d in doc_details:
-		doc.mrp_print_templates[d.name] = d.print_field
+		doc.mrp_print_templates[d.template_name] = d.print_field
 		
 def add_signature(doc,letterhead,sign_type = None):
 
@@ -282,7 +273,8 @@ def get_rendered_template(doc, name=None, print_format=None, meta=None,
 		"letter_head": letter_head.content,
 		"footer": letter_head.footer,
 		"print_settings": frappe.get_doc("Print Settings"),
-		"signature_html":signature_html
+		"signature_html":signature_html,
+		"mrp_print_options":print_options
 	}
 
 	html = template.render(args, filters={"len": len})
@@ -455,6 +447,10 @@ def make_layout(doc, meta, format_data=None):
 			section = get_new_section()
 			if df.fieldtype=='Section Break' and df.label:
 				section['label'] = df.label
+				if df.force_heading:
+					section['force_heading'] = df.force_heading
+				else:
+					section['force_heading'] = 0
 				
 			if df.fieldtype=='Section Break':
 				try:
@@ -529,6 +525,10 @@ def is_visible(df, doc):
 
 def has_value(df, doc):
 	value = doc.get(df.fieldname)
+	
+	if df.fieldtype=="Table":
+		return True
+	
 	if value in (None, ""):
 		return False
 

@@ -555,7 +555,7 @@ export default class Grid {
 
 	setup_visible_columns() {
 		if (this.visible_columns) return;
-
+		var default_max_columns = 11;
 		var total_colsize = 1,
 			fields = this.editable_fields || this.docfields;
 
@@ -594,7 +594,7 @@ export default class Grid {
 				}
 
 				total_colsize += df.colsize;
-				if(total_colsize > 11)
+				if(total_colsize > default_max_columns)
 					return false;
 				this.visible_columns.push([df, df.colsize]);
 			}
@@ -606,7 +606,7 @@ export default class Grid {
 			for(var i in this.visible_columns) {
 				var df = this.visible_columns[i][0];
 				var colsize = this.visible_columns[i][1];
-				if(colsize > 1 && colsize < 11
+				if(colsize > 1 && colsize < default_max_columns
 					&& !in_list(frappe.model.std_fields_list, df.fieldname)) {
 
 					if (passes < 3 && ["Int", "Currency", "Float", "Check", "Percent"].indexOf(df.fieldtype)!==-1) {

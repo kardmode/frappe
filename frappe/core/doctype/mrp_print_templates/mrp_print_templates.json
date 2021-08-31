@@ -1,5 +1,6 @@
 {
- "autoname": "field:template_name",
+ "allow_rename": 1,
+ "autoname": "Prompt",
  "beta": 1,
  "creation": "2019-02-24 16:10:29.082489",
  "doctype": "DocType",
@@ -18,8 +19,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Template Name",
-   "reqd": 1,
-   "unique": 1
+   "reqd": 1
   },
   {
    "fieldname": "print_field",
@@ -42,7 +42,7 @@
    "options": "MRP Print Template Type"
   }
  ],
- "modified": "2020-03-11 23:26:28.161989",
+ "modified": "2020-06-11 23:17:11.324894",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "MRP Print Templates",

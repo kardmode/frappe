@@ -234,11 +234,12 @@ frappe.PrintFormatBuilder = Class.extend({
 			section.columns.push(column);
 			section.no_of_columns += 1;
 		}
-
-		var set_section = function(label,page_break) {
+		
+		var set_section = function(label,page_break, force_heading) {
 			section = me.get_new_section();
 			if(label) section.label = label;
 			if(page_break) section.page_break = page_break;
+			if(force_heading) section.force_heading = force_heading;
 			column = null;
 			me.layout_data.push(section);
 		}
@@ -265,7 +266,7 @@ frappe.PrintFormatBuilder = Class.extend({
 			}
 
 			if(f.fieldtype==="Section Break") {
-				set_section(f.label,f.page_break);
+				set_section(f.label,f.page_break,f.force_heading);
 
 			} else if(f.fieldtype==="Column Break") {
 				set_column();
@@ -394,6 +395,7 @@ frappe.PrintFormatBuilder = Class.extend({
 			var no_of_columns = section.find(".section-column").length;
 			var label = section.attr('data-label');
 			var page_break = section.attr('data-page-break');
+			var force_heading = section.attr('data-force-heading');
 			// new dialog
 			var d = new frappe.ui.Dialog({
 				title: "Edit Section",
@@ -417,6 +419,12 @@ frappe.PrintFormatBuilder = Class.extend({
 						description: __('Will add a page break before section')
 					},
 					{
+						label:__("Force Heading"),
+						fieldname:"force_heading",
+						fieldtype:"Check",
+						description: __('Will show section heading even if disabled in defaults')
+					},
+					{
 						label: __("Remove Section"),
 						fieldname: "remove_section",
 						fieldtype: "Button",
@@ -438,6 +446,12 @@ frappe.PrintFormatBuilder = Class.extend({
 				d.set_input("page_break", 1);
 			else
 				d.set_input("page_break", 0);
+			
+			if (force_heading == 1)
+				d.set_input("force_heading", 1);
+			else
+				d.set_input("force_heading", 0);
+			
 			d.set_primary_action(__("Update"), function() {
 				// resize number of columns
 				me.update_columns_in_section(section, no_of_columns,
@@ -447,6 +461,7 @@ frappe.PrintFormatBuilder = Class.extend({
 				section.find('.section-label').html(d.get_value('label') || '');
 				
 				section.attr('data-page-break', d.get_value('page_break') || 0);
+				section.attr('data-force-heading', d.get_value('force_heading') || 0);
 				d.hide();
 			});
 
@@ -978,7 +993,7 @@ frappe.PrintFormatBuilder = Class.extend({
 
 		// add pages
 		this.page.main.find(".print-format-builder-section").each(function() {
-			var section = {"fieldtype": "Section Break", 'label': $(this).attr('data-label') || '', 'page_break': $(this).attr('data-page-break') || 0};
+			var section = {"fieldtype": "Section Break", 'label': $(this).attr('data-label') || '', 'page_break': $(this).attr('data-page-break') || 0, 'force_heading': $(this).attr('data-force-heading') || 0};
 			data.push(section);
 			$(this).find(".print-format-builder-column").each(function() {
 				data.push({"fieldtype": "Column Break"});

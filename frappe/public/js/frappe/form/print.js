@@ -64,6 +64,32 @@ frappe.ui.form.PrintPreview = Class.extend({
 				me.print_sel.trigger("change"); 
 			});
 			
+		this.mrp_print_caption_options = {}
+		
+		this.mrp_print_caption_btn = this.wrapper
+			.find(".btn-print-caption-options")
+			.on("click", function() {
+				
+				var dialog = new frappe.ui.Dialog({
+					title: __("Add Caption"),
+					fields: [
+						{fieldname:'sec_0', fieldtype:'Section Break'},
+						{fieldname:'caption_text', fieldtype:'Data', label: __('Caption Text'),reqd:0},
+						{fieldname:'show_in_header', fieldtype:'Check', label: __('Show In Header'),reqd:0,default:1},
+						{fieldname:'show_in_footer', fieldtype:'Check', label: __('Show In Footer'),reqd:0},
+					]
+				});
+				
+				dialog.set_primary_action(__("Add"), function() {
+					me.mrp_print_caption_options =  dialog.get_values();
+					me.print_sel.trigger("change"); 
+					dialog.hide();
+				});
+				dialog.show();
+				
+				
+			});
+			
 		this.mrp_print_sign_options = {}
 			
 		this.mrp_print_sign_btn = this.wrapper
@@ -111,6 +137,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 				dialog.set_primary_action(__("Sign"), function() {
 				
 					me.mrp_print_sign_options =  dialog.get_values();
+					me.print_sel.trigger("change"); 
 					dialog.hide();
 
 				
@@ -199,10 +226,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 				me.print_page_size = "A4";
 			}
 				
-			var mrp_print_options = {'letterhead':me.selected_letterhead(),
-				'sign_type': me.selected_sign(),
-				'orientation':me.orientation,
-				'page_size':me.print_page_size};
+			var mrp_print_options = me.mrp_get_print_options();
 			
 			var w = window.open(
 				frappe.urllib.get_full_url("/api/method/frappe.utils.print_format.download_pdf?"
@@ -459,6 +483,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 		}
 	},
 	get_print_html: function (callback) {
+		var me = this;
 		let print_format = this.get_print_format();
 		if (print_format.raw_printing) {
 			callback({
@@ -470,7 +495,7 @@ frappe.ui.form.PrintPreview = Class.extend({
 			this._req.abort();
 		}
 		
-		var mrp_print_options = {'letterhead':this.selected_letterhead(), 'sign_type': this.selected_sign()};
+		var mrp_print_options = me.mrp_get_print_options();
 
 		this._req = frappe.call({
 			method: "frappe.www.printview.get_html_and_style",
@@ -551,7 +576,8 @@ frappe.ui.form.PrintPreview = Class.extend({
 		this.print_signs.unshift(["None"]);
 		this.print_sign_sel.empty().add_options(this.print_signs);
 
-		
+		this.mrp_print_caption_options = {};
+
 		
 		return this.print_sel
 			.empty().add_options(this.print_formats);
@@ -565,6 +591,13 @@ frappe.ui.form.PrintPreview = Class.extend({
 	},
 	selected_sign: function() {
 		return this.print_sign_sel.val() || "None";
+	},
+	mrp_get_print_options:function(){
+		return {'letterhead':this.selected_letterhead(),
+				'sign_type': this.selected_sign(),
+				'orientation':this.orientation,
+				'page_size':this.print_page_size,
+				'mrp_print_caption_options':this.mrp_print_caption_options};
 	},
 	is_old_style: function(format) {
 		return this.get_print_format(format).print_format_type==="Client";

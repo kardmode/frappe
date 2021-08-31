@@ -12,7 +12,7 @@ class BulkUpdate(Document):
 	pass
 
 @frappe.whitelist()
-def update(doctype, field, value, condition='', limit=500,force_update=False):
+def update(doctype, field, value, condition='', limit=500,force_update=False,only_list=False):
 	if not limit or cint(limit) > 500:
 		limit = 500
 
@@ -28,11 +28,13 @@ def update(doctype, field, value, condition='', limit=500,force_update=False):
 	data = {}
 	data[field] = value
 
+	if only_list:
+		return [[],docnames]
 	
 	if force_update:
-		return submit_cancel_or_update_docs(doctype, docnames, 'force-update', data)
+		return [submit_cancel_or_update_docs(doctype, docnames, 'force-update', data),docnames]
 	else:
-		return submit_cancel_or_update_docs(doctype, docnames, 'update', data)
+		return [submit_cancel_or_update_docs(doctype, docnames, 'update', data),docnames]
 
 @frappe.whitelist()
 def submit_cancel_or_update_docs(doctype, docnames, action='submit', data=None):
@@ -42,6 +44,7 @@ def submit_cancel_or_update_docs(doctype, docnames, action='submit', data=None):
 		data = frappe.parse_json(data)
 
 	failed = []
+	success = []
 
 	for i, d in enumerate(docnames, 1):
 		doc = frappe.get_doc(doctype, d)
@@ -50,6 +53,7 @@ def submit_cancel_or_update_docs(doctype, docnames, action='submit', data=None):
 			if action == 'submit' and doc.docstatus==0:
 				doc.submit()
 				message = _('Submiting {0}').format(doctype)
+				
 			elif action == 'cancel' and doc.docstatus==1:
 				doc.cancel()
 				message = _('Cancelling {0}').format(doctype)

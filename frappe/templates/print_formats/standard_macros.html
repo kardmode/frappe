@@ -3,7 +3,6 @@
 		{%- if df.fieldname=="packed_items" -%}
 			{{ render_table_custom(df, doc) }}
 		{%- else -%}
-		
 			{{ render_table(df, doc) }}
 		{%- endif -%}
 	{%- elif df.fieldtype=="HTML" and df.options -%}
@@ -18,10 +17,11 @@
 	{%- elif df.fieldtype=="Signature" -%}
 		{{ render_signature(df, doc) }}
 	{%- elif df.fieldtype=="Currency" -%}
-		{%- if doc.print_templates and doc.print_templates.get(df.fieldname) -%}
-			{% include doc.print_templates[df.fieldname] %}
-		{%- elif doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname) -%}
+		{%- if doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname) -%}
 			{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"doc":doc}) }}	
+		{%- elif doc.print_templates and doc.print_templates.get(df.fieldname) -%}
+			{% include doc.print_templates[df.fieldname] %}
+		
 		{%- else -%}
 			{{ render_field_with_label(df, doc) }}
 		{%- endif -%}
@@ -49,7 +49,7 @@
 				<thead>
 					<tr>
 						{% if not df.get("hide_sr") or df.hide_sr == None or df.hide_sr == "0" or df.hide_sr == 0 %}
-							<th style="width: 30px" class="table-sr">{{ _("Sr") }}</th>
+							<th style="width: 20px" class="table-sr">{{ _("Sr") }}</th>
 						{% endif %}	
 						{% for tdf in visible_columns %}
 						{% if ((not data[0].flags.compact_item_print) or tdf.fieldname in doc.get(df.fieldname)[0].flags.compact_item_fields) and (not tdf.get("print_parent") or tdf.print_parent == "" or tdf.print_parent == None) %}
@@ -248,7 +248,7 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
         {% include doc.print_templates[df.fieldname] %}
 	
 	{% elif parent_doc and parent_doc.mrp_print_templates and parent_doc.mrp_print_templates.get(df.fieldname) %}
-		{{ frappe.render_template(parent_doc.mrp_print_templates[df.fieldname], {"df":df,"doc":doc}) }}	
+		{{ frappe.render_template(parent_doc.mrp_print_templates[df.fieldname], {"df":df,"doc":doc,"parent_doc":parent_doc}) }}	
 	
 	{% elif doc and doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname)%}
 	
@@ -323,17 +323,14 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 
 {% macro print_heading_template(doc) -%}
 	
-	
 	{% if doc.print_heading_template %}
-        {{ frappe.render_template(doc.print_heading_template, {"doc":doc}) }}
+		{{ frappe.render_template(doc.print_heading_template, {"doc":doc}) }}
     {% else %}
-    <div class="print-heading">
-		<h2>{{ doc.select_print_heading or (doc.print_heading if doc.print_heading != None
-			else _(doc.doctype)) }}<br>
-				<small>{{ doc.name }}</small>
-
-        </h2>
-    </div>
+		<!-- <div class="print-heading">
+			<h2>{{ doc.select_print_heading or (doc.print_heading if doc.print_heading != None else _(doc.doctype)) }}
+				<br><small>{{ doc.name }}</small>
+			</h2>
+		</div> -->
 	{% endif %}
 
 {%- endmacro %}
@@ -347,11 +344,23 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{{am_prefix}}
 {%- endmacro %}
 
-{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None) -%}
+{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None,mrp_print_options=None) -%}
 	
-	<div class="letter-head">
+	{%- set header_caption = "" -%} 
+	{% if mrp_print_options and mrp_print_options.mrp_print_caption_options 
+		and mrp_print_options.mrp_print_caption_options.caption_text 
+		and mrp_print_options.mrp_print_caption_options.show_in_header == 1 %}
+		{%- set header_caption = mrp_print_options.mrp_print_caption_options.caption_text -%} 
+	{% endif %}
+	
+	
+	<div class="letter-head" style="position:relative;">
 	{% if letter_head and not no_letterhead %}
 		{{ letter_head }}
+		{% if (header_caption != "") %}<div class="header-caption">{{header_caption}}</div>{% endif %}
+		<div style="clear: both; margin-bottom: 1px;"><div id="variables" style="display: none;"></div></div>
+	{% else %}
+		{% if (header_caption != "") %}<div class="header-caption">{{header_caption}}</div>{% endif %}
 	{% endif %}
 	</div>
    
@@ -362,46 +371,47 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
     {% else %}
 		{{ print_heading_template(doc) }}
 	{% endif %}
-
-	
-	
 	
 	{%- if doc.meta.is_submittable and doc.docstatus==0 and (print_settings==None or print_settings.add_draft_heading) -%}
-	<div class="text-center document-status" document-status="draft">
-		<h4 style="margin: 0px;">{{ _("DRAFT") }}</h4>
-    </div>
+		<div class="text-center document-status" document-status="draft">
+			<h4 style="color:darkred; margin: 0px;">{{ _("DRAFT") }}</h4>
+		</div>
+	{%- elif doc.meta.is_submittable and doc.docstatus==2 -%}
+		<div class="text-center" document-status="cancelled">
+			<h4 style="color:darkred; margin: 0px;">{{ _("CANCELLED") }}</h4>
+		</div>
 	{%- endif -%}
-	{%- if doc.meta.is_submittable and doc.docstatus==2-%}
-	<div class="text-center" document-status="cancelled">
-		<h4 style="margin: 0px;">{{ _("CANCELLED") }}</h4>
-    </div>
-	{%- endif -%}
+	
+	
 {%- endmacro -%}
 
 
-{%- macro add_footer(max_pages,doc,no_letterhead,footer,signature_html,print_settings=None) -%}
+{%- macro add_footer(max_pages,doc,no_letterhead,footer,signature_html,print_settings=None,mrp_print_options=None) -%}
 	<div id="footer-html" class="hidden-pdf">
-		<div class="letter-head-footer">
-
+		<div class="letter-head-footer" style="position:relative;">
+			
 			{{ signature_html }}
 			
+			
 			{% if print_settings.repeat_header_footer %}
-				
+						
 					{% if not no_letterhead and footer %}
-
-					{{ footer }}
-
+						{{ footer }}
 					{% endif %}
 					
 					{% if not no_letterhead %}
 
-					
-
 					{% endif %}
-					
-			<!-- {% else %}
-			 <div id="variables" style="display: none;"><span id="margin-bottom">25mm</span></div> -->
+
 			{% endif %}
+			
+			{% if mrp_print_options and mrp_print_options.mrp_print_caption_options 
+				and mrp_print_options.mrp_print_caption_options.caption_text
+				and mrp_print_options.mrp_print_caption_options.show_in_footer == 1 %}
+				<div class="footer-caption text-right">{{ _(mrp_print_options.mrp_print_caption_options.caption_text) }}</h2>
+
+			{% endif %}
+			
 		</div>
 		<!-- <p class="text-right small page-number visible-pdf">
 		{{ _("{0} of {1}").format('<span class="page"></span>', '<span class="topage"></span>') }}
@@ -450,7 +460,7 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 						<thead>
 							<tr>
 								{% if not df.get("hide_sr") or df.hide_sr == None or df.hide_sr == "0" or df.hide_sr == 0 %}
-									<th style="width: 30px" class="table-sr">{{ _("Sr") }}</th>
+									<th style="width: 20px" class="table-sr">{{ _("Sr") }}</th>
 								{% endif %}	
 								{% for tdf in visible_columns %}
 								{% if ((not data[0].flags.compact_item_print) or tdf.fieldname in doc.get(df.fieldname)[0].flags.compact_item_fields) and (not tdf.get("print_parent") or tdf.print_parent == "" or tdf.print_parent == None) %}
