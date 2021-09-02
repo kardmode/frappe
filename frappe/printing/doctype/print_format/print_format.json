@@ -3,10 +3,6 @@
  "autoname": "Prompt",
  "creation": "2013-01-23 19:54:43",
  "doctype": "DocType",
-<<<<<<< HEAD
- "document_type": "Printing",
-=======
->>>>>>> 72baab0866ff1ff27b502f601e77c95d4f526ab5
  "engine": "InnoDB",
  "field_order": [
   "doc_type",
@@ -24,10 +20,7 @@
   "align_labels_right",
   "show_section_headings",
   "line_breaks",
-<<<<<<< HEAD
-=======
   "absolute_value",
->>>>>>> 72baab0866ff1ff27b502f601e77c95d4f526ab5
   "column_break_11",
   "default_print_language",
   "font",
@@ -145,15 +138,12 @@
    "label": "Show Line Breaks after Sections"
   },
   {
-<<<<<<< HEAD
-=======
    "default": "0",
    "fieldname": "absolute_value",
    "fieldtype": "Check",
    "label": "Show Absolute Values"
   },
   {
->>>>>>> 72baab0866ff1ff27b502f601e77c95d4f526ab5
    "fieldname": "column_break_11",
    "fieldtype": "Column Break"
   },
@@ -209,9 +199,6 @@
    "default": "0",
    "fieldname": "print_format_builder",
    "fieldtype": "Check",
-<<<<<<< HEAD
-   "label": "Print Format Builder"
-=======
    "hidden": 1,
    "label": "Print Format Builder"
   },
@@ -222,16 +209,11 @@
    "fieldname": "absolute_value",
    "fieldtype": "Check",
    "label": "Show Absolute Values"
->>>>>>> 72baab0866ff1ff27b502f601e77c95d4f526ab5
   }
  ],
  "icon": "fa fa-print",
  "idx": 1,
-<<<<<<< HEAD
- "modified": "2020-03-11 22:41:49.991985",
-=======
  "modified": "2020-12-14 11:38:49.132061",
->>>>>>> 72baab0866ff1ff27b502f601e77c95d4f526ab5
  "modified_by": "Administrator",
  "module": "Printing",
  "name": "Print Format",
@@ -252,8 +234,4 @@
  "sort_field": "modified",
  "sort_order": "DESC",
  "track_changes": 1
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 72baab0866ff1ff27b502f601e77c95d4f526ab5

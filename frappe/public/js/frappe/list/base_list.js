@@ -99,7 +99,7 @@ frappe.views.BaseList = class BaseList {
 	build_fields() {
 		// fill in missing doctype
 		this.fields = this.fields.map(f => {
-			if (typeof f === 'string') {
+			if (typeof f === 'string' && f !== "") {
 				f = [f, this.doctype];
 			}
 			return f;
