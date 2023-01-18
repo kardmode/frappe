@@ -416,31 +416,31 @@ $.extend(frappe.model, {
 	},
 
 	trigger: function(fieldname, value, doc) {
-		let tasks = [];
-		var runner = function(events, event_doc) {
-			$.each(events || [], function(i, fn) {
-				if(fn) {
-					let _promise = fn(fieldname, value, event_doc || doc);
+		const tasks = [];
+
+		function enqueue_events(events) {
+			if (!events) return;
+
+			for (const fn of events) {
+				if (!fn) continue;
+
+				tasks.push(() => {
+					const return_value = fn(fieldname, value, doc);
 
 					// if the trigger returns a promise, return it,
 					// or use the default promise frappe.after_ajax
-					if (_promise && _promise.then) {
-						return _promise;
+					if (return_value && return_value.then) {
+						return return_value;
 					} else {
 						return frappe.after_server_call();
 					}
-				}
-			});
+				});
+			}
 		};
 
 		if(frappe.model.events[doc.doctype]) {
-			tasks.push(() => {
-				return runner(frappe.model.events[doc.doctype][fieldname]);
-			});
-
-			tasks.push(() => {
-				return runner(frappe.model.events[doc.doctype]['*']);
-			});
+			enqueue_events(frappe.model.events[doc.doctype][fieldname]);
+			enqueue_events(frappe.model.events[doc.doctype]['*']);
 		}
 
 		return frappe.run_serially(tasks);
@@ -561,12 +561,12 @@ $.extend(frappe.model, {
 			var args = d.get_values();
 			if(!args) return;
 			return frappe.call({
-				method:"frappe.model.rename_doc.rename_doc",
+				method:"frappe.client.rename_doc",
 				args: {
 					doctype: doctype,
-					old: docname,
-					"new": args.new_name,
-					"merge": args.merge
+					old_name: docname,
+					new_name: args.new_name,
+					merge: args.merge,
 				},
 				btn: d.get_primary_btn(),
 				callback: function(r,rt) {

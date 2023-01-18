@@ -690,8 +690,10 @@ class Document(BaseDocument):
 			elif self.docstatus==1:
 				self._action = "submit"
 				self.check_permission("submit")
+			elif self.docstatus==2:
+				raise frappe.DocstatusTransitionError(_("Cannot change docstatus from 0 (Draft) to 2 (Cancelled)"))
 			else:
-				raise frappe.DocstatusTransitionError(_("Cannot change docstatus from 0 to 2"))
+				raise frappe.ValidationError(_("Invalid docstatus"), self.docstatus)
 
 		elif docstatus==1:
 			if self.docstatus==1:
@@ -700,8 +702,10 @@ class Document(BaseDocument):
 			elif self.docstatus==2:
 				self._action = "cancel"
 				self.check_permission("cancel")
+			elif self.docstatus==0:
+				raise frappe.DocstatusTransitionError(_("Cannot change docstatus from 1 (Submitted) to 0 (Draft)"))
 			else:
-				raise frappe.DocstatusTransitionError(_("Cannot change docstatus from 1 to 0"))
+				raise frappe.ValidationError(_("Invalid docstatus"), self.docstatus)
 
 		elif docstatus==2:
 			raise frappe.ValidationError(_("Cannot edit cancelled document"))
@@ -789,14 +793,14 @@ class Document(BaseDocument):
 
 	def run_method(self, method, *args, **kwargs):
 		"""run standard triggers, plus those in hooks"""
-		if "flags" in kwargs:
-			del kwargs["flags"]
 
-		if hasattr(self, method) and hasattr(getattr(self, method), "__call__"):
-			fn = lambda self, *args, **kwargs: getattr(self, method)(*args, **kwargs)
-		else:
-			# hack! to run hooks even if method does not exist
-			fn = lambda self, *args, **kwargs: None
+		def fn(self, *args, **kwargs):
+			method_object = getattr(self, method, None)
+
+			# Cannot have a field with same name as method
+			# If method found in __dict__, expect it to be callable
+			if method in self.__dict__ or callable(method_object):
+				return method_object(*args, **kwargs)
 
 		fn.__name__ = str(method)
 		out = Document.hook(fn)(self, *args, **kwargs)
@@ -858,23 +862,23 @@ class Document(BaseDocument):
 	def _submit(self):
 		"""Submit the document. Sets `docstatus` = 1, then saves."""
 		self.docstatus = 1
-		self.save()
+		return self.save()
 
 	@whitelist.__func__
 	def _cancel(self):
 		"""Cancel the document. Sets `docstatus` = 2, then saves."""
 		self.docstatus = 2
-		self.save()
+		return self.save()
 
 	@whitelist.__func__
 	def submit(self):
 		"""Submit the document. Sets `docstatus` = 1, then saves."""
-		self._submit()
+		return self._submit()
 
 	@whitelist.__func__
 	def cancel(self):
 		"""Cancel the document. Sets `docstatus` = 2, then saves."""
-		self._cancel()
+		return self._cancel()
 
 	def delete(self, ignore_permissions=False):
 		"""Delete document."""

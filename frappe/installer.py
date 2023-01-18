@@ -180,6 +180,7 @@ def remove_app(app_name, dry_run=False, yes=False, no_backup=False, force=False)
 
 	if not dry_run:
 		remove_from_installed_apps(app_name)
+		frappe.get_single('Installed Applications').update_versions()
 		frappe.db.commit()
 
 	click.secho("Uninstalled App {0} from Site {1}".format(app_name, frappe.local.site), fg="green")
@@ -404,6 +405,6 @@ def is_downgrade(sql_file_path, verbose=False):
 						downgrade = backup_version > current_version
 
 						if verbose and downgrade:
-							print("Your site will be downgraded from Frappe {0} to {1}".format(current_version, backup_version))
+							print("Your site will be downgraded from Frappe {0} to {1}".format(backup_version, current_version))
 
 						return downgrade

@@ -261,11 +261,17 @@ def get_rendered_template(doc, name=None, print_format=None, meta=None,
 		letter_head.footer = frappe.utils.jinja.render_template(letter_head.footer, {"doc": doc.as_dict()})
 
 	convert_markdown(doc, meta)
-	signature_html = add_signature(doc,letterhead,sign_type)
 	
+	signature_html = add_signature(doc,letterhead,sign_type)
 	add_mrp_print_templates(doc)
 	
-	args = {
+	args = {}
+
+	# extract `print_heading_template` from the first field and remove it
+	if format_data and format_data[0].get("fieldname") == "print_heading_template":
+		args["print_heading_template"] = format_data.pop(0).get("options")
+
+	args.update({
 		"doc": doc,
 		"meta": frappe.get_meta(doc.doctype),
 		"layout": make_layout(doc, meta, format_data),
@@ -276,7 +282,7 @@ def get_rendered_template(doc, name=None, print_format=None, meta=None,
 		"print_settings": frappe.get_doc("Print Settings"),
 		"signature_html":signature_html,
 		"mrp_print_options":print_options
-	}
+	})
 
 	html = template.render(args, filters={"len": len})
 
@@ -411,13 +417,6 @@ def make_layout(doc, meta, format_data=None):
 	:param format_data: Fields sequence and properties defined by Print Format Builder."""
 	layout, page = [], []
 	layout.append(page)
-
-	if format_data:
-		# extract print_heading_template from the first field
-		# and remove the field
-		if format_data[0].get("fieldname") == "print_heading_template":
-			doc.print_heading_template = format_data[0].get("options")
-			format_data = format_data[1:]
 
 	def get_new_section(): return  {'columns': [], 'has_data': False}
 

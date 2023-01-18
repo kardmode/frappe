@@ -331,10 +331,11 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{% endif -%}
 {%- endmacro %}
 
-{% macro print_heading_template(doc) -%}
+
+{% macro print_heading(doc,print_heading_template) -%}
 	
-	{% if doc.print_heading_template %}
-		{{ frappe.render_template(doc.print_heading_template, {"doc":doc}) }}
+	{% if print_heading_template %}
+        {{ frappe.render_template(print_heading_template, {"doc":doc}) }}
     {% else %}
 		<!-- <div class="print-heading">
 			<h2>{{ doc.select_print_heading or (doc.print_heading if doc.print_heading != None else _(doc.doctype)) }}
@@ -354,8 +355,7 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{{am_prefix}}
 {%- endmacro %}
 
-{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None,mrp_print_options=None) -%}
-	
+{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None,print_heading_template=None,mrp_print_options=None) -%}
 	{%- set header_caption = "" -%} 
 	{% if mrp_print_options and mrp_print_options.mrp_print_caption_options 
 		and mrp_print_options.mrp_print_caption_options.caption_text 
@@ -373,13 +373,13 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 		{% if (header_caption != "") %}<div class="header-caption">{{header_caption}}</div>{% endif %}
 	{% endif %}
 	</div>
-   
+ 
 	{% if doc.meta.is_submittable and doc.amended_from %}
 		{%- set new_doc_name = doc -%}
 		{% set test = new_doc_name.update({'name': get_main_prefix(new_doc_name)}) %}
-		{{ print_heading_template(new_doc_name) }}
+		{{ print_heading(new_doc_name,print_heading_template) }}
     {% else %}
-		{{ print_heading_template(doc) }}
+		{{ print_heading(doc,print_heading_template) }}
 	{% endif %}
 	
 	{%- if doc.meta.is_submittable and doc.docstatus==0 and (print_settings==None or print_settings.add_draft_heading) -%}
