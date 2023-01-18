@@ -357,27 +357,33 @@ def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
 
 	naming_series_parts = parts
 	if (doc and doc.doctype) or doctype:
-		date = "PDY"
-		abbr = "COM"
-		date_list = ['PDY','YYYY']
+		default_date = "PDY"
+		company = "COM"
 		
+		autoname_details = frappe.db.get_value(
+			"MRP Autoname Rule", doc.get('doctype') or doctype, ["disable_company", "disable_date"], as_dict=1
+		)
+		
+		date_list = ['PDY','YYYY']		
 		# if not any(elem in naming_series_parts for elem in date_list):
-
-
-		if not date in naming_series_parts:
-			if len(naming_series_parts) > 0:
-				if '#' in naming_series_parts[len(naming_series_parts)-1]:
-					naming_series_parts.insert(len(naming_series_parts)-1,date)
-				else:
-					naming_series_parts.insert(len(naming_series_parts),date)
+		
+		if default_date not in naming_series_parts:
+			if autoname_details and autoname_details.disable_date == True:
+				pass
 			else:
-				naming_series_parts = ["PDY"]
-		if abbr in naming_series_parts:
-			pass
-		elif frappe.db.get_value("MRP Autoname Rule", doc.get('doctype') or doctype, "name"):
-			pass
-		else:
-			naming_series_parts.insert(0,abbr)
-			naming_series_parts.insert(1,"-")
+				if len(naming_series_parts) > 0:
+					if '#' in naming_series_parts[len(naming_series_parts)-1]:
+						naming_series_parts.insert(len(naming_series_parts)-1,default_date)
+					else:
+						naming_series_parts.insert(len(naming_series_parts),default_date)
+				else:
+					naming_series_parts = ["PDY"]		
+		
+		if company not in naming_series_parts:
+			if autoname_details and autoname_details.disable_company == True:
+				pass
+			else:
+				naming_series_parts.insert(0,company)
+				naming_series_parts.insert(1,"-")
 						
 	return naming_series_parts

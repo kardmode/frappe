@@ -397,10 +397,13 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 
 
 {%- macro add_footer(max_pages,doc,no_letterhead,footer,signature_html,print_settings=None,mrp_print_options=None) -%}
+
+			{{ signature_html }}
+
+
 	<div id="footer-html" class="hidden-pdf">
 		<div class="letter-head-footer" style="position:relative;">
 			
-			{{ signature_html }}
 			
 			
 			{% if print_settings.repeat_header_footer %}

@@ -37,25 +37,14 @@ frappe.ui.form.ControlLink = frappe.ui.form.ControlData.extend({
 					me.$link_open.attr('href', frappe.utils.get_form_link(doctype, name));
 					me.$link_sync.on('click', function(event) {
 						event.preventDefault();
-						
-						if(this.frm && this.frm.doc) {
-							if(this.frm.script_manager.has_handlers(this.df.fieldname, this.doctype)) {
-								this.frm.script_manager.trigger(this.df.fieldname, this.doctype, this.docname);
+						if(me.frm && me.frm.doc) {
+							if(me.frm.script_manager.has_handlers(me.df.fieldname, me.doctype)) {
+								me.frm.script_manager.trigger(me.df.fieldname, me.doctype, me.docname);
 							} else {
-								this.frm.runscript(this.df.options, this);
+								me.frm.runscript(me.df.options, me);
 							}
+							me.frm.dirty();
 						}
-						// else if(this.df.click) {
-							// this.df.click();
-						// }
-						
-						
-						// if(me.frm.script_manager.has_handlers(me.df.fieldname, me.doctype)) 
-						// {
-							// me.frm.script_manager.trigger(me.df.fieldname, me.doctype, me.docname);
-						// } else {
-							// me.frm.runscript(me.doctype, me);
-						// }
 					});
 					
 

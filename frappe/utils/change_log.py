@@ -169,15 +169,15 @@ def check_for_update():
 
 def parse_latest_non_beta_release(response):
 	"""
-	Pasrses the response JSON for all the releases and returns the latest non prerelease
-
+	Parses the response JSON for all the releases and returns the latest non prerelease
 	Parameters
 	response (list): response object returned by github
-
 	Returns
 	json   : json object pertaining to the latest non-beta release
 	"""
-	version_list = [release.get('tag_name').strip('v') for release in response if not release.get('prerelease')]
+	version_list = [
+		release.get("tag_name").strip("v") for release in response if not release.get("prerelease")
+	]
 
 	if version_list:
 		return sorted(version_list, key=Version, reverse=True)[0]
