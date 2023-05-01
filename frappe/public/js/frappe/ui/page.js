@@ -210,13 +210,6 @@ frappe.ui.Page = class Page {
 		$('<div class="close-sidebar">').hide().appendTo(this.sidebar).fadeIn();
 		let scroll_container = $("html").css("overflow-y", "hidden");
 
-
-		/* if(this.sidebar.find(".close-sidebar").length == 0)
-		{
-			$('<div class="close-sidebar">').hide().appendTo(this.sidebar).fadeIn();
-		} */
-
-
 		this.sidebar.find(".close-sidebar").on("click", (e) => this.close_sidebar(e));
 		this.sidebar.on("click", "button:not(.dropdown-toggle)", (e) => this.close_sidebar(e));
 

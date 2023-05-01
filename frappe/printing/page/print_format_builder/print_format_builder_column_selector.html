@@ -25,6 +25,7 @@
 	<div class="col-sm-2 text-center"><h4>{{ __("Align") }}</h4></div>
 </div>
 <div class="column-selector-list">
+<<<<<<< HEAD
     {% for (i=0; i < fields.length; i++) { var f = fields[i]; %}
         {% var selected = in_list(column_names, f.fieldname) %}
         <div class="row column-selector-row">
@@ -56,6 +57,29 @@
 					maxlength="140" data-fieldtype="Select" 
 					data-fieldname="{{ f.fieldname }}" 
 					placeholder="" 
+=======
+	{% for (i=0; i < fields.length; i++) { var f = fields[i]; %}
+		{% var selected = in_list(column_names, f.fieldname) %}
+		<div class="row column-selector-row">
+			<div class="col-sm-6 flex align-center">
+				<div class="drag-handle flex align-center">
+					<svg class="icon icon-xs"><use href="#icon-drag"></use></svg>
+				</div>
+				<div class="checkbox">
+					<label>
+						<span class="input-area">
+							<input type="checkbox" data-fieldname="{{ f.fieldname }}" {{ selected ? "checked" : "" }}>
+						</span>
+						<span class="label-area">{{ __(f.label) }}</span>
+					</label>
+				</div>
+			</div>
+			<div class="col-sm-6 text-right">
+				<input class="form-control column-width input-xs text-right"
+					value="{{ (widths[f.fieldname] || "") }}"
+					data-fieldname="{{ f.fieldname }}"
+					style="width: 100px; display: inline"
+>>>>>>> cac911c5f1821242bd77fc349a7925d6fca06815
 					{{ selected ? "" : "disabled" }}>
 					</select>
 		
