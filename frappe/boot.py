@@ -48,6 +48,7 @@ def get_bootinfo():
 	bootinfo.module_list = []
 	load_desktop_data(bootinfo)
 	bootinfo.letter_heads = get_letter_heads()
+	bootinfo.sign_types = get_sign_types()
 	bootinfo.active_domains = frappe.get_active_domains()
 	bootinfo.all_domains = [d.get("name") for d in frappe.get_all("Domain")]
 	add_layouts(bootinfo)
@@ -115,6 +116,13 @@ def get_letter_heads():
 
 	return letter_heads
 
+def get_sign_types():
+	sign_types = []
+	for d in frappe.get_all("Signature DocType", fields = ["name"]):
+		sign_doc = frappe.get_doc('Signature DocType', d.name)
+		if sign_doc.has_permission("read"):
+			sign_types.append(d.name)
+	return sign_types
 
 def load_conf_settings(bootinfo):
 	from frappe import conf

@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"Backup\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Google Services\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Authentication\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Settings\",\"col\":4}}]",
+ "content": "[{\"id\":\"3XN6QPT7WS\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"id\":\"6bovkCTcq3\",\"type\":\"card\",\"data\":{\"card_name\":\"Backup\",\"col\":4}},{\"id\":\"ClEBN4qgGG\",\"type\":\"card\",\"data\":{\"card_name\":\"Google Services\",\"col\":4}},{\"id\":\"zkQDxyjfrH\",\"type\":\"card\",\"data\":{\"card_name\":\"Authentication\",\"col\":4}},{\"id\":\"5rmSs1viMB\",\"type\":\"card\",\"data\":{\"card_name\":\"Settings\",\"col\":4}}]",
  "creation": "2020-03-02 15:16:18.714190",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -8,6 +8,7 @@
  "hide_custom": 0,
  "icon": "integration",
  "idx": 0,
+ "is_hidden": 0,
  "label": "Integrations",
  "links": [
   {
@@ -197,17 +198,17 @@
    "type": "Link"
   }
  ],
- "modified": "2022-07-23 18:00:28.805405",
+ "modified": "2023-02-24 22:28:43.914743",
  "modified_by": "Administrator",
  "module": "Integrations",
  "name": "Integrations",
  "owner": "Administrator",
- "parent_page": "",
+ "parent_page": "Settings",
  "public": 1,
  "quick_lists": [],
  "restrict_to_domain": "",
  "roles": [],
- "sequence_id": 15.0,
+ "sequence_id": 29.0,
  "shortcuts": [],
  "title": "Integrations"
 }

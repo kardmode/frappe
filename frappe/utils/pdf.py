@@ -101,15 +101,14 @@ def prepare_options(html, options):
 	)
 
 	if not options.get("margin-right"):
-		options["margin-right"] = "15mm"
+		options['margin-right'] = '12.5mm'
 
 	if not options.get("margin-left"):
-		options["margin-left"] = "15mm"
+		options['margin-left'] = '12.5mm'
+
 
 	html, html_options = read_options_from_html(html)
 	options.update(html_options or {})
-
-	# cookies
 	options.update(get_cookie_options())
 
 	# page size
@@ -126,6 +125,11 @@ def prepare_options(html, options):
 		)
 	else:
 		options["page-size"] = pdf_page_size
+		
+	# page size
+	if not (options.get("page-width") or options.get("page-height")) and not options.get("page-size"):
+		options['page-size'] = frappe.db.get_single_value("Print Settings", "pdf_page_size") or "A4"
+	
 
 	return html, options
 
@@ -145,6 +149,26 @@ def get_cookie_options():
 		options["cookie-jar"] = cookiejar
 
 	return options
+	
+def get_cookie_options_mine():
+	options = {}
+	if frappe.session and frappe.session.sid and hasattr(frappe.local, "request"):
+		options['cookie'] = [('sid', '{0}'.format(frappe.session.sid))]
+		if frappe.session.sid == frappe.session.user:
+			sid = frappe.session.sid
+			
+			from frappe.sessions import get_sessions_to_clear
+			sids = get_sessions_to_clear()
+			if len(sids) > 0:
+				sid = sids[0]
+			else:
+				sid = frappe.session.sid
+				options['cookie'] = [('sid', '{0}'.format(sid))]
+
+			options['cookie'] = [('sid', '{0}'.format(sid))]
+
+	return options
+
 
 
 def read_options_from_html(html):
@@ -155,6 +179,13 @@ def read_options_from_html(html):
 
 	toggle_visible_pdf(soup)
 
+	
+	# try:
+		# for img in soup.findAll('img'):
+			# img['src'] = 'cid:' + splitext(basename(img['src']))[0]
+	# except:
+		# pass
+	
 	# use regex instead of soup-parser
 	for attr in (
 		"margin-top",
@@ -164,14 +195,20 @@ def read_options_from_html(html):
 		"page-size",
 		"header-spacing",
 		"orientation",
-		"page-width",
+		"page-width", 
 		"page-height",
 	):
 		try:
+			# mrp old method
+			# tag = soup.find(id=attr)
+			# if tag and tag.contents:
+				# options[attr] = tag.contents
+		
 			pattern = re.compile(r"(\.print-format)([\S|\s][^}]*?)(" + str(attr) + r":)(.+)(mm;)")
 			match = pattern.findall(html)
 			if match:
 				options[attr] = str(match[-1][3]).strip()
+
 		except Exception:
 			pass
 
@@ -214,13 +251,12 @@ def prepare_header_footer(soup):
 			with open(fname, "wb") as f:
 				f.write(html.encode("utf-8"))
 
-			# {"header-html": "/tmp/frappe-pdf-random.html"}
 			options[html_id] = fname
 		else:
 			if html_id == "header-html":
-				options["margin-top"] = "15mm"
+				options["margin-top"] = "12.5mm"
 			elif html_id == "footer-html":
-				options["margin-bottom"] = "15mm"
+				options["margin-bottom"] = "12.5mm"
 
 	return options
 

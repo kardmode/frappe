@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"ToDo\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Note\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"File\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Assignment Rule\",\"col\":3}},{\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Auto Repeat\",\"col\":3}},{\"type\":\"spacer\",\"data\":{\"col\":12}},{\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports & Masters</b></span>\",\"col\":12}},{\"type\":\"card\",\"data\":{\"card_name\":\"Tools\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Email\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Automation\",\"col\":4}},{\"type\":\"card\",\"data\":{\"card_name\":\"Event Streaming\",\"col\":4}}]",
+ "content": "[{\"id\":\"ABDuqC-Sk-\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Your Shortcuts</b></span>\",\"col\":12}},{\"id\":\"lFQ-wpvVgc\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"ToDo\",\"col\":3}},{\"id\":\"gUcBjV00t7\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Note\",\"col\":3}},{\"id\":\"U312AYFk2d\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"File\",\"col\":3}},{\"id\":\"WA5VpwpZhl\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Assignment Rule\",\"col\":3}},{\"id\":\"KiCex2lVxK\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"Auto Repeat\",\"col\":3}},{\"id\":\"CX309N9jIx\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"SMveAD7csZ\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Reports &amp; Masters</b></span>\",\"col\":12}},{\"id\":\"46ild6RR7G\",\"type\":\"card\",\"data\":{\"card_name\":\"Tools\",\"col\":4}},{\"id\":\"vs3grS4yIg\",\"type\":\"card\",\"data\":{\"card_name\":\"Email\",\"col\":4}},{\"id\":\"KqibyEJHd3\",\"type\":\"card\",\"data\":{\"card_name\":\"Automation\",\"col\":4}},{\"id\":\"g9kbWOpmVD\",\"type\":\"card\",\"data\":{\"card_name\":\"Event Streaming\",\"col\":4}}]",
  "creation": "2020-03-02 14:53:24.980279",
  "docstatus": 0,
  "doctype": "Workspace",
@@ -8,71 +8,9 @@
  "hide_custom": 0,
  "icon": "tool",
  "idx": 0,
+ "is_hidden": 0,
  "label": "Tools",
  "links": [
-  {
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Tools",
-   "link_count": 0,
-   "onboard": 0,
-   "type": "Card Break"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "To Do",
-   "link_count": 0,
-   "link_to": "ToDo",
-   "link_type": "DocType",
-   "onboard": 1,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Calendar",
-   "link_count": 0,
-   "link_to": "Event",
-   "link_type": "DocType",
-   "onboard": 1,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Note",
-   "link_count": 0,
-   "link_to": "Note",
-   "link_type": "DocType",
-   "onboard": 1,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Files",
-   "link_count": 0,
-   "link_to": "File",
-   "link_type": "DocType",
-   "onboard": 0,
-   "type": "Link"
-  },
-  {
-   "dependencies": "",
-   "hidden": 0,
-   "is_query_report": 0,
-   "label": "Activity",
-   "link_count": 0,
-   "link_to": "activity",
-   "link_type": "Page",
-   "onboard": 0,
-   "type": "Link"
-  },
   {
    "hidden": 0,
    "is_query_report": 0,
@@ -206,18 +144,102 @@
    "link_type": "DocType",
    "onboard": 0,
    "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Tools",
+   "link_count": 7,
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "To Do",
+   "link_count": 0,
+   "link_to": "ToDo",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Calendar",
+   "link_count": 0,
+   "link_to": "Event",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Note",
+   "link_count": 0,
+   "link_to": "Note",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Files",
+   "link_count": 0,
+   "link_to": "File",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "dependencies": "",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Activity",
+   "link_count": 0,
+   "link_to": "activity",
+   "link_type": "Page",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "CV Builder",
+   "link_count": 0,
+   "link_to": "RB Resume",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "MRP Reminder",
+   "link_count": 0,
+   "link_to": "MRP Reminder",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
   }
  ],
- "modified": "2022-01-13 17:48:48.456763",
+ "modified": "2023-04-07 04:04:20.703277",
  "modified_by": "Administrator",
  "module": "Automation",
  "name": "Tools",
  "owner": "Administrator",
  "parent_page": "",
  "public": 1,
+ "quick_lists": [],
  "restrict_to_domain": "",
  "roles": [],
- "sequence_id": 26.0,
+ "sequence_id": 25.0,
  "shortcuts": [
   {
    "label": "ToDo",

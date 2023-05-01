@@ -657,7 +657,58 @@ frappe.views.CommunicationComposer = class {
 			frappe.msgprint(__("You are not allowed to send emails related to this document"));
 			return;
 		}
+		
+		// Use other print settings
+		var mrp_print_options = {
+			'letterhead':'Default',
+			'sign_type':'None',
+			'orientation':'Portrait',
+			'page_size':'A4',
+			'mrp_print_caption_options':{},			
+		};
+		
+		if(frappe.pages["print"]) {
+			var print_format_sel = $(".print-preview-sidebar").find("[data-fieldname='print_format']"); 
+			var letterhead = $(".print-preview-sidebar").find("[data-fieldname='letterhead']"); 
+			var sign_type = $(".print-preview-sidebar").find("[data-fieldname='signature']"); 
+			var orientation = $(".print-preview-sidebar").find("[data-fieldname='orientation']"); 
+			var page_size = $(".print-preview-sidebar").find("[data-fieldname='pagesize']"); 
+			var mrp_print_caption_options = {}; 
+			
+			var route = frappe.get_route();
+			if(route && route[0] == "Form")
+			{
+				route[0]="print";
+				var print_route = route.join("/");
+				if(frappe.ui.pages[print_route])
+				{
+					// console.log(frappe.ui.pages[print_route]);
+					// console.log(frappe.ui.pages[print_route].mrp_print_caption_options);
+					mrp_print_caption_options = {...frappe.ui.pages[print_route].mrp_print_caption_options};
+				}
+			}
+			else if(route && route[0] == "print")
+			{
+				var print_route = route.join("/");
+				if(frappe.ui.pages[print_route])
+				{
+					// console.log(frappe.ui.pages[print_route]);
+					// console.log(frappe.ui.pages[print_route].mrp_print_caption_options);
+					mrp_print_caption_options = {...frappe.ui.pages[print_route].mrp_print_caption_options};
+				}
+			}
 
+			print_format = print_format_sel[1].value;
+			mrp_print_options['letterhead'] = letterhead[1].value || "Default";
+			mrp_print_options['sign_type'] = sign_type[1].value  || "None";
+			mrp_print_options['orientation'] = orientation[1].value  || "Portrait";
+			mrp_print_options['page_size'] = page_size[1].value  || "A4";
+			mrp_print_options['mrp_print_caption_options'] = mrp_print_caption_options;
+		}
+
+		// console.log(print_format);
+		// console.log(mrp_print_options);
+		
 		return frappe.call({
 			method: "frappe.core.doctype.communication.email.make",
 			args: {
@@ -679,6 +730,7 @@ frappe.views.CommunicationComposer = class {
 				_lang: me.lang_code,
 				read_receipt: form_values.send_read_receipt,
 				print_letterhead: me.is_print_letterhead_checked(),
+				mrp_print_options:JSON.stringify(mrp_print_options),
 			},
 			btn,
 			callback(r) {
@@ -726,6 +778,10 @@ frappe.views.CommunicationComposer = class {
 	}
 
 	is_print_letterhead_checked() {
+		if(frappe.pages["print"]) {
+			var print_letterhead = $(".print-preview-sidebar").find("[data-fieldname='print-letterhead']"); 
+			return print_letterhead[1].value || 1; 
+		}
 		if (this.frm && $(this.frm.wrapper).find(".form-print-wrapper").is(":visible")) {
 			return $(this.frm.wrapper).find(".print-letterhead").prop("checked") ? 1 : 0;
 		} else {

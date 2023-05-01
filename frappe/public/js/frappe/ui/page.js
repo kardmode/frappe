@@ -168,6 +168,22 @@ frappe.ui.Page = class Page {
 	setup_sidebar_toggle() {
 		let sidebar_toggle = $(".page-head").find(".sidebar-toggle-btn");
 		let sidebar_wrapper = this.wrapper.find(".layout-side-section");
+		
+		/* let route = frappe.get_route_str();
+		if(!route.toLowerCase().includes('Workspaces'.toLowerCase()))
+		{
+			if (frappe.utils.is_xs() || frappe.utils.is_sm()) {
+				this.setup_overlay_sidebar();
+			} else {
+				//this.setup_overlay_sidebar();
+				sidebar_wrapper.toggle();
+			}
+			$(document.body).trigger("toggleSidebar");
+			this.update_sidebar_icon();
+		} */
+		
+		
+		
 		if (this.disable_sidebar_toggle || !sidebar_wrapper.length) {
 			sidebar_toggle.remove();
 		} else {
@@ -179,6 +195,7 @@ frappe.ui.Page = class Page {
 				if (frappe.utils.is_xs() || frappe.utils.is_sm()) {
 					this.setup_overlay_sidebar();
 				} else {
+					//this.setup_overlay_sidebar();
 					sidebar_wrapper.toggle();
 				}
 				$(document.body).trigger("toggleSidebar");
@@ -186,16 +203,24 @@ frappe.ui.Page = class Page {
 			});
 		}
 	}
-
+	
 	setup_overlay_sidebar() {
+		this.sidebar.find(".close-sidebar").remove();
 		let overlay_sidebar = this.sidebar.find(".overlay-sidebar").addClass("opened");
 		$('<div class="close-sidebar">').hide().appendTo(this.sidebar).fadeIn();
 		let scroll_container = $("html").css("overflow-y", "hidden");
 
-		this.sidebar.find(".close-sidebar").on("click", (e) => close_sidebar(e));
-		this.sidebar.on("click", "button:not(.dropdown-toggle)", (e) => close_sidebar(e));
 
-		let close_sidebar = () => {
+		/* if(this.sidebar.find(".close-sidebar").length == 0)
+		{
+			$('<div class="close-sidebar">').hide().appendTo(this.sidebar).fadeIn();
+		} */
+
+
+		this.sidebar.find(".close-sidebar").on("click", (e) => this.close_sidebar(e));
+		this.sidebar.on("click", "button:not(.dropdown-toggle)", (e) => this.close_sidebar(e));
+
+		this.close_sidebar = () => {
 			scroll_container.css("overflow-y", "");
 			this.sidebar.find("div.close-sidebar").fadeOut(() => {
 				overlay_sidebar

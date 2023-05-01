@@ -181,6 +181,7 @@ class CommunicationEmailMixin:
 				"print_format_attachment": 1,
 				"doctype": self.reference_doctype,
 				"name": self.reference_name,
+				"print_options":self.mrp_print_options
 			}
 			final_attachments.append(d)
 

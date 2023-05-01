@@ -2009,6 +2009,7 @@ def get_print(
 	password=None,
 	pdf_options=None,
 	letterhead=None,
+	print_options=None,
 ):
 	"""Get Print Format for given document.
 
@@ -2028,7 +2029,10 @@ def get_print(
 	local.form_dict.doc = doc
 	local.form_dict.no_letterhead = no_letterhead
 	local.form_dict.letterhead = letterhead
-
+	
+	# by me - more options
+	local.form_dict.print_options = print_options
+	
 	pdf_options = pdf_options or {}
 	if password:
 		pdf_options["password"] = password
@@ -2037,6 +2041,12 @@ def get_print(
 		html = get_response_content("printview")
 
 	if as_pdf:
+		if print_options:
+			_print_options = json.loads(print_options)
+			
+			pdf_options["orientation"] = _print_options.get('orientation') or "Portrait"
+			pdf_options["page-size"] =_print_options.get('page_size') or "A4"
+
 		return get_pdf(html, options=pdf_options, output=output)
 	else:
 		return html
@@ -2053,6 +2063,7 @@ def attach_print(
 	lang=None,
 	print_letterhead=True,
 	password=None,
+	print_options=None,
 ):
 	from frappe.utils import scrub_urls
 
@@ -2078,6 +2089,7 @@ def attach_print(
 		doc=doc,
 		no_letterhead=no_letterhead,
 		password=password,
+		print_options=print_options,
 	)
 
 	content = ""

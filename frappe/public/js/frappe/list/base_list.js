@@ -272,7 +272,7 @@ frappe.views.BaseList = class BaseList {
 	}
 
 	toggle_side_bar(show) {
-		let show_sidebar = show || JSON.parse(localStorage.show_sidebar || "true");
+		let show_sidebar = show || false;
 		show_sidebar = !show_sidebar;
 		localStorage.show_sidebar = show_sidebar;
 		this.show_or_hide_sidebar();
@@ -280,7 +280,7 @@ frappe.views.BaseList = class BaseList {
 	}
 
 	show_or_hide_sidebar() {
-		let show_sidebar = JSON.parse(localStorage.show_sidebar || "true");
+		let show_sidebar = false;
 		$(document.body).toggleClass("no-list-sidebar", !show_sidebar);
 	}
 

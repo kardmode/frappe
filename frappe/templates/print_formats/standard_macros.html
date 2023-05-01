@@ -1,6 +1,10 @@
 {% macro render_field(df, doc, no_of_cols=2) -%}
 	{%- if df.fieldtype=="Table" -%}
-		{{ render_table(df, doc) }}
+		{%- if df.fieldname=="packed_items" -%}
+			{{ render_table_custom(df, doc) }}
+		{%- else -%}
+			{{ render_table(df, doc) }}
+		{%- endif -%}
 	{%- elif df.fieldtype=="HTML" and df.options -%}
 		<div>{{ frappe.render_template(df.options, {"doc": doc}) or "" }}</div>
 	{%- elif df.fieldtype in ("Text", "Text Editor", "Code", "Long Text") -%}
@@ -16,8 +20,9 @@
 	{%- elif df.fieldtype=="Signature" -%}
 		{{ render_signature(df, doc) }}
 	{%- elif df.fieldtype=="Currency" -%}
-		{%- if doc.print_templates and
-				doc.print_templates.get(df.fieldname) -%}
+		{%- if doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname) -%}
+			{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"doc":doc}) }}	
+		{%- elif doc.print_templates and doc.print_templates.get(df.fieldname) -%}
 			{% include doc.print_templates[df.fieldname] %}
 		{%- else -%}
 			{{ render_field_with_label(df, doc, no_of_cols) }}
@@ -30,10 +35,17 @@
 {%- macro render_table(df, doc) -%}
 	{%- set table_meta = frappe.get_meta(df.options) -%}
 	{%- set data = doc.get(df.fieldname)[df.start:df.end] -%}
-	{%- if doc.print_templates and
-			doc.print_templates.get(df.fieldname) -%}
+	{%- if doc.print_templates and doc.print_templates.get(df.fieldname) -%}
 		{% include doc.print_templates[df.fieldname] %}
+	{%- elif doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname) -%}
+		{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"doc":doc,"table_meta":table_meta,"data":data}) }}		
 	{%- else -%}
+		{%- if doc.flags.compact_item_fields -%}
+		{%- else -%}
+		
+		{%- endif -%}
+					{%- set compact_item_fields = doc.flags.compact_item_fields -%}
+
 		{%- if data -%}
 		{%- set visible_columns = get_visible_columns(doc.get(df.fieldname),
 			table_meta, df) -%}
@@ -41,18 +53,25 @@
 			<table class="table table-bordered table-condensed">
 				<thead>
 					<tr>
-						<th style="width: 40px" class="table-sr">{{ _("Sr") }}</th>
+						{% if not df.get("hide_sr") or df.hide_sr == None or df.hide_sr == "0" or df.hide_sr == 0 %}
+							<th style="width: 20px" class="table-sr">{{ _("Sr") }}</th>
+						{% endif %}	
 						{% for tdf in visible_columns %}
-						<th style="width: {{ get_width(tdf) }};" class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>
-							{{ _(tdf.label) }}</th>
+						{% if (not print_settings.compact_item_print or not compact_item_fields or tdf.fieldname in compact_item_fields) and (not tdf.get("print_parent") or tdf.print_parent == "" or tdf.print_parent == None) %}
+							<th style="width: {{ get_width(tdf) }};" class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>{{print_table_label(tdf,data[0])}}</th>
+						{% endif %}
 						{% endfor %}
 					</tr>
 				</thead>
 				<tbody>
-					{% for d in data %}
+					{% for d in data if not d.get("print_hide") or d.print_hide == None or d.print_hide == "0" or d.print_hide == 0 %}
 					<tr>
-						<td class="table-sr">{{ d.idx }}</td>
+						{% if not df.get("hide_sr") or df.hide_sr == None or df.hide_sr == "0" or df.hide_sr == 0 %}
+							<td class="table-sr">{{ d.idx }}</td>
+						{% endif %}	
+						
 						{% for tdf in visible_columns %}
+						{% if (not print_settings.compact_item_print or not compact_item_fields or tdf.fieldname in compact_item_fields) and (not tdf.get("print_parent") or tdf.print_parent == "" or tdf.print_parent == None) %}
 							<td class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>
 							{% if doc.child_print_templates %}
 								{%- set child_templates = doc.child_print_templates.get(df.fieldname) -%}
@@ -60,12 +79,44 @@
 							{% else %}
 								<div class="value">{{ print_value(tdf, d, doc, visible_columns) }}</div></td>
 							{% endif %}
+						{% endif %}
 						{% endfor %}
 					</tr>
 					{% endfor %}
 				</tbody>
 			</table>
 		</div>
+		{%- else -%}
+			<div {{ fieldmeta(df) }}>
+				<table class="table table-bordered table-condensed">
+					<thead>
+						<tr>
+							{% if not df.get("hide_sr") or df.hide_sr == None or df.hide_sr == "0" or df.hide_sr == 0 %}
+								<th style="width: 20px" class="table-sr">{{ _("Sr") }}</th>
+							{% endif %}	
+							{% for tdf in visible_columns %}
+						{% if (not print_settings.compact_item_print or not compact_item_fields or tdf.fieldname in compact_item_fields) and (not tdf.get("print_parent") or tdf.print_parent == "" or tdf.print_parent == None) %}
+								<th style="width: {{ get_width(tdf) }};" class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>{{print_table_label(tdf,data[0])}}</th>
+							{% endif %}
+							{% endfor %}
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							{% if not df.get("hide_sr") or df.hide_sr == None or df.hide_sr == "0" or df.hide_sr == 0 %}
+								<td class="table-sr"></td>
+							{% endif %}	
+							{% for tdf in visible_columns %}
+						{% if (not print_settings.compact_item_print or not compact_item_fields or tdf.fieldname in compact_item_fields) and (not tdf.get("print_parent") or tdf.print_parent == "" or tdf.print_parent == None) %}
+								<th style="width: {{ get_width(tdf) }};" class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>{{print_table_label(tdf,data[0])}}</th>
+							{% endif %}
+							{% endfor %}
+							
+						</tr>
+					</tbody>
+				</table>
+			</div>
+
 		{%- endif -%}
 	{%- endif -%}
 {%- endmacro -%}
@@ -74,7 +125,50 @@
 data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 {%- endmacro %}
 
+{% macro print_table_label(df,doc) -%}
+	{% if (df.print_label)%}
+	{{ _(df.print_label) }}
+	{%- else -%}
+	{{ _(df.label) }}
+	{% endif %}
+
+	{% if df.fieldtype == "Currency" %}
+	{% endif %}
+	
+{%- endmacro %}
+
+{% macro render_compact_fields_for_parent(df, d, parent_doc, visible_columns) -%}
+	{% for tdf in visible_columns %}
+		{% if tdf.print_parent == df.fieldname %}
+			{% if d.get(tdf.fieldname) %}
+				{% if tdf.print_align == "inline-before" %}
+					<span class="pull-left">{% if tdf.print_label  -%}<strong>{{ _(tdf.print_label) }}:</strong>{% endif %}
+					{{ print_value(tdf, d, parent_doc) }}</span>
+				{% endif %}
+			{% endif %}
+		{% endif %}
+	{% endfor %}
+
+	{{ print_value(df, d, parent_doc) }}
+	
+	{% for tdf in visible_columns %}
+		{% if tdf.print_parent == df.fieldname %}
+			{% if d.get(tdf.fieldname) %}
+				{% if tdf.print_align == "inline" %}
+					<span>{% if tdf.print_label  -%}<strong>{{ _(tdf.print_label) }}:</strong>{% endif %}
+					{{ print_value(tdf, d, parent_doc) }}</span>
+				{%- elif tdf.print_align != "inline-before" %}
+					<div>{% if tdf.print_label  -%}<strong>{{ _(tdf.print_label) }}:</strong>{% endif %}
+					{{ print_value(tdf, d, parent_doc) }}</div>
+				{% endif %}
+			{% endif %}
+		{% endif %}
+	{% endfor %}
+	
+{%- endmacro %}
+
 {%- macro render_field_with_label(df, doc, no_of_cols) -%}
+
 		{%- set label_col_class = resolve_class({
 			'col-xs-9': df.fieldtype=="Check",
 			'col-xs-5': df.fieldtype!="Check" and no_of_cols < 3,
@@ -86,10 +180,11 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 			'col-xs-7': df.fieldtype!="Check" and no_of_cols < 3,
 			'col-xs-12': df.fieldtype!="Check" and no_of_cols >= 3,
 		}) -%}
-
+		
 		{% set render_field = doc.get(df.fieldname) != 0 if df.fieldtype == "Check" else doc.get(df.fieldname) != None %}
 		{% if render_field %}
-			<div class="row {% if df.bold %}important{% endif %} data-field" {{ fieldmeta(df) }}>
+		
+			<!-- <div class="row {% if df.bold %}important{% endif %} data-field" {{ fieldmeta(df) }}>
 				<div class="{{label_col_class}}
 					{%- if doc.align_labels_right %} text-right{%- endif -%}">
 					{% if df.fieldtype not in ("Image", "HTML") %}
@@ -100,6 +195,94 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 				{{ get_align_class(df, no_of_cols) }} value">
 					{{ _(print_value(df, doc)) }}
 				</div>
+			</div> -->
+		
+			<div class="row {% if df.bold %}important{% endif %} data-field" {{ fieldmeta(df) }}>
+				{% if get_label_location(df) == "hidden"  %}
+					<div class="col-xs-{{ "12" if df.fieldtype=="Check" else "12" }}
+					{{ get_align_class(df) }} value">
+						{% if doc.get(df.fieldname) != None -%}
+							{{ print_value(df, doc) }}{% endif %}
+					</div>
+				{% elif get_label_location(df) =="above" %}
+					<div class="print_label col-xs-{{ "12" if df.fieldtype=="Check" else "12" }}
+					{%- if doc._align_labels_right %} text-right{%- endif -%}">
+					{% if df.fieldtype not in ("Image","HTML","Check") and
+						doc.get(df.fieldname) != None %}
+					<label>{{ _(df.label) }}</label>
+					{% endif %}
+					{% if df.fieldtype == "Check" and
+					doc.get(df.fieldname) != 0 %}
+					<label>{{ _(df.label) }}</label>
+					{% endif %}
+					</div>
+					<div class="col-xs-{{ "12" if df.fieldtype=="Check" else "12" }}
+					{{ get_align_class(df) }} value">
+						{% if doc.get(df.fieldname) != None -%}
+							{{ print_value(df, doc) }}{% endif %}
+					</div>
+				{% elif get_label_location(df) =="below" %}
+					
+					<div class="col-xs-{{ "12" if df.fieldtype=="Check" else "12" }}
+					{{ get_align_class(df) }} value">
+						{% if doc.get(df.fieldname) != None -%}
+							{{ print_value(df, doc) }}{% endif %}
+					</div>
+					<div class="print_label col-xs-{{ "12" if df.fieldtype=="Check" else "12" }}
+					{%- if doc._align_labels_right %} text-right{%- endif -%}">
+
+
+					{% if df.fieldtype not in ("Image", "HTML", "Check") and
+						doc.get(df.fieldname) != None %}
+					<label>{{ _(df.label) }}</label>
+					{% endif %}
+					{% if df.fieldtype == "Check" and
+					doc.get(df.fieldname) != 0 %}
+					<label>{{ _(df.label) }}</label>
+					{% endif %}
+					</div>
+				{% elif get_label_location(df) =="right" %}
+				
+					
+					<div class="col-xs-{{ "3" if df.fieldtype=="Check" else "8" }}
+					{{ get_align_class(df) }} value">
+						{% if doc.get(df.fieldname) != None -%}
+							{{ print_value(df, doc) }}{% endif %}
+					</div>
+					<div class="print_label col-xs-{{ "9" if df.fieldtype=="Check" else "4" }}
+					{%- if doc._align_labels_right %} text-right{%- endif -%}">
+
+					{% if df.fieldtype not in ("Image","HTML","Check") and
+						doc.get(df.fieldname) != None %}
+					<label>{{ _(df.label) }}</label>
+					{% endif %}
+					{% if df.fieldtype == "Check" and
+					doc.get(df.fieldname) != 0 %}
+					<label>{{ _(df.label) }}</label>
+					{% endif %}
+					</div>
+				{% else -%}
+				
+					<div class="print_label col-xs-{{ "9" if df.fieldtype=="Check" else "4" }}
+					{%- if doc._align_labels_right %} text-right{%- endif -%}">
+
+					{% if df.fieldtype not in ("Image","HTML","Check") and
+						doc.get(df.fieldname) != None %}
+					<label>{{ _(df.label) }}</label>
+					{% endif %}
+					{% if df.fieldtype == "Check" and
+					doc.get(df.fieldname) != 0 %}
+					<label>{{ _(df.label) }}</label>
+					{% endif %}
+					</div>
+					<div class="col-xs-{{ "3" if df.fieldtype=="Check" else "8" }}
+					{{ get_align_class(df) }} value">
+						{% if doc.get(df.fieldname) != None -%}
+							{{ _(print_value(df, doc)) }}{% endif %}
+					</div>
+				{% endif %}
+				
+			
 			</div>
 		{% endif %}
 {%- endmacro -%}
@@ -129,9 +312,24 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{{ "" }}
 {%- endmacro -%}
 
+{%- macro custom_print_value(fieldname, doc, parent_doc=None, visible_columns=None) -%}
+	{%- set df = doc.meta.get_field(fieldname) -%}
+	{{ print_value(df, doc) }}
+{%- endmacro -%}
+
+
 {%- macro print_value(df, doc, parent_doc=None, visible_columns=None, child_templates=None) -%}
+
 	{% if child_templates and child_templates[df.fieldname] %}
 		{% include child_templates[df.fieldname] %}
+	{% elif doc.print_templates and doc.print_templates.get(df.fieldname) %}
+        {% include doc.print_templates[df.fieldname] %}
+	{% elif parent_doc and parent_doc.mrp_print_templates and parent_doc.mrp_print_templates.get(df.fieldname) %}
+		{{ frappe.render_template(parent_doc.mrp_print_templates[df.fieldname], {"df":df,"doc":doc,"parent_doc":parent_doc}) }}	
+	{% elif doc and doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname)%}
+		{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"df":df,"doc":doc}) }}	
+	{% elif visible_columns %}
+		{{  render_compact_fields_for_parent(df, doc, parent_doc, visible_columns) }}
 	{% elif df.fieldtype=="Check" and doc[df.fieldname] %}
 		<!-- <i class="{{ 'fa fa-check' }}"></i> -->
 		<svg viewBox="0 0 16 16"
@@ -167,12 +365,12 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 {%- endmacro %}
 
 {% macro get_width(df) -%}
-	{%- if df.print_width -%}
-		{%- if df.print_width.endswith("%") -%}
-			{{ df.print_width }}
+	{%- if df.print_width -%}	
+		{%- if "%" in (df.print_width|str) -%}
+			{{ ((df.print_width|str).replace("%", "")|trim) }}%
 		{%- else -%}
-			{{ df.print_width.replace("px", "") }}px
-		{%- endif -%}
+			{{ ((df.print_width|str).replace("px", "")|trim) }}px
+		{% endif -%}
 	{%- elif df.fieldtype in ("Int", "Check", "Float", "Currency") -%}{{ 80 }}px
 	{%- else -%}{{ 150 }}px{% endif -%}
 {%- endmacro %}
@@ -186,30 +384,239 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	{%- endif -%}
 {% endmacro %}
 
-{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None, print_heading_template=None) -%}
-	{% if letter_head and not no_letterhead %}
-		<div class="letter-head">{{ letter_head }}</div>
-	{% endif %}
+{% macro get_label_location(df) %}
+	{%- if df.label_location -%}{{ df.label_location  }}
+	{%- else -%}{{ "left" }}
+	{%- endif -%}
+{% endmacro %}
+
+{% macro get_label_align_class(df) %}
+	{%- if df.label_align -%}{{ "text-" + df.align }}
+	{%- else -%}{{ "" }}
+	{%- endif -%}
+{% endmacro %}
+
+{% macro print_date(doc) -%}
+	{%- if doc.transaction_date -%}{{ doc.get_formatted("transaction_date", doc) }}
+	{%- elif doc.posting_date -%} {{ doc.get_formatted("posting_date", doc) }}
+	{% endif -%}
+{%- endmacro %}
+
+{% macro print_heading(doc,print_heading_template) -%}
+	
 	{% if print_heading_template %}
-		{{ frappe.render_template(print_heading_template, {"doc":doc}) }}
-	{% else %}
-	<div class="print-heading">
-		<h2>
-			<div>{{ _(doc.select_print_heading) or (_(doc.print_heading) if doc.print_heading != None
-				else _(doc.doctype)) }}</div>
-			<small class="sub-heading">{{ _(doc.sub_heading) if doc.sub_heading != None
-				else doc.name }}</small>
-		</h2>
-	</div>
+        {{ frappe.render_template(print_heading_template, {"doc":doc}) }}
+    {% else %}
+		<div class="print-heading">
+			<h2>{{ doc.select_print_heading or (doc.print_heading if doc.print_heading != None else _(doc.doctype)) }}
+				<br><small>{{ doc.name }}</small>
+			</h2>
+		</div>
 	{% endif %}
+
+{%- endmacro %}
+
+
+{% macro get_main_prefix(doc) -%}
+	{% set am_prefix = doc.amended_from %}
+	{% if frappe.db.get_value(doc.doctype, doc.amended_from, "amended_from") %}
+		{% set am_prefix = "-".join(doc.amended_from.split("-")[:-1]) %}
+	{% endif %}
+	{{am_prefix}}
+{%- endmacro %}
+
+{%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None,print_heading_template=None,mrp_print_options=None) -%}
+	{%- set header_caption = "" -%} 
+	{% if mrp_print_options and mrp_print_options.mrp_print_caption_options 
+		and mrp_print_options.mrp_print_caption_options.caption_text 
+		and mrp_print_options.mrp_print_caption_options.show_in_header == 1 %}
+		{%- set header_caption = mrp_print_options.mrp_print_caption_options.caption_text -%} 
+	{% endif %}
+	
+	
+	<div class="letter-head" style="position:relative;">
+	{% if letter_head and not no_letterhead %}
+		{{ letter_head }}
+		{% if (header_caption != "") %}<div class="header-caption">{{header_caption}}</div>{% endif %}
+		<div style="clear: both; margin-bottom: 1px;"><div id="variables" style="display: none;"></div></div>
+	{% else %}
+		{% if (header_caption != "") %}<div class="header-caption">{{header_caption}}</div>{% endif %}
+	{% endif %}
+	</div>
+ 
+	{% if doc.meta.is_submittable and doc.amended_from %}
+		{%- set new_doc_name = doc -%}
+		{% set test = new_doc_name.update({'name': get_main_prefix(new_doc_name)}) %}
+		{{ print_heading(new_doc_name,print_heading_template) }}
+    {% else %}
+		{{ print_heading(doc,print_heading_template) }}
+	{% endif %}
+	
 	{%- if doc.meta.is_submittable and doc.docstatus==0 and (print_settings==None or print_settings.add_draft_heading) -%}
-	<div class="text-center" document-status="draft">
-		<h4 style="margin: 0px;">{{ _("DRAFT") }}</h4>
-	</div>
+		<div class="text-center document-status" document-status="draft">
+			<h4 style="color:darkred; margin: 0px;">{{ _("DRAFT") }}</h4>
+		</div>
+	{%- elif doc.meta.is_submittable and doc.docstatus==2 -%}
+		<div class="text-center" document-status="cancelled">
+			<h4 style="color:darkred; margin: 0px;">{{ _("CANCELLED") }}</h4>
+		</div>
 	{%- endif -%}
-	{%- if doc.meta.is_submittable and doc.docstatus==2-%}
-	<div class="text-center" document-status="cancelled">
-		<h4 style="margin: 0px;">{{ _("CANCELLED") }}</h4>
+{%- endmacro -%}
+
+
+{%- macro add_footer(max_pages,doc,no_letterhead,footer,signature_html,print_settings=None,mrp_print_options=None) -%}
+
+	{{ signature_html }}
+
+
+	<div id="footer-html" class="hidden-pdf">
+		<div class="letter-head-footer" style="position:relative;">
+			
+			{% if print_settings.repeat_header_footer %}
+						
+					{% if not no_letterhead and footer %}
+						{{ footer }}
+					{% endif %}
+					
+					{% if not no_letterhead %}
+
+					{% endif %}
+
+			{% endif %}
+			
+			{% if mrp_print_options and mrp_print_options.mrp_print_caption_options 
+				and mrp_print_options.mrp_print_caption_options.caption_text
+				and mrp_print_options.mrp_print_caption_options.show_in_footer == 1 %}
+				<div class="footer-caption text-right">{{ _(mrp_print_options.mrp_print_caption_options.caption_text) }}</h2>
+
+			{% endif %}
+			
+		</div>
+		<!-- <p class="text-right small page-number visible-pdf">
+		{{ _("{0} of {1}").format('<span class="page"></span>', '<span class="topage"></span>') }}
+		</p> -->
+	
 	</div>
-	{%- endif -%}
+{%- endmacro -%}
+
+{%- macro render_table_custom(df, doc) -%}
+	
+	{%- set table_meta = frappe.get_meta(df.options) -%}
+	
+	{% for bundle_parent in doc.get("items") %}
+		{% if bundle_parent.name in doc.get("packed_items")|map(attribute="parent_detail_docname") %}
+			{%- set data = [] -%}
+			
+			
+			
+			{% for dc in doc.get("packed_items") %}
+				{% if dc.parent_detail_docname == bundle_parent.name %}
+					<div class="hide">{{ data.append(dc) }}</div>
+				{% endif %}
+			{% endfor %}
+			{%- set compact_item_fields = doc.flags.compact_item_fields -%}
+
+			{%- if data -%}
+			{% set total_qty = namespace(value=0) %}
+
+
+			</div></div>
+			<div class="page-break"></div>
+			<div class="row section-break">
+			<div class="col-xs-12 column-break">
+				
+				
+
+				<h4>{{ custom_print_value('project', doc) }}
+					<br>
+					<small>
+					{{bundle_parent.item_name}} 
+					- {{ frappe.utils.strip_html(bundle_parent.description or '')}} 
+					- <b>{{bundle_parent.qty}} Nos</b>
+					</small>
+				</h4>
+
+				{%- set visible_columns = get_visible_columns(doc.get(df.fieldname),
+					table_meta, df) -%}
+				<div {{ fieldmeta(df) }}>
+					<table class="table table-bordered table-condensed">
+						<thead>
+							<tr>
+								{% if not df.get("hide_sr") or df.hide_sr == None or df.hide_sr == "0" or df.hide_sr == 0 %}
+									<th style="width: 20px" class="table-sr">{{ _("Sr") }}</th>
+								{% endif %}	
+								{% for tdf in visible_columns %}
+						{% if (not print_settings.compact_item_print or not compact_item_fields or tdf.fieldname in compact_item_fields) and (not tdf.get("print_parent") or tdf.print_parent == "" or tdf.print_parent == None) %}
+									<th style="width: {{ get_width(tdf) }};" class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>{{print_table_label(tdf,data[0])}}</th>
+								{% endif %}
+								{% endfor %}
+							</tr>
+						</thead>
+						<tbody>
+
+							{% for d in data if not d.get("print_hide") or d.print_hide == None or d.print_hide == "0" or d.print_hide == 0 %}
+							<tr>
+								{% if not df.get("hide_sr") or df.hide_sr == None or df.hide_sr == "0" or df.hide_sr == 0 %}
+									<td class="table-sr">{{ loop.index }}</td>
+								{% endif %}	
+								
+								{% for tdf in visible_columns %}
+						{% if (not print_settings.compact_item_print or not compact_item_fields or tdf.fieldname in compact_item_fields) and (not tdf.get("print_parent") or tdf.print_parent == "" or tdf.print_parent == None) %}
+									<td class="{{ get_align_class(tdf) }}" {{ fieldmeta(df) }}>
+																		
+									<div class="value">
+									{% if tdf.fieldname == "qty"%}
+										{% set total_qty.value = total_qty.value + d.qty/bundle_parent.qty %}
+										
+										<div class="value">
+										<small class="pull-left">{{d.uom}}</small>
+										{{d.qty/bundle_parent.qty}}
+									{% else %}
+										{{ print_value(tdf, d, doc, visible_columns) }}
+									{% endif %}
+									
+									</div></td>
+								{% endif %}
+								{% endfor %}
+							</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+
+				<div class="row section-break">
+					<div class="col-xs-6 column-break">
+						<div class="row data-field" data-fieldname="total_qty" data-fieldtype="Float">
+							<div class="col-xs-4"><label>Total Qty</label></div>
+							<div class="col-xs-8 text-right">
+							{{total_qty.value}}
+							{% set total_qty.value = 0 %}
+							</div>
+						</div>
+					
+					</div>
+					<div class="col-xs-6 column-break">
+						<div class="row data-field" data-fieldname="total" data-fieldtype="Currency">
+							<div class="col-xs-4"><label>Total</label></div>
+							<div class="col-xs-8 text-right">
+							{{ frappe.utils.fmt_money(bundle_parent.amount/bundle_parent.qty, currency=doc.currency) }}
+							</div>
+						</div>
+					</div>
+				</div>
+				
+			
+			
+			{%- endif -%}
+		
+			
+			
+			
+		{% endif %}
+		
+	{% endfor %}
+
+	
+
+		
 {%- endmacro -%}

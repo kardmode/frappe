@@ -35,6 +35,12 @@ def get_context(context):
 	else:
 		doc = frappe.get_doc(frappe.form_dict.doctype, frappe.form_dict.name)
 
+	# mrp added
+	if frappe.form_dict.print_options:
+		print_options = frappe.form_dict.print_options	
+	else:
+		print_options = None
+	
 	settings = frappe.parse_json(frappe.form_dict.settings)
 
 	letterhead = frappe.form_dict.letterhead or None
@@ -56,6 +62,7 @@ def get_context(context):
 		no_letterhead=frappe.form_dict.no_letterhead,
 		letterhead=letterhead,
 		settings=settings,
+		print_options=print_options,
 	)
 	print_style = get_print_style(frappe.form_dict.style, print_format)
 
@@ -71,7 +78,6 @@ def get_context(context):
 		"key": frappe.form_dict.get("key"),
 	}
 
-
 def get_print_format_doc(print_format_name, meta):
 	"""Returns print format document"""
 	if not print_format_name:
@@ -86,7 +92,102 @@ def get_print_format_doc(print_format_name, meta):
 			# if old name, return standard!
 			return None
 
+def add_mrp_print_templates(doc):
+	doc.mrp_print_templates = {}
+	
+	doc_details = frappe.db.sql("""
+					select t1.template_name , t2.print_field
+					from `tabMRP Print Templates` t1,
+					`tabPrint Fields` t2, 
+					`tabMRP Print Template Type` t3
+					where
+					(t1.use_for_all_doctypes = 1 or (t3.type = %s and t1.name = t3.parent))
+					and t2.name = t1.print_field
+					""", (doc.doctype), as_dict=True)
+					
+	for d in doc_details:
+		doc.mrp_print_templates[d.template_name] = d.print_field
+		
+def add_signature(doc,letterhead,sign_type = None):
 
+	if not sign_type or sign_type == "None":
+		return ""
+
+	sign_info = frappe._dict(frappe.db.get_value("Signature DocType", sign_type, ["has_stamp", "print_field","has_sign","full_authority_sign","use_signoff"], as_dict=True) or {})
+	
+	if not sign_info:
+		return ""
+		
+	
+	if letterhead == "Default":
+		if doc.get("company"):
+			letterhead = frappe.db.get_value("Company", doc.company, "default_letter_head") or "Default"
+		else:
+			letterhead = frappe.db.get_value("Letter Head", {"is_default": 1}, "name") or "Default"
+	signoff = "Authorized Signatory"
+	signature = ""
+	if sign_info.has_sign:
+		if sign_info.full_authority_sign:
+			signature = frappe.db.get_value("Authority Signature", letterhead, "company_signature") or ""
+			user_signoff = frappe.db.get_value("Authority Signature", letterhead, "signoff") or "Authorized Signatory"
+			if signature:
+				sign_doc = frappe.get_doc('Authority Signature', letterhead) or {}
+				if not sign_doc.has_permission("read"):
+					signature = ""
+			
+			if user_signoff or user_signoff != "":
+				signoff = user_signoff
+			else:
+				signoff = "Authorized Signatory"
+				
+	
+		else:
+			
+			signature = frappe.db.get_value("User", frappe.session.user, "signature") or ""
+			user_signoff = frappe.db.get_value("User", frappe.session.user, "signoff") or "Authorized Signatory"
+		
+			if signature:
+				sign_doc = frappe.get_doc('User', frappe.session.user) or {}
+				if not sign_doc.has_permission("read"):
+					signature = ""
+					
+			if sign_info.use_signoff:
+				if user_signoff or user_signoff != "":
+					signoff = user_signoff
+				else:
+					signoff = "Authorized Signatory"
+	
+	stamp = ""
+	if sign_info.has_stamp:
+		stamp = frappe.db.get_value("MRP Company Stamps", {'company':letterhead},"stamp") or ""
+		stamp_doc = frappe.get_doc('MRP Company Stamps', {'company':letterhead}) or {}
+		if not stamp_doc.has_permission("read"):
+			stamp = ""
+	
+	allow = frappe.db.get_single_value('System Settings', 'allow_signature_if_not_submitted')
+
+	if allow:
+		if stamp and signature:
+			authorized_signature = frappe.render_template(frappe.db.get_value("Print Fields", "Signature with Stamp", "print_field"), {"doc":doc,"authorized_signature":signature,"stamp":stamp})
+		elif signature:
+			authorized_signature = frappe.render_template(frappe.db.get_value("Print Fields", "Signature Only", "print_field"), {"doc":doc,"authorized_signature":signature,"stamp":stamp})		
+		elif stamp:
+			authorized_signature = frappe.render_template(frappe.db.get_value("Print Fields", "Stamp Only", "print_field"), {"doc":doc,"authorized_signature":signature,"stamp":stamp})		
+		else:
+			authorized_signature = ''
+
+	else:
+		# if doc.meta.is_submittable and doc.docstatus==1:
+			# pass
+		# elif not doc.meta.is_submittable:
+			# pass
+		authorized_signature = ''
+	
+	signature_html = ""
+	if sign_info.print_field:
+		signature_html = frappe.render_template(frappe.db.get_value("Print Fields",  sign_info.print_field, "print_field"), {"doc":doc,"authorized_signature":authorized_signature,"signoff":signoff})
+	return signature_html
+	
 def get_rendered_template(
 	doc,
 	name=None,
@@ -96,6 +197,7 @@ def get_rendered_template(
 	letterhead=None,
 	trigger_print=False,
 	settings=None,
+	print_options=None,
 ):
 
 	print_settings = frappe.get_single("Print Settings").as_dict()
@@ -171,9 +273,18 @@ def get_rendered_template(
 
 	if template == "standard":
 		template = jenv.get_template(standard_format)
+		
+		
+	letterhead = None
+	sign_type = None
+	
+	if print_options:
+		print_options = json.loads(print_options)
+		sign_type = print_options.get('sign_type') or None
+		letterhead = print_options.get('letterhead') or None
 
 	letter_head = frappe._dict(get_letter_head(doc, no_letterhead, letterhead) or {})
-
+	
 	if letter_head.content:
 		letter_head.content = frappe.utils.jinja.render_template(
 			letter_head.content, {"doc": doc.as_dict()}
@@ -185,7 +296,10 @@ def get_rendered_template(
 		)
 
 	convert_markdown(doc, meta)
-
+	
+	signature_html = add_signature(doc,letterhead,sign_type)
+	add_mrp_print_templates(doc)
+	
 	args = {}
 	# extract `print_heading_template` from the first field and remove it
 	if format_data and format_data[0].get("fieldname") == "print_heading_template":
@@ -201,6 +315,8 @@ def get_rendered_template(
 			"letter_head": letter_head.content,
 			"footer": letter_head.footer,
 			"print_settings": print_settings,
+			"signature_html":signature_html,
+			"mrp_print_options":print_options,
 		}
 	)
 
@@ -278,6 +394,7 @@ def get_html_and_style(
 	style=None,
 	settings=None,
 	templates=None,
+	print_options=None,
 ):
 	"""Returns `html` and `style` of print format, used in PDF etc"""
 
@@ -300,6 +417,7 @@ def get_html_and_style(
 			letterhead=letterhead,
 			trigger_print=trigger_print,
 			settings=frappe.parse_json(settings),
+			print_options=print_options
 		)
 	except frappe.TemplateNotFoundError:
 		frappe.clear_last_message()
@@ -361,13 +479,34 @@ def validate_key(key, doc):
 	raise frappe.exceptions.InvalidKeyError
 
 
-def get_letter_head(doc, no_letterhead, letterhead=None):
+def get_letter_head(doc, no_letterhead,letterhead=None):
 	if no_letterhead:
 		return {}
-	if letterhead:
+	if letterhead == "Default":
+		
+		if doc.get("company"):
+			letter_head = frappe.db.get_value("Company", doc.company, "default_letter_head") or ""
+			if letter_head:
+				return frappe.db.get_value("Letter Head", letter_head, ["content", "footer"], as_dict=True)
+			else:
+				return {}
+		elif doc.get("letter_head"):
+			return frappe.db.get_value("Letter Head", doc.letter_head, ["content", "footer"], as_dict=True)
+		
+		else:
+			return frappe.db.get_value("Letter Head", {"is_default": 1}, ["content", "footer"], as_dict=True) or {}
+
+	elif letterhead:
 		return frappe.db.get_value("Letter Head", letterhead, ["content", "footer"], as_dict=True)
-	if doc.get("letter_head"):
+	elif doc.get("letter_head"):
 		return frappe.db.get_value("Letter Head", doc.letter_head, ["content", "footer"], as_dict=True)
+	
+	elif doc.get("company"):
+		letter_head = frappe.db.get_value("Company", doc.company, "default_letter_head") or ""
+		if letter_head:
+			return frappe.db.get_value("Letter Head", letter_head, ["content", "footer"], as_dict=True)
+		else:
+			return {}
 	else:
 		return (
 			frappe.db.get_value("Letter Head", {"is_default": 1}, ["content", "footer"], as_dict=True) or {}
@@ -438,8 +577,21 @@ def make_layout(doc, meta, format_data=None):
 					del page[-1]
 
 			section = get_new_section()
-			if df.fieldtype == "Section Break" and df.label:
-				section["label"] = df.label
+			
+			if df.fieldtype=='Section Break' and df.label:
+				section['label'] = df.label
+				
+				# MRP ADDED TO GIVE SECTIONS HEADERS
+				if df.get("force_heading"):
+					section['force_heading'] = df.force_heading
+				else:
+					section['force_heading'] = 0
+				
+			if df.fieldtype=='Section Break':
+				try:
+					section['page_break'] = cint(df.page_break) or 0
+				except:
+					section['page_break'] = 0
 
 			page.append(section)
 
@@ -459,6 +611,7 @@ def make_layout(doc, meta, format_data=None):
 			doc.set(df.fieldname, placeholder_image)
 
 		if is_visible(df, doc) and has_value(df, doc):
+		# if (df.fieldname == "taxes" and df.fieldtype=="Table" and is_visible(df, doc)) or (is_visible(df, doc) and has_value(df, doc)):
 			append_empty_field_dict_to_page_column(page)
 
 			page[-1]["columns"][-1]["fields"].append(df)
@@ -504,6 +657,11 @@ def is_visible(df, doc):
 
 def has_value(df, doc):
 	value = doc.get(df.fieldname)
+	
+	# mrp tables should always show
+	if df.fieldtype=="Table":
+		return True
+	
 	if value in (None, ""):
 		return False
 
@@ -604,7 +762,7 @@ def column_has_value(data, fieldname, col_df):
 	"""Check if at least one cell in column has non-zero and non-blank value"""
 	has_value = False
 
-	if col_df.fieldtype in ["Float", "Currency"] and not col_df.print_hide_if_no_value:
+	if col_df.fieldtype in ['Float', 'Currency','Code'] and not col_df.print_hide_if_no_value:
 		return True
 
 	for row in data:

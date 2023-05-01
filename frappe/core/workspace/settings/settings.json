@@ -8,6 +8,7 @@
  "hide_custom": 0,
  "icon": "setting",
  "idx": 0,
+ "is_hidden": 0,
  "label": "Settings",
  "links": [
   {
@@ -345,7 +346,7 @@
    "type": "Link"
   }
  ],
- "modified": "2022-08-28 21:41:28.065190",
+ "modified": "2023-02-24 22:28:43.754607",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "Settings",
@@ -355,7 +356,7 @@
  "quick_lists": [],
  "restrict_to_domain": "",
  "roles": [],
- "sequence_id": 29.0,
+ "sequence_id": 27.0,
  "shortcuts": [
   {
    "icon": "setting",

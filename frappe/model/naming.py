@@ -9,7 +9,7 @@ import frappe
 from frappe import _
 from frappe.model import log_types
 from frappe.query_builder import DocType
-from frappe.utils import cint, cstr, now_datetime
+from frappe.utils import cint, cstr, now_datetime, getdate
 
 if TYPE_CHECKING:
 	from frappe.model.document import Document
@@ -124,16 +124,23 @@ class NamingSeries:
 		prefix = self.get_prefix()
 		return cint(frappe.db.get_value("Series", prefix, "current", order_by="name"))
 
+# Types that can be using in naming series fields
+NAMING_SERIES_PART_TYPES = (
+	int,
+	str,
+	datetime.datetime,
+	datetime.date,
+	datetime.time,
+	datetime.timedelta,
+)
 
 def set_new_name(doc):
 	"""
 	Sets the `name` property for the document based on various rules.
-
 	1. If amended doc, set suffix.
 	2. If `autoname` method is declared, then call it.
 	3. If `autoname` property is set in the DocType (`meta`), then build it using the `autoname` property.
 	4. If no rule defined, use hash.
-
 	:param doc: Document to be named.
 	"""
 
@@ -200,7 +207,6 @@ def is_autoincremented(doctype: str, meta: Optional["Meta"] = None) -> bool:
 			return True
 
 	return False
-
 
 def set_name_from_naming_options(autoname, doc):
 	"""
@@ -304,6 +310,8 @@ def parse_naming_series(
 
 	if not number_generator:
 		number_generator = getseries
+		
+	parts = get_custom_naming_series_by_parts(parts,doc,doctype=doctype)
 
 	series_set = False
 	today = now_datetime()
@@ -323,8 +331,30 @@ def parse_naming_series(
 			part = today.strftime("%m")
 		elif e == "DD":
 			part = today.strftime("%d")
-		elif e == "YYYY":
-			part = today.strftime("%Y")
+		elif e == 'YYYY':
+			part = today.strftime('%Y')
+		elif e=='PDY':
+			date = ''
+			date_string = ''
+			if doc and doc.get('posting_date'):
+				date = doc.posting_date
+			elif doc and doc.get('transaction_date'):
+				date = doc.transaction_date
+			elif doc and doc.get('attendance_date'):
+				date = doc.attendance_date
+			
+			if date:
+				import datetime
+				year = (getdate(date)).year
+				date_string = str(year)
+			
+			part = date_string	
+			
+		elif e=='COM':
+			abbr = ''
+			if doc and doc.get('company'):
+				abbr = str(frappe.db.get_value("Company", doc.company, "abbr")) or ''
+			part = abbr
 		elif e == "WW":
 			part = determine_consecutive_week_number(today)
 		elif e == "timestamp":
@@ -345,6 +375,19 @@ def parse_naming_series(
 			name += cstr(part).strip()
 
 	return name
+
+
+def determine_consecutive_week_number(datetime):
+	"""Determines the consecutive calendar week"""
+	m = datetime.month
+	# ISO 8601 calandar week
+	w = datetime.strftime("%V")
+	# Ensure consecutiveness for the first and last days of a year
+	if m == 1 and int(w) >= 52:
+		w = "00"
+	elif m == 12 and int(w) <= 1:
+		w = "53"
+	return w
 
 
 def determine_consecutive_week_number(datetime):
@@ -405,6 +448,7 @@ def revert_series_if_last(key, name, doc=None):
 	"""
 	if ".#" in key:
 		prefix, hashes = key.rsplit(".", 1)
+
 		if "#" not in hashes:
 			# get the hash part from the key
 			hash = re.search("#+", key)
@@ -414,9 +458,12 @@ def revert_series_if_last(key, name, doc=None):
 			prefix = prefix.replace(hash.group(), "")
 	else:
 		prefix = key
+		
+	prefix = parse_naming_series(prefix.split('.'),doc=doc)
 
-	if "." in prefix:
-		prefix = parse_naming_series(prefix.split("."), doc=doc)
+	# if '.' in prefix:
+		# prefix = parse_naming_series(prefix.split('.'),doc=doc)
+
 
 	count = cint(name.replace(prefix, ""))
 	series = DocType("Series")
@@ -475,7 +522,6 @@ def validate_name(doctype: str, name: int | str, case: str | None = None):
 
 	return name
 
-
 def append_number_if_name_exists(doctype, value, fieldname="name", separator="-", filters=None):
 	if not filters:
 		filters = dict()
@@ -504,17 +550,16 @@ def append_number_if_name_exists(doctype, value, fieldname="name", separator="-"
 
 	return value
 
-
-def _set_amended_name(doc):
+def _set_amended_name(doc, separator='-'):
 	am_id = 1
 	am_prefix = doc.amended_from
 	if frappe.db.get_value(doc.doctype, doc.amended_from, "amended_from"):
-		am_id = cint(doc.amended_from.split("-")[-1]) + 1
-		am_prefix = "-".join(doc.amended_from.split("-")[:-1])  # except the last hyphen
+		am_id = cint(doc.amended_from.split(separator)[-1]) + 1
+		am_prefix = separator.join(doc.amended_from.split(separator)[:-1]) # except the last hyphen
 
-	doc.name = am_prefix + "-" + str(am_id)
+	doc.name = am_prefix + separator + str(am_id)
+
 	return doc.name
-
 
 def _field_autoname(autoname, doc, skip_slicing=None):
 	"""
@@ -534,6 +579,7 @@ def _prompt_autoname(autoname, doc):
 	# set from __newname in save.py
 	if not doc.name:
 		frappe.throw(_("Please set the document name"))
+
 
 
 def _format_autoname(autoname, doc):
@@ -557,3 +603,41 @@ def _format_autoname(autoname, doc):
 	name = BRACED_PARAMS_PATTERN.sub(get_param_value_for_match, autoname_value)
 
 	return name
+
+def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
+
+	naming_series_parts = parts
+	if (doc and doc.doctype) or doctype:
+		default_date = "PDY"
+		company = "COM"
+		
+		autoname_details = frappe.db.get_value(
+			"MRP Autoname Rule", doc.get('doctype') or doctype, ["disable_company", "disable_date"], as_dict=1
+		)
+		
+		date_list = ['PDY','YYYY']		
+		# if not any(elem in naming_series_parts for elem in date_list):
+		
+		if default_date not in naming_series_parts:
+			if autoname_details and autoname_details.disable_date == True:
+				pass
+			else:
+			
+				if doc and (doc.get('posting_date') or doc.get('transaction_date') or doc.get('attendance_date')):			
+					if len(naming_series_parts) > 0:
+						if '#' in naming_series_parts[len(naming_series_parts)-1]:
+							naming_series_parts.insert(len(naming_series_parts)-1,default_date)
+						else:
+							naming_series_parts.insert(len(naming_series_parts),default_date)
+					else:
+						naming_series_parts = ["PDY"]		
+		
+		if company not in naming_series_parts:
+			if autoname_details and autoname_details.disable_company == True:
+				pass
+			else:
+				if doc and doc.get('company'):
+					naming_series_parts.insert(0,company)
+					naming_series_parts.insert(1,"-")
+							
+	return naming_series_parts
