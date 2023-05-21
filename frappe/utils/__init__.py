@@ -34,6 +34,9 @@ PERSON_NAME_PATTERN = re.compile(r"^[\w][\w\'\-]*( \w[\w\'\-]*)*$")
 WHITESPACE_PATTERN = re.compile(r"[\t\n\r]")
 MULTI_EMAIL_STRING_PATTERN = re.compile(r'[,\n](?=(?:[^"]|"[^"]*")*$)')
 
+# def convert_utc_to_system_timezone(utc_timestamp):
+	# time_zone = get_system_timezone()
+	# return convert_utc_to_timezone(utc_timestamp, time_zone)
 
 def get_fullname(user=None):
 	"""get the full name (first name + last name) of the user from User"""

@@ -689,7 +689,17 @@ frappe.ui.form.Toolbar = class Toolbar {
 		if (this.frm.save_disabled && !this.frm.set_dirty) return;
 
 		if (this.frm.is_dirty()) {
+			if (this.page.btn_primary) {
+				this.page.btn_primary.addClass("dirty");
+			}
 			this.page.set_indicator(__("Not Saved"), "orange");
+		}
+		else
+		{
+			if (this.page.btn_primary) {
+				this.page.btn_primary.removeClass("dirty");
+			}
+			
 		}
 
 		$(this.frm.wrapper).attr("data-state", this.frm.is_dirty() ? "dirty" : "clean");

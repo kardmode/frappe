@@ -197,10 +197,11 @@ frappe.render_pdf = function (html, opts = {}) {
 		if (this.status === 200) {
 			var blob = new Blob([success.currentTarget.response], { type: "application/pdf" });
 			var objectUrl = URL.createObjectURL(blob);
+			window.open(objectUrl,"_blank",);
 
 			// Create a hidden a tag to force set report name
 			// https://stackoverflow.com/questions/19327749/javascript-blob-filename-without-link
-			let hidden_a_tag = document.createElement("a");
+			/* let hidden_a_tag = document.createElement("a");
 			document.body.appendChild(hidden_a_tag);
 			hidden_a_tag.style = "display: none";
 			hidden_a_tag.href = objectUrl;
@@ -208,7 +209,7 @@ frappe.render_pdf = function (html, opts = {}) {
 
 			// Open report in a new window
 			hidden_a_tag.click();
-			window.URL.revokeObjectURL(objectUrl);
+			window.URL.revokeObjectURL(objectUrl); */
 		}
 	};
 	xhr.send(formData);
