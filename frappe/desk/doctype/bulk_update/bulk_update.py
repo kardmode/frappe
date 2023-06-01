@@ -23,13 +23,24 @@ class BulkUpdate(Document):
 		docnames = frappe.db.sql_list(
 			f"""select name from `tab{self.document_type}`{condition} limit {limit} offset 0"""
 		)
+		
+		if self.only_list or self.field==None:
+			return [[],docnames]
+		
+		if self.sql_update:
+			frappe.db.sql(
+				f"""UPDATE `tab{self.document_type}` SET {self.field} = {self.update_value}{condition} limit {limit}"""
+			)
+			return [[],docnames]
+			
+		
 		return submit_cancel_or_update_docs(
-			self.document_type, docnames, "update", {self.field: self.update_value}
+			self.document_type, docnames, "update", {self.field: self.update_value}, self.ignore_validate_update_after_submit
 		)
 
 
 @frappe.whitelist()
-def submit_cancel_or_update_docs(doctype, docnames, action="submit", data=None):
+def submit_cancel_or_update_docs(doctype, docnames, action="submit", data=None, ignore_validate_update_after_submit=None):
 	docnames = frappe.parse_json(docnames)
 
 	if data:
@@ -49,6 +60,9 @@ def submit_cancel_or_update_docs(doctype, docnames, action="submit", data=None):
 				message = _("Cancelling {0}").format(doctype)
 			elif action == "update" and not doc.docstatus.is_cancelled():
 				doc.update(data)
+				if ignore_validate_update_after_submit:
+					doc.flags.ignore_validate_update_after_submit = True
+				
 				doc.save()
 				message = _("Updating {0}").format(doctype)
 			else:
