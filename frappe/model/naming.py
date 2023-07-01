@@ -317,7 +317,6 @@ def parse_naming_series(
 		number_generator = getseries
 		
 	parts = get_custom_naming_series_by_parts(parts,doc,doctype=doctype)
-
 	series_set = False
 	today = now_datetime()
 	for e in parts:
@@ -449,6 +448,12 @@ def revert_series_if_last(key, name, doc=None):
 	                * prefix = #### and hashes = 2021 (hash doesn't exist)
 	                * will search hash in key then accordingly get prefix = ""
 	"""
+	
+	if key.startswith("format:"):
+		first_colon_index = key.find(":")
+		autoname_value = key[first_colon_index + 1 :]
+		key = get_prefix_format_autoname(autoname_value)
+	
 	if ".#" in key:
 		prefix, hashes = key.rsplit(".", 1)
 
@@ -461,19 +466,19 @@ def revert_series_if_last(key, name, doc=None):
 			prefix = prefix.replace(hash.group(), "")
 	else:
 		prefix = key
-		
+	
+			
+	# ignore check for . so we can add default prefixes
 	prefix = parse_naming_series(prefix.split('.'),doc=doc)
-
+	
 	# if '.' in prefix:
 		# prefix = parse_naming_series(prefix.split('.'),doc=doc)
 
-
-	count = cint(name.replace(prefix, ""))
+	count = cint(name.replace(prefix, ""))	
 	series = DocType("Series")
 	current = (
 		frappe.qb.from_(series).where(series.name == prefix).for_update().select("current")
 	).run()
-
 	if current and current[0][0] == count:
 		frappe.db.sql("UPDATE `tabSeries` SET `current` = `current` - 1 WHERE `name`=%s", prefix)
 
@@ -583,8 +588,19 @@ def _prompt_autoname(autoname, doc):
 	if not doc.name:
 		frappe.throw(_("Please set the document name"))
 
-
-
+def get_prefix_format_autoname(autoname_value):
+	def get_param_value_for_match_custom(match):
+		param = match.group()
+		key = param[1:-1]
+		if '#' in key:
+			return '.' + key
+		else:
+			return key + '.'
+	
+	prefix = BRACED_PARAMS_PATTERN.sub(get_param_value_for_match_custom, autoname_value)
+	return prefix
+	
+	
 def _format_autoname(autoname, doc):
 	"""
 	Generate autoname by replacing all instances of braced params (fields, date params ('DD', 'MM', 'YY'), series)
@@ -595,18 +611,19 @@ def _format_autoname(autoname, doc):
 
 	first_colon_index = autoname.find(":")
 	autoname_value = autoname[first_colon_index + 1 :]
+	
+	prefix = get_prefix_format_autoname(autoname_value)
+	name = parse_naming_series(prefix.split('.'),doc=doc)
+	
+	# def get_param_value_for_match(match):
+		# param = match.group()
+		# return parse_naming_series([param[1:-1]], doc=doc)
 
-	def get_param_value_for_match(match):
-		param = match.group()
-		return parse_naming_series([param[1:-1]], doc=doc)
-
-	# Replace braced params with their parsed value
-	name = BRACED_PARAMS_PATTERN.sub(get_param_value_for_match, autoname_value)
-
+	# # Replace braced params with their parsed value
+	# name = BRACED_PARAMS_PATTERN.sub(get_param_value_for_match, autoname_value)
 	return name
 
 def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
-
 	naming_series_parts = parts
 	if (doc and doc.doctype) or doctype:
 		default_date = "PDY"
