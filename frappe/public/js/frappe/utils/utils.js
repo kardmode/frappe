@@ -1256,7 +1256,7 @@ Object.assign(frappe.utils, {
 		return frappe.utils.shorten_number(label, country || default_country, 3);
 	},
 
-	generate_route(item) {
+	generate_route(item) {		
 		const type = item.type.toLowerCase();
 		if (type === "doctype") {
 			item.doctype = item.name;
@@ -1301,6 +1301,8 @@ Object.assign(frappe.utils, {
 					}
 				}
 			} else if (type === "report") {
+				if(item.name == "MRP VAT Sales")
+					console.log(item);
 				if (item.is_query_report) {
 					route = "query-report/" + item.name;
 				} else if (!item.doctype) {
