@@ -61,6 +61,7 @@
    "default": "0",
    "fieldname": "disabled",
    "fieldtype": "Check",
+   "in_standard_filter": 1,
    "label": "Disabled"
   },
   {
@@ -259,7 +260,7 @@
  "idx": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2021-10-12 17:52:41.167107",
+ "modified": "2023-08-26 04:54:18.761703",
  "modified_by": "Administrator",
  "module": "Printing",
  "name": "Print Format",
@@ -280,5 +281,6 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
+ "states": [],
  "track_changes": 1
 }

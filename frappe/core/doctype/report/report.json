@@ -1,5 +1,6 @@
 {
  "actions": [],
+ "allow_rename": 1,
  "autoname": "field:report_name",
  "creation": "2013-03-09 15:45:57",
  "doctype": "DocType",
@@ -195,7 +196,7 @@
  "idx": 1,
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2023-04-07 18:18:11.782178",
+ "modified": "2023-08-21 02:09:56.387766",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "Report",

@@ -252,7 +252,7 @@ $.extend(frappe.meta, {
 	},
 
 	get_print_formats: function (doctype) {
-		var print_format_list = ["Standard"];
+		var print_format_list = [];
 		var default_print_format = locals.DocType[doctype].default_print_format;
 		let enable_raw_printing = frappe.model.get_doc(
 			":Print Settings",
@@ -261,7 +261,7 @@ $.extend(frappe.meta, {
 		var print_formats = frappe
 			.get_list("Print Format", { doc_type: doctype })
 			.sort(function (a, b) {
-				return a > b ? 1 : -1;
+				 return a > b ? 1 : -1;
 			});
 		$.each(print_formats, function (i, d) {
 			if (
@@ -275,9 +275,13 @@ $.extend(frappe.meta, {
 
 		if (default_print_format && default_print_format != "Standard") {
 			var index = print_format_list.indexOf(default_print_format);
-			print_format_list.splice(index, 1).sort();
+			print_format_list.splice(index, 1);
+			print_format_list.sort();
 			print_format_list.unshift(default_print_format);
 		}
+		
+		if (print_format_list.length <=0 || !default_print_format)
+			print_format_list.unshift("Standard");
 
 		return print_format_list;
 	},

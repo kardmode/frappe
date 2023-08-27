@@ -1093,7 +1093,11 @@ class BaseDocument:
 
 			doctype = self.meta.get_field(parentfield).options if parentfield else self.doctype
 			df = frappe.get_meta(doctype).get_field(fieldname)
-
+			if not df or not df.get("fieldtype"):
+				precision = cint(frappe.db.get_default("currency_precision")) or 2
+				# precision = cint(frappe.db.get_default("float_precision")) or 3
+				return self._precision[cache_key][fieldname]
+			
 			if df.fieldtype in ("Currency", "Float", "Percent"):
 				self._precision[cache_key][fieldname] = get_field_precision(df, self)
 

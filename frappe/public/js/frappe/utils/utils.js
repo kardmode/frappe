@@ -1304,8 +1304,6 @@ Object.assign(frappe.utils, {
 					}
 				}
 			} else if (type === "report") {
-				if(item.name == "MRP VAT Sales")
-					console.log(item);
 				if (item.is_query_report) {
 					route = "query-report/" + item.name;
 				} else if (!item.doctype) {
