@@ -170,21 +170,6 @@ frappe.ui.Page = class Page {
 		let sidebar_toggle = $(".page-head").find(".sidebar-toggle-btn");
 		let sidebar_wrapper = this.wrapper.find(".layout-side-section");
 		
-		/* let route = frappe.get_route_str();
-		if(!route.toLowerCase().includes('Workspaces'.toLowerCase()))
-		{
-			if (frappe.utils.is_xs() || frappe.utils.is_sm()) {
-				this.setup_overlay_sidebar();
-			} else {
-				//this.setup_overlay_sidebar();
-				sidebar_wrapper.toggle();
-			}
-			$(document.body).trigger("toggleSidebar");
-			this.update_sidebar_icon();
-		} */
-		
-		
-		
 		if (this.disable_sidebar_toggle || !sidebar_wrapper.length) {
 			sidebar_toggle.remove();
 		} else {

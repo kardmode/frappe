@@ -1,23 +1,26 @@
 {
- "content": null, 
- "creation": "2015-01-27 04:35:43.872918", 
- "docstatus": 0, 
- "doctype": "Page", 
- "idx": 0, 
- "modified": "2017-05-03 05:59:33.702308", 
- "modified_by": "Administrator", 
- "module": "Printing", 
- "name": "print-format-builder", 
- "owner": "Administrator", 
- "page_name": "print-format-builder", 
+ "beta": 0,
+ "content": null,
+ "creation": "2015-01-27 04:35:43.872918",
+ "custom": 0,
+ "docstatus": 0,
+ "doctype": "Page",
+ "document_type": "",
+ "idx": 0,
+ "modified": "2023-09-19 06:08:15.308342",
+ "modified_by": "Administrator",
+ "module": "Printing",
+ "name": "print-format-builder",
+ "owner": "Administrator",
+ "page_name": "print-format-builder",
  "roles": [
   {
    "role": "System Manager"
   }
- ], 
- "script": null, 
- "standard": "Yes", 
- "style": null, 
- "system_page": 0, 
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
  "title": "Print Format Builder"
 }

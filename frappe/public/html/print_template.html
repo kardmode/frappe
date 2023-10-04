@@ -34,17 +34,14 @@
 					{% endif %}
 				{% endif %}
 			>
-			{% if print_settings.letter_head %}
 			<div {% if print_settings.repeat_header_footer %} id="header-html" class="hidden-pdf" {% endif %}>
 				<div class="letter-head" style="position:relative;">
 					{% if print_settings.letter_head %}
 						{{ print_settings.letter_head.header }}
 					{% endif %}
 				</div>
-			</div>			
-			
+			</div>	
 			{{ content }}
-			
 			<div id="footer-html" class="hidden-pdf">
 				<div class="letter-head-footer" style="position:relative;">
 					{% if print_settings.repeat_header_footer %}
