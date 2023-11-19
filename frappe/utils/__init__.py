@@ -348,6 +348,7 @@ def _get_traceback_sanitizer():
 			*[(variable_name, lambda *a, **kw: placeholder) for variable_name in blocklist],
 			# redact dictionary keys
 			(["_secret", dict, lambda *a, **kw: False], dict_printer),
+			(["_secret", frappe._dict, lambda *a, **kw: False], dict_printer),
 		],
 	)
 
@@ -657,6 +658,11 @@ def is_markdown(text):
 		return False
 	else:
 		return not NON_MD_HTML_PATTERN.search(text)
+
+
+def is_a_property(x) -> bool:
+	"""Get properties (@property, @cached_property) in a controller class"""
+	return isinstance(x, (property, functools.cached_property))
 
 
 def get_sites(sites_path=None):

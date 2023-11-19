@@ -8,6 +8,7 @@ from werkzeug.exceptions import NotFound
 
 import frappe
 from frappe import _, is_whitelisted, msgprint
+from frappe.core.doctype.file.utils import relink_mismatched_files
 from frappe.core.doctype.server_script.server_script_utils import run_server_script_for_doc_event
 from frappe.desk.form.document_follow import follow_document
 from frappe.integrations.doctype.webhook import run_webhooks
@@ -192,7 +193,7 @@ class Document(BaseDocument):
 	def check_permission(self, permtype="read", permlevel=None):
 		"""Raise `frappe.PermissionError` if not permitted"""
 		if not self.has_permission(permtype):
-			self.raise_no_permission_to(permlevel or permtype)
+			self.raise_no_permission_to(permtype)
 
 	def has_permission(self, permtype="read", verbose=False) -> bool:
 		"""
@@ -211,7 +212,9 @@ class Document(BaseDocument):
 
 	def raise_no_permission_to(self, perm_type):
 		"""Raise `frappe.PermissionError`."""
-		frappe.flags.error_message = _("Insufficient Permission for {0}").format(self.doctype)
+		frappe.flags.error_message = (
+			_("Insufficient Permission for {0}").format(self.doctype) + f" ({frappe.bold(_(perm_type))})"
+		)
 		raise frappe.PermissionError
 
 	def insert(
@@ -282,6 +285,7 @@ class Document(BaseDocument):
 		# flag to prevent creation of event update log for create and update both
 		# during document creation
 		self.flags.update_log_for_doc_creation = True
+		relink_mismatched_files(self)
 		self.run_post_save_methods()
 		self.flags.in_insert = False
 

@@ -338,7 +338,7 @@ export default class GridRow {
 					this.open_form_button = $(`
 						<div class="btn-open-row">
 							<a>${frappe.utils.icon("edit", "xs")}</a>
-							<div class="hidden-xs edit-grid-row">${__("Edit")}</div>
+							<div class="hidden-md edit-grid-row">${__("Edit", "", "Edit grid row")}</div>
 						</div>
 					`)
 						.appendTo(this.open_form_button)
@@ -963,7 +963,17 @@ export default class GridRow {
 				}
 				var col = this;
 				let first_input_field = $(col).find('input[type="Text"]:first');
-				first_input_field.trigger("focus");
+				let input_in_focus = false;
+
+				$(col)
+					.find("input[type='text']")
+					.each(function () {
+						if ($(this).is(":focus")) {
+							input_in_focus = true;
+						}
+					});
+
+				!input_in_focus && first_input_field.trigger("focus");
 
 				if (event.pointerType == "touch") {
 					first_input_field.length && on_input_focus(first_input_field);
