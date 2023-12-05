@@ -43,6 +43,26 @@ class BulkUpdate(Document):
 def submit_cancel_or_update_docs(doctype, docnames, action="submit", data=None, ignore_validate_update_after_submit=None):
 	docnames = frappe.parse_json(docnames)
 
+	if len(docnames) < 20:
+		return _bulk_action(doctype, docnames, action, data)
+	elif len(docnames) <= 500:
+		frappe.msgprint(_("Bulk operation is enqueued in background."), alert=True)
+		frappe.enqueue(
+			_bulk_action,
+			doctype=doctype,
+			docnames=docnames,
+			action=action,
+			data=data,
+			queue="short",
+			timeout=1000,
+		)
+	else:
+		frappe.throw(
+			_("Bulk operations only support up to 500 documents."), title=_("Too Many Documents")
+		)
+
+
+def _bulk_action(doctype, docnames, action, data):
 	if data:
 		data = frappe.parse_json(data)
 
@@ -79,5 +99,4 @@ def submit_cancel_or_update_docs(doctype, docnames, action="submit", data=None, 
 
 def show_progress(docnames, message, i, description):
 	n = len(docnames)
-	if n >= 10:
-		frappe.publish_progress(float(i) * 100 / n, title=message, description=description)
+	frappe.publish_progress(float(i) * 100 / n, title=message, description=description)
