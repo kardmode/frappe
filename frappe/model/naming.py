@@ -627,12 +627,16 @@ def _format_autoname(autoname, doc):
 
 def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
 	naming_series_parts = parts
-	if (doc and doc.doctype) or doctype:
+	
+	if not doctype and doc:
+		doctype = doc.get("doctype")
+	
+	if doctype:
 		default_date = "PDY"
 		company = "COM"
 		
 		autoname_details = frappe.db.get_value(
-			"MRP Autoname Rule", doc.get('doctype') or doctype, ["disable_company", "disable_date"], as_dict=1
+			"MRP Autoname Rule", doctype, ["disable_company", "disable_date"], as_dict=1
 		)
 		
 		date_list = ['PDY','YYYY']		
@@ -642,8 +646,7 @@ def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
 			if autoname_details and autoname_details.disable_date == True:
 				pass
 			else:
-			
-				if doc and (doc.get('posting_date') or doc.get('transaction_date') or doc.get('attendance_date')):			
+				if frappe.get_meta(doctype).has_field("posting_date") or frappe.get_meta(doctype).has_field("transaction_date") or frappe.get_meta(doctype).has_field("attendance_date"): 
 					if len(naming_series_parts) > 0:
 						if '#' in naming_series_parts[len(naming_series_parts)-1]:
 							naming_series_parts.insert(len(naming_series_parts)-1,default_date)
@@ -656,8 +659,8 @@ def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
 			if autoname_details and autoname_details.disable_company == True:
 				pass
 			else:
-				if doc and doc.get('company'):
+				if frappe.get_meta(doctype).has_field("company"):
 					naming_series_parts.insert(0,company)
 					naming_series_parts.insert(1,"-")
-							
+						
 	return naming_series_parts
