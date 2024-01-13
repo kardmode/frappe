@@ -130,7 +130,6 @@ def prepare_options(html, options):
 	if not (options.get("page-width") or options.get("page-height")) and not options.get("page-size"):
 		options['page-size'] = frappe.db.get_single_value("Print Settings", "pdf_page_size") or "A4"
 	
-
 	return html, options
 
 
@@ -149,23 +148,42 @@ def get_cookie_options():
 		options["cookie-jar"] = cookiejar
 
 	return options
-	
-def get_cookie_options_mine():
+
+def get_cookie_options_new():
 	options = {}
 	if frappe.session and frappe.session.sid and hasattr(frappe.local, "request"):
-		options['cookie'] = [('sid', '{0}'.format(frappe.session.sid))]
-		if frappe.session.sid == frappe.session.user:
-			sid = frappe.session.sid
-			
+		sid = frappe.session.sid
+		if frappe.session.user and sid == frappe.session.user:
 			from frappe.sessions import get_sessions_to_clear
 			sids = get_sessions_to_clear()
 			if len(sids) > 0:
 				sid = sids[0]
-			else:
-				sid = frappe.session.sid
-				options['cookie'] = [('sid', '{0}'.format(sid))]
+		
+		
+		# Use wkhtmltopdf's cookie-jar feature to set cookies and restrict them to host domain
+		cookiejar = f"/tmp/{frappe.generate_hash()}.jar"
 
-			options['cookie'] = [('sid', '{0}'.format(sid))]
+		# Remove port from request.host
+		# https://werkzeug.palletsprojects.com/en/0.16.x/wrappers/#werkzeug.wrappers.BaseRequest.host
+		domain = frappe.utils.get_host_name().split(":", 1)[0]
+		with open(cookiejar, "w") as f:
+			f.write(f"sid={sid}; Domain={domain};\n")
+
+		options["cookie-jar"] = cookiejar
+
+	return options
+	
+def get_cookie_options_mine():
+	options = {}
+	if frappe.session and frappe.session.sid and hasattr(frappe.local, "request"):
+		sid = frappe.session.sid
+		if frappe.session.user and sid == frappe.session.user:
+			from frappe.sessions import get_sessions_to_clear
+			sids = get_sessions_to_clear()
+			if len(sids) > 0:
+				sid = sids[0]
+
+		options['cookie'] = [('sid', '{0}'.format(sid))]
 
 	return options
 
