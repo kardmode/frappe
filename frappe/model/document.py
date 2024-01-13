@@ -330,6 +330,7 @@ class Document(BaseDocument):
 		if self.get("__islocal") or not self.get("name"):
 			return self.insert()
 
+		self._set_defaults()
 		self.check_permission("write", "save")
 
 		self.set_user_and_timestamp()
@@ -738,16 +739,18 @@ class Document(BaseDocument):
 		if frappe.flags.in_import:
 			return
 
-		new_doc = frappe.new_doc(self.doctype, as_dict=True)
-		self.update_if_missing(new_doc)
+		if self.is_new():
+			new_doc = frappe.new_doc(self.doctype, as_dict=True)
+			self.update_if_missing(new_doc)
 
 		# children
 		for df in self.meta.get_table_fields():
-			new_doc = frappe.new_doc(df.options, as_dict=True)
+			new_doc = frappe.new_doc(df.options, parent_doc=self, parentfield=df.fieldname, as_dict=True)
 			value = self.get(df.fieldname)
 			if isinstance(value, list):
 				for d in value:
-					d.update_if_missing(new_doc)
+					if d.is_new():
+						d.update_if_missing(new_doc)
 
 	def check_if_latest(self):
 		"""Checks if `modified` timestamp provided by document being updated is same as the

@@ -211,7 +211,7 @@ class Communication(Document, CommunicationEmailMixin):
 		emails = split_emails(emails) if isinstance(emails, str) else (emails or [])
 		if exclude_displayname:
 			return [email.lower() for email in {parse_addr(email)[1] for email in emails} if email]
-		return [email.lower() for email in set(emails) if email]
+		return [email for email in set(emails) if email]
 
 	def to_list(self, exclude_displayname=True):
 		"""Returns to list."""
@@ -338,7 +338,7 @@ class Communication(Document, CommunicationEmailMixin):
 				frappe.db.commit()
 
 	def parse_email_for_timeline_links(self):
-		if not frappe.db.get_value("Email Account", self.email_account, "enable_automatic_linking"):
+		if not frappe.db.get_value("Email Account", filters={"enable_automatic_linking": 1}):
 			return
 
 		for doctype, docname in parse_email([self.recipients, self.cc, self.bcc]):

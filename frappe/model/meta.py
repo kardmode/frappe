@@ -574,7 +574,14 @@ class Meta(Document):
 
 		return self.high_permlevel_fields
 
-	def get_permitted_fieldnames(self, parenttype=None, *, user=None, permission_type="read"):
+	def get_permitted_fieldnames(
+		self,
+		parenttype=None,
+		*,
+		user=None,
+		permission_type="read",
+		with_virtual_fields=True,
+	):
 		"""Build list of `fieldname` with read perm level and all the higher perm levels defined.
 
 		Note: If permissions are not defined for DocType, return all the fields with value.
@@ -597,7 +604,9 @@ class Meta(Document):
 			self.get_permlevel_access(permission_type=permission_type, parenttype=parenttype, user=user)
 		)
 
-		for df in self.get_fieldnames_with_value(with_field_meta=True, with_virtual_fields=True):
+		for df in self.get_fieldnames_with_value(
+			with_field_meta=True, with_virtual_fields=with_virtual_fields
+		):
 			if df.permlevel in permlevel_access:
 				permitted_fieldnames.append(df.fieldname)
 
@@ -685,15 +694,12 @@ class Meta(Document):
 					dict(label=link.group, items=[link.parent_doctype or link.link_doctype])
 				)
 
+			if not data.fieldname and link.link_fieldname:
+				data.fieldname = link.link_fieldname
+
 			if not link.is_child_table:
-				if link.link_fieldname != data.fieldname:
-					if data.fieldname:
-						data.non_standard_fieldnames[link.link_doctype] = link.link_fieldname
-					else:
-						data.fieldname = link.link_fieldname
+				data.non_standard_fieldnames[link.link_doctype] = link.link_fieldname
 			elif link.is_child_table:
-				if not data.fieldname:
-					data.fieldname = link.link_fieldname
 				data.internal_links[link.parent_doctype] = [link.table_fieldname, link.link_fieldname]
 
 	def get_row_template(self):
