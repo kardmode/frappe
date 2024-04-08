@@ -166,9 +166,7 @@ class DataExporter:
 		self.writer.writerow([_("Notes:")])
 		self.writer.writerow([_("Please do not change the template headings.")])
 		self.writer.writerow([_("First data column must be blank.")])
-		self.writer.writerow(
-			[_('If you are uploading new records, leave the "name" (ID) column blank.')]
-		)
+		self.writer.writerow([_('If you are uploading new records, leave the "name" (ID) column blank.')])
 		self.writer.writerow(
 			[_('If you are uploading new records, "Naming Series" becomes mandatory, if present.')]
 		)
@@ -235,7 +233,9 @@ class DataExporter:
 							"label": "Parent",
 							"fieldtype": "Data",
 							"reqd": 1,
-							"info": _("Parent is the name of the document to which the data will get added to."),
+							"info": _(
+								"Parent is the name of the document to which the data will get added to."
+							),
 						}
 					),
 					True,
@@ -427,23 +427,20 @@ class DataExporter:
 				row[_column_start_end.start + i + 1] = value
 
 	def build_response_as_excel(self):
+		from frappe.desk.utils import provide_binary_file
+		from frappe.utils.xlsxutils import make_xlsx
+
 		filename = frappe.generate_hash(length=10)
 		with open(filename, "wb") as f:
 			f.write(cstr(self.writer.getvalue()).encode("utf-8"))
 		f = open(filename)
 		reader = csv.reader(f)
-
-		from frappe.utils.xlsxutils import make_xlsx
-
 		xlsx_file = make_xlsx(reader, "Data Import Template" if self.template else "Data Export")
 
 		f.close()
 		os.remove(filename)
 
-		# write out response as a xlsx type
-		frappe.response["filename"] = _(self.doctype) + ".xlsx"
-		frappe.response["filecontent"] = xlsx_file.getvalue()
-		frappe.response["type"] = "binary"
+		provide_binary_file(self.doctype, "xlsx", xlsx_file.getvalue())
 
 	def _append_name_column(self, dt=None):
 		self.append_field_column(

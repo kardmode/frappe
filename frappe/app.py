@@ -125,7 +125,7 @@ def application(request: Request):
 
 		try:
 			run_after_request_hooks(request, response)
-		except Exception as e:
+		except Exception:
 			# We can not handle exceptions safely here.
 			frappe.logger().error("Failed to run after request hook", exc_info=True)
 
@@ -251,9 +251,7 @@ def set_cors_headers(response):
 
 	# only required for preflight requests
 	if request.method == "OPTIONS":
-		cors_headers["Access-Control-Allow-Methods"] = request.headers.get(
-			"Access-Control-Request-Method"
-		)
+		cors_headers["Access-Control-Allow-Methods"] = request.headers.get("Access-Control-Request-Method")
 
 		if allowed_headers := request.headers.get("Access-Control-Request-Headers"):
 			cors_headers["Access-Control-Allow-Headers"] = allowed_headers
@@ -377,11 +375,7 @@ def handle_exception(e):
 
 def sync_database(rollback: bool) -> bool:
 	# if HTTP method would change server state, commit if necessary
-	if (
-		frappe.db
-		and (frappe.local.flags.commit or frappe.local.request.method in UNSAFE_HTTP_METHODS)
-		and frappe.db.transaction_writes
-	):
+	if frappe.db and (frappe.local.flags.commit or frappe.local.request.method in UNSAFE_HTTP_METHODS):
 		frappe.db.commit()
 		rollback = False
 	elif frappe.db:
@@ -399,9 +393,7 @@ def sync_database(rollback: bool) -> bool:
 	return rollback
 
 
-def serve(
-	port=8000, profile=False, no_reload=False, no_threading=False, site=None, sites_path="."
-):
+def serve(port=8000, profile=False, no_reload=False, no_threading=False, site=None, sites_path="."):
 	global application, _site, _sites_path
 	_site = site
 	_sites_path = sites_path
@@ -412,9 +404,7 @@ def serve(
 		application = ProfilerMiddleware(application, sort_by=("cumtime", "calls"))
 
 	if not os.environ.get("NO_STATICS"):
-		application = SharedDataMiddleware(
-			application, {"/assets": str(os.path.join(sites_path, "assets"))}
-		)
+		application = SharedDataMiddleware(application, {"/assets": str(os.path.join(sites_path, "assets"))})
 
 		application = StaticDataMiddleware(application, {"/files": str(os.path.abspath(sites_path))})
 

@@ -234,7 +234,6 @@ def get_rendered_template(
 	settings=None,
 	print_options=None,
 ):
-
 	print_settings = frappe.get_single("Print Settings").as_dict()
 	print_settings.update(settings or {})
 
@@ -322,14 +321,22 @@ def get_rendered_template(
 	letter_head = frappe._dict(get_letter_head(doc, no_letterhead, letterhead) or {})
 	
 	if letter_head.content:
-		letter_head.content = frappe.utils.jinja.render_template(
-			letter_head.content, {"doc": doc.as_dict()}
-		)
+		letter_head.content = frappe.utils.jinja.render_template(letter_head.content, {"doc": doc.as_dict()})
+		if letter_head.header_script:
+			letter_head.content += f"""
+				<script>
+					{ letter_head.header_script }
+				</script>
+			"""
 
 	if letter_head.footer:
-		letter_head.footer = frappe.utils.jinja.render_template(
-			letter_head.footer, {"doc": doc.as_dict()}
-		)
+		letter_head.footer = frappe.utils.jinja.render_template(letter_head.footer, {"doc": doc.as_dict()})
+		if letter_head.footer_script:
+			letter_head.footer += f"""
+				<script>
+					{ letter_head.footer_script }
+				</script>
+			"""
 
 	convert_markdown(doc, meta)
 	
@@ -501,9 +508,7 @@ def get_rendered_raw_commands(doc, name=None, print_format=None, meta=None, lang
 			_("{0} is not a raw printing format.").format(print_format), frappe.TemplateNotFoundError
 		)
 
-	return {
-		"raw_commands": get_rendered_template(doc, name=name, print_format=print_format, meta=meta)
-	}
+	return {"raw_commands": get_rendered_template(doc, name=name, print_format=print_format, meta=meta)}
 
 
 def validate_print_permission(doc):
@@ -540,6 +545,7 @@ def validate_key(key, doc):
 def get_letter_head(doc, no_letterhead,letterhead=None):
 	if no_letterhead:
 		return {}
+<<<<<<< HEAD
 	if letterhead == "Default":
 		
 		if doc.get("company"):
@@ -565,17 +571,32 @@ def get_letter_head(doc, no_letterhead,letterhead=None):
 			return frappe.db.get_value("Letter Head", letter_head, ["content", "footer"], as_dict=True)
 		else:
 			return {}
+=======
+
+	letterhead_name = letterhead or doc.get("letter_head")
+	if letterhead_name:
+		return frappe.db.get_value(
+			"Letter Head",
+			letterhead_name,
+			["content", "footer", "header_script", "footer_script"],
+			as_dict=True,
+		)
+>>>>>>> c3350b8fa862a80a27147afcea6c2f43db9554f2
 	else:
 		return (
-			frappe.db.get_value("Letter Head", {"is_default": 1}, ["content", "footer"], as_dict=True) or {}
+			frappe.db.get_value(
+				"Letter Head",
+				{"is_default": 1},
+				["content", "footer", "header_script", "footer_script"],
+				as_dict=True,
+			)
+			or {}
 		)
 
 
 def get_print_format(doctype, print_format):
 	if print_format.disabled:
-		frappe.throw(
-			_("Print Format {0} is disabled").format(print_format.name), frappe.DoesNotExistError
-		)
+		frappe.throw(_("Print Format {0} is disabled").format(print_format.name), frappe.DoesNotExistError)
 
 	# server, find template
 	module = print_format.module or frappe.db.get_value("DocType", doctype, "module")
@@ -630,7 +651,7 @@ def make_layout(doc, meta, format_data=None):
 
 		if df.fieldtype == "Section Break" or page == []:
 			if len(page) > 1:
-				if page[-1]["has_data"] == False:
+				if page[-1]["has_data"] is False:
 					# truncate last section if empty
 					del page[-1]
 

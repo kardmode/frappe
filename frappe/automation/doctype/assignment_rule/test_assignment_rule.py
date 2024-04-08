@@ -81,13 +81,11 @@ class TestAutoAssign(FrappeTestCase):
 		self.assignment_rule.save()
 
 		for _ in range(30):
-			note = make_note(dict(public=1))
+			make_note(dict(public=1))
 
 		# check if each user has 10 assignments (?)
 		for user in ("test@example.com", "test1@example.com", "test2@example.com"):
-			self.assertEqual(
-				len(frappe.get_all("ToDo", dict(allocated_to=user, reference_type="Note"))), 10
-			)
+			self.assertEqual(len(frappe.get_all("ToDo", dict(allocated_to=user, reference_type="Note"))), 10)
 
 		# clear 5 assignments for first user
 		# can't do a limit in "delete" since postgres does not support it
@@ -97,14 +95,12 @@ class TestAutoAssign(FrappeTestCase):
 			frappe.db.delete("ToDo", {"name": d.name})
 
 		# add 5 more assignments
-		for i in range(5):
+		for _i in range(5):
 			make_note(dict(public=1))
 
 		# check if each user still has 10 assignments
 		for user in ("test@example.com", "test1@example.com", "test2@example.com"):
-			self.assertEqual(
-				len(frappe.get_all("ToDo", dict(allocated_to=user, reference_type="Note"))), 10
-			)
+			self.assertEqual(len(frappe.get_all("ToDo", dict(allocated_to=user, reference_type="Note"))), 10)
 
 	def test_assingment_on_guest_submissions(self):
 		"""Sometimes documents are inserted as guest, check if assignment rules run on them. Use case: Web Forms"""

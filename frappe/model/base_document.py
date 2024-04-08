@@ -2,6 +2,7 @@
 # License: MIT. See LICENSE
 import datetime
 import json
+import types
 from functools import cached_property
 
 import frappe
@@ -96,19 +97,21 @@ def get_controller(doctype):
 
 
 class BaseDocument:
-	_reserved_keywords = {
-		"doctype",
-		"meta",
-		"flags",
-		"parent_doc",
-		"_table_fields",
-		"_valid_columns",
-		"_doc_before_save",
-		"_table_fieldnames",
-		"_reserved_keywords",
-		"permitted_fieldnames",
-		"dont_update_if_missing",
-	}
+	_reserved_keywords = frozenset(
+		{
+			"doctype",
+			"meta",
+			"flags",
+			"parent_doc",
+			"_table_fields",
+			"_valid_columns",
+			"_doc_before_save",
+			"_table_fieldnames",
+			"_reserved_keywords",
+			"permitted_fieldnames",
+			"dont_update_if_missing",
+		}
+	)
 
 	def __init__(self, d):
 		if d.get("doctype"):
@@ -199,7 +202,7 @@ class BaseDocument:
 
 		value = self.__dict__.get(key, default)
 
-		if limit and isinstance(value, (list, tuple)) and len(value) > limit:
+		if limit and isinstance(value, list | tuple) and len(value) > limit:
 			value = value[:limit]
 
 		return value
@@ -361,7 +364,7 @@ class BaseDocument:
 					value = None
 
 			if convert_dates_to_str and isinstance(
-				value, (datetime.datetime, datetime.date, datetime.time, datetime.timedelta)
+				value, datetime.datetime | datetime.date | datetime.time | datetime.timedelta
 			):
 				value = str(value)
 
@@ -502,7 +505,7 @@ class BaseDocument:
 
 		if not self.creation:
 			self.creation = self.modified = now()
-			self.created_by = self.modified_by = frappe.session.user
+			self.owner = self.modified_by = frappe.session.user
 
 		# if doctype is "DocType", don't insert null values as we don't know who is valid yet
 		d = self.get_valid_dict(
@@ -574,7 +577,7 @@ class BaseDocument:
 				SET {values} WHERE `name`=%s""".format(
 					doctype=self.doctype, values=", ".join("`" + c + "`=%s" for c in columns)
 				),
-				list(d.values()) + [name],
+				[*list(d.values()), name],
 			)
 		except Exception as e:
 			if frappe.db.is_unique_key_violation(e):
@@ -729,9 +732,7 @@ class BaseDocument:
 		invalid_links = []
 		cancelled_links = []
 
-		for df in self.meta.get_link_fields() + self.meta.get(
-			"fields", {"fieldtype": ("=", "Dynamic Link")}
-		):
+		for df in self.meta.get_link_fields() + self.meta.get("fields", {"fieldtype": ("=", "Dynamic Link")}):
 			docname = self.get(df.fieldname)
 
 			if docname:
@@ -761,7 +762,9 @@ class BaseDocument:
 						# cache a single value type
 						values = _dict(name=frappe.db.get_value(doctype, docname, "name", cache=True))
 					else:
-						values_to_fetch = ["name"] + [_df.fetch_from.split(".")[-1] for _df in fields_to_fetch]
+						values_to_fetch = ["name"] + [
+							_df.fetch_from.split(".")[-1] for _df in fields_to_fetch
+						]
 
 						# don't cache if fetching other values too
 						values = frappe.db.get_value(doctype, docname, values_to_fetch, as_dict=True)
@@ -790,7 +793,6 @@ class BaseDocument:
 						and frappe.get_meta(doctype).is_submittable
 						and cint(frappe.db.get_value(doctype, docname, "docstatus")) == DocStatus.cancelled()
 					):
-
 						cancelled_links.append((df.fieldname, docname, get_msg(df, docname)))
 
 		return invalid_links, cancelled_links
@@ -807,7 +809,9 @@ class BaseDocument:
 
 			if not fetch_from_df:
 				frappe.throw(
-					_('Please check the value of "Fetch From" set for field {0}').format(frappe.bold(df.label)),
+					_('Please check the value of "Fetch From" set for field {0}').format(
+						frappe.bold(df.label)
+					),
 					title=_("Wrong Fetch From value"),
 				)
 
@@ -1075,9 +1079,7 @@ class BaseDocument:
 		if self.get(fieldname) and not self.is_dummy_password(self.get(fieldname)):
 			return self.get(fieldname)
 
-		return get_decrypted_password(
-			self.doctype, self.name, fieldname, raise_exception=raise_exception
-		)
+		return get_decrypted_password(self.doctype, self.name, fieldname, raise_exception=raise_exception)
 
 	def is_dummy_password(self, pwd):
 		return "".join(set(pwd)) == "*"
@@ -1147,7 +1149,7 @@ class BaseDocument:
 		if not doc:
 			doc = getattr(self, "parent_doc", None) or self
 
-		if (absolute_value or doc.get("absolute_value")) and isinstance(val, (int, float)):
+		if (absolute_value or doc.get("absolute_value")) and isinstance(val, int | float):
 			val = abs(self.get(fieldname))
 
 		return format_value(val, df=df, doc=doc, currency=currency, format=format)
@@ -1254,7 +1256,7 @@ def _filter(data, filters, limit=None):
 		for f in filters:
 			fval = filters[f]
 
-			if not isinstance(fval, (tuple, list)):
+			if not isinstance(fval, tuple | list):
 				if fval is True:
 					fval = ("not None", fval)
 				elif fval is False:

@@ -85,11 +85,10 @@ def get_preferred_address(doctype, name, preferred_key="is_primary_address"):
 			FROM
 				`tabAddress` addr, `tabDynamic Link` dl
 			WHERE
-				dl.parent = addr.name and dl.link_doctype = %s and
-				dl.link_name = %s and ifnull(addr.disabled, 0) = 0 and
-				%s = %s
-			"""
-			% ("%s", "%s", preferred_key, "%s"),
+				dl.parent = addr.name and dl.link_doctype = {} and
+				dl.link_name = {} and ifnull(addr.disabled, 0) = 0 and
+				{} = {}
+			""".format("%s", "%s", preferred_key, "%s"),
 			(doctype, name, 1),
 			as_dict=1,
 		)
@@ -101,9 +100,7 @@ def get_preferred_address(doctype, name, preferred_key="is_primary_address"):
 
 
 @frappe.whitelist()
-def get_default_address(
-	doctype: str, name: str | None, sort_key: str = "is_primary_address"
-) -> str | None:
+def get_default_address(doctype: str, name: str | None, sort_key: str = "is_primary_address") -> str | None:
 	"""Returns default Address name for the given doctype, name"""
 	if sort_key not in ["is_shipping_address", "is_primary_address"]:
 		return None

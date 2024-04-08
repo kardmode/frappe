@@ -170,9 +170,7 @@ def notify(consumer):
 		enqueued_method = "frappe.event_streaming.doctype.event_consumer.event_consumer.notify"
 		jobs = get_jobs()
 		if not jobs or enqueued_method not in jobs[frappe.local.site] and not consumer.flags.notifed:
-			frappe.enqueue(
-				enqueued_method, queue="long", enqueue_after_commit=True, **{"consumer": consumer}
-			)
+			frappe.enqueue(enqueued_method, queue="long", enqueue_after_commit=True, **{"consumer": consumer})
 
 
 def has_consumer_access(consumer, update_log):
@@ -216,6 +214,6 @@ def has_consumer_access(consumer, update_log):
 				return frappe.call(cmd, **args)
 			else:
 				return frappe.safe_eval(condition, frappe._dict(doc=doc))
-	except Exception as e:
+	except Exception:
 		consumer.log_error("has_consumer_access error")
 	return False

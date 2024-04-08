@@ -8,6 +8,7 @@ import json
 import os
 import shlex
 import subprocess
+import types
 import unittest
 from contextlib import contextmanager
 from functools import wraps
@@ -427,9 +428,7 @@ class TestCommands(BaseTestCommands):
 		self.assertEqual(check_password("Administrator", original_password), "Administrator")
 
 	@skipIf(
-		not (
-			frappe.conf.root_password and frappe.conf.admin_password and frappe.conf.db_type == "mariadb"
-		),
+		not (frappe.conf.root_password and frappe.conf.admin_password and frappe.conf.db_type == "mariadb"),
 		"DB Root password and Admin password not set in config",
 	)
 	def test_bench_drop_site_should_archive_site(self):
@@ -454,9 +453,7 @@ class TestCommands(BaseTestCommands):
 		self.assertTrue(os.path.exists(archive_directory))
 
 	@skipIf(
-		not (
-			frappe.conf.root_password and frappe.conf.admin_password and frappe.conf.db_type == "mariadb"
-		),
+		not (frappe.conf.root_password and frappe.conf.admin_password and frappe.conf.db_type == "mariadb"),
 		"DB Root password and Admin password not set in config",
 	)
 	def test_force_install_app(self):
@@ -493,15 +490,17 @@ class TestCommands(BaseTestCommands):
 
 
 class TestBackups(BaseTestCommands):
-	backup_map = {
-		"includes": {
-			"includes": [
-				"ToDo",
-				"Note",
-			]
-		},
-		"excludes": {"excludes": ["Activity Log", "Access Log", "Error Log"]},
-	}
+	backup_map = types.MappingProxyType(
+		{
+			"includes": {
+				"includes": [
+					"ToDo",
+					"Note",
+				]
+			},
+			"excludes": {"excludes": ["Activity Log", "Access Log", "Error Log"]},
+		}
+	)
 	home = os.path.expanduser("~")
 	site_backup_path = frappe.utils.get_site_path("private", "backups")
 
@@ -573,9 +572,7 @@ class TestBackups(BaseTestCommands):
 	def test_backup_with_custom_path(self):
 		"""Backup to a custom path (--backup-path)"""
 		backup_path = os.path.join(self.home, "backups")
-		self.execute(
-			"bench --site {site} backup --backup-path {backup_path}", {"backup_path": backup_path}
-		)
+		self.execute("bench --site {site} backup --backup-path {backup_path}", {"backup_path": backup_path})
 
 		self.assertEqual(self.returncode, 0)
 		self.assertTrue(os.path.exists(backup_path))
@@ -690,7 +687,12 @@ class TestRemoveApp(FrappeTestCase):
 				"module": "RemoveThis",
 				"custom": 1,
 				"fields": [
-					{"label": "Modulen't", "fieldname": "notmodule", "fieldtype": "Link", "options": "Module Def"}
+					{
+						"label": "Modulen't",
+						"fieldname": "notmodule",
+						"fieldtype": "Link",
+						"options": "Module Def",
+					}
 				],
 			}
 		).insert()

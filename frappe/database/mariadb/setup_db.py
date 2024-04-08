@@ -63,7 +63,7 @@ def setup_help_database(help_db_name):
 	dbman.drop_database(help_db_name)
 
 	# make database
-	if not help_db_name in dbman.get_database_list():
+	if help_db_name not in dbman.get_database_list():
 		try:
 			dbman.create_user(help_db_name, help_db_name)
 		except Exception as e:
@@ -120,7 +120,6 @@ def import_db_from_sql(source_sql=None, verbose=False):
 
 
 def check_database_settings():
-
 	check_compatible_versions()
 
 	# Check each expected value vs. actuals:
@@ -128,10 +127,7 @@ def check_database_settings():
 	result = True
 	for key, expected_value in REQUIRED_MARIADB_CONFIG.items():
 		if mariadb_variables.get(key) != expected_value:
-			print(
-				"For key %s. Expected value %s, found value %s"
-				% (key, expected_value, mariadb_variables.get(key))
-			)
+			print(f"For key {key}. Expected value {expected_value}, found value {mariadb_variables.get(key)}")
 			result = False
 
 	if not result:
@@ -182,8 +178,6 @@ def get_root_connection(root_login, root_password):
 		if not root_password:
 			root_password = getpass.getpass("MySQL root password: ")
 
-		frappe.local.flags.root_connection = frappe.database.get_db(
-			user=root_login, password=root_password
-		)
+		frappe.local.flags.root_connection = frappe.database.get_db(user=root_login, password=root_password)
 
 	return frappe.local.flags.root_connection

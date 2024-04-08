@@ -49,8 +49,7 @@ def get_queues_timeout():
 		"default": default_timeout,
 		"long": 1500,
 		**{
-			worker: config.get("timeout", default_timeout)
-			for worker, config in custom_workers_config.items()
+			worker: config.get("timeout", default_timeout) for worker, config in custom_workers_config.items()
 		},
 	}
 
@@ -150,9 +149,7 @@ def enqueue(
 	)
 
 
-def enqueue_doc(
-	doctype, name=None, method=None, queue="default", timeout=300, now=False, **kwargs
-):
+def enqueue_doc(doctype, name=None, method=None, queue="default", timeout=300, now=False, **kwargs):
 	"""Enqueue a method to be run on a document"""
 	return enqueue(
 		"frappe.utils.background_jobs.run_doc_method",
@@ -239,7 +236,7 @@ def start_worker(
 	rq_password: str | None = None,
 	burst: bool = False,
 	strategy: Literal["round_robin", "random"] | None = None,
-) -> NoReturn | None:
+) -> None:
 	"""Wrapper to start rq worker. Connects to redis and monitors these queues."""
 	DEQUEUE_STRATEGIES = {"round_robin": RoundRobinWorker, "random": RandomWorker}
 
@@ -254,7 +251,6 @@ def start_worker(
 		if queue:
 			queue = [q.strip() for q in queue.split(",")]
 		queues = get_queue_list(queue, build_queue_name=True)
-		queue_name = queue and generate_qname(queue)
 
 	if os.environ.get("CI"):
 		setup_loghandlers("ERROR")
@@ -265,7 +261,7 @@ def start_worker(
 	logging_level = "INFO"
 	if quiet:
 		logging_level = "WARNING"
-	worker = WorkerKlass(queues, name=get_worker_name(queue_name), connection=redis_connection)
+	worker = WorkerKlass(queues, connection=redis_connection)
 	worker.work(
 		logging_level=logging_level,
 		burst=burst,
@@ -280,9 +276,7 @@ def get_worker_name(queue):
 
 	if queue:
 		# hostname.pid is the default worker name
-		name = "{uuid}.{hostname}.{pid}.{queue}".format(
-			uuid=uuid4().hex, hostname=socket.gethostname(), pid=os.getpid(), queue=queue
-		)
+		name = f"{uuid4().hex}.{socket.gethostname()}.{os.getpid()}.{queue}"
 
 	return name
 
@@ -403,7 +397,7 @@ def get_redis_conn(username=None, password=None):
 		raise
 	except Exception as e:
 		log(
-			f"Please make sure that Redis Queue runs @ {frappe.get_conf().redis_queue}. Redis reported error: {str(e)}",
+			f"Please make sure that Redis Queue runs @ {frappe.get_conf().redis_queue}. Redis reported error: {e!s}",
 			colour="red",
 		)
 		raise
@@ -483,7 +477,7 @@ def truncate_failed_registry(job, connection, type, value, traceback):
 	"""Ensures that number of failed jobs don't exceed specified limits."""
 	from frappe.utils import create_batch
 
-	conf = frappe.get_conf(site=job.kwargs.get("site"))
+	conf = frappe.conf if frappe.conf else frappe.get_conf(site=job.kwargs.get("site"))
 	limit = (conf.get("rq_failed_jobs_limit") or RQ_FAILED_JOBS_LIMIT) - 1
 
 	for queue in get_queues(connection=connection):

@@ -12,6 +12,7 @@ import frappe.sessions
 import frappe.utils
 from frappe import _, is_whitelisted
 from frappe.core.doctype.server_script.server_script_utils import get_server_script_map
+from frappe.monitor import add_data_to_monitor
 from frappe.utils import cint
 from frappe.utils.csvutils import build_csv_response
 from frappe.utils.image import optimize_image
@@ -191,7 +192,8 @@ def upload_file():
 	optimize = frappe.form_dict.optimize
 	content = None
 
-	if frappe.form_dict.get("library_file_name", False):
+	if library_file := frappe.form_dict.get("library_file_name"):
+		frappe.has_permission("File", doc=library_file, throw=True)
 		doc = frappe.get_value(
 			"File",
 			frappe.form_dict.library_file_name,
@@ -219,9 +221,7 @@ def upload_file():
 	frappe.local.uploaded_file = content
 	frappe.local.uploaded_filename = filename
 
-	if content is not None and (
-		frappe.session.user == "Guest" or (user and not user.has_desk_access())
-	):
+	if content is not None and (frappe.session.user == "Guest" or (user and not user.has_desk_access())):
 		filetype = guess_type(filename)[0]
 		if filetype not in ALLOWED_MIMETYPES:
 			frappe.throw(_("You can only upload JPG, PNG, PDF, TXT or Microsoft documents."))
@@ -332,6 +332,8 @@ def run_doc_method(method, docs=None, dt=None, dn=None, arg=None, args=None):
 		return
 
 	frappe.response["message"] = response
+
+	add_data_to_monitor(methodname=method)
 
 
 # for backwards compatibility

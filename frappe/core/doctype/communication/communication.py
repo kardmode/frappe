@@ -46,7 +46,6 @@ class Communication(Document, CommunicationEmailMixin):
 			and self.uid
 			and self.uid != -1
 		):
-
 			email_flag_queue = frappe.db.get_value(
 				"Email Flag Queue", {"communication": self.name, "is_completed": 0}
 			)
@@ -452,6 +451,7 @@ def get_contacts(email_strings: list[str], auto_create_contact=False) -> list[st
 				contact.insert(ignore_permissions=True)
 				contact_name = contact.name
 			except Exception:
+				contact_name = None
 				contact.log_error("Unable to add contact")
 
 		if contact_name:

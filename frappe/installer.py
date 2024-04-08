@@ -92,9 +92,7 @@ def _new_site(
 		db_port=db_port,
 		no_mariadb_socket=no_mariadb_socket,
 	)
-	apps_to_install = (
-		["frappe"] + (frappe.conf.get("install_apps") or []) + (list(install_apps) or [])
-	)
+	apps_to_install = ["frappe"] + (frappe.conf.get("install_apps") or []) + (list(install_apps) or [])
 
 	for app in apps_to_install:
 		# NOTE: not using force here for 2 reasons:
@@ -212,7 +210,7 @@ def fetch_details_from_tag(_tag: str) -> tuple[str, str, str]:
 	try:
 		repo, tag = app_tag
 	except ValueError:
-		repo, tag = app_tag + [None]
+		repo, tag = [*app_tag, None]
 
 	try:
 		org, repo = org_repo
@@ -266,7 +264,7 @@ def install_app(name, verbose=False, set_as_patched=True, force=False):
 	if app_hooks.required_apps:
 		for app in app_hooks.required_apps:
 			required_app = parse_app_name(app)
-			install_app(required_app, verbose=verbose, force=force)
+			install_app(required_app, verbose=verbose)
 
 	frappe.flags.in_install = name
 	frappe.clear_cache()
@@ -355,6 +353,14 @@ def remove_app(app_name, dry_run=False, yes=False, no_backup=False, force=False)
 			click.secho(f"App {app_name} not installed on Site {site}", fg="yellow")
 			return
 
+	# Don't allow uninstalling if we have dependent apps installed
+	for app in frappe.get_installed_apps():
+		if app != app_name:
+			hooks = frappe.get_hooks(app_name=app)
+			if hooks.required_apps and any(app_name in required_app for required_app in hooks.required_apps):
+				click.secho(f"App {app_name} is a dependency of {app}. Uninstall {app} first.", fg="yellow")
+				return
+
 	print(f"Uninstalling App {app_name} from Site {site}...")
 
 	if not dry_run and not yes:
@@ -431,10 +437,7 @@ def _delete_modules(modules: list[str], dry_run: bool) -> list[str]:
 	return drop_doctypes
 
 
-def _delete_linked_documents(
-	module_name: str, doctype_linkfield_map: dict[str, str], dry_run: bool
-) -> None:
-
+def _delete_linked_documents(module_name: str, doctype_linkfield_map: dict[str, str], dry_run: bool) -> None:
 	"""Deleted all records linked with module def"""
 	for doctype, fieldname in doctype_linkfield_map.items():
 		for record in frappe.get_all(doctype, filters={fieldname: module_name}, pluck="name"):
@@ -517,13 +520,9 @@ def init_singles():
 			continue
 
 
-def make_conf(
-	db_name=None, db_password=None, site_config=None, db_type=None, db_host=None, db_port=None
-):
+def make_conf(db_name=None, db_password=None, site_config=None, db_type=None, db_host=None, db_port=None):
 	site = frappe.local.site
-	make_site_config(
-		db_name, db_password, site_config, db_type=db_type, db_host=db_host, db_port=db_port
-	)
+	make_site_config(db_name, db_password, site_config, db_type=db_type, db_host=db_host, db_port=db_port)
 	sites_path = frappe.local.sites_path
 	frappe.destroy()
 	frappe.init(site, sites_path=sites_path)
@@ -779,8 +778,6 @@ def is_downgrade(sql_file_path, verbose=False):
 
 	from semantic_version import Version
 
-	head = "INSERT INTO `tabInstalled Application` VALUES"
-
 	with open(sql_file_path) as f:
 		header = f.readline()
 		# Example first line:
@@ -821,7 +818,7 @@ def partial_restore(sql_file_path, verbose=False):
 			" partial restore operation for PostreSQL databases",
 			fg="yellow",
 		)
-		warnings.warn(warn)
+		warnings.warn(warn, stacklevel=1)
 
 	import_db_from_sql(source_sql=sql_file, verbose=verbose)
 

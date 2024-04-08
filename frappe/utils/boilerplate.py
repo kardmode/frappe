@@ -86,9 +86,7 @@ def _create_app_boilerplate(dest, hooks, no_git=False):
 		os.path.join(dest, hooks.app_name, hooks.app_name, frappe.scrub(hooks.app_title)),
 		with_init=True,
 	)
-	frappe.create_folder(
-		os.path.join(dest, hooks.app_name, hooks.app_name, "templates"), with_init=True
-	)
+	frappe.create_folder(os.path.join(dest, hooks.app_name, hooks.app_name, "templates"), with_init=True)
 	frappe.create_folder(os.path.join(dest, hooks.app_name, hooks.app_name, "www"))
 	frappe.create_folder(
 		os.path.join(dest, hooks.app_name, hooks.app_name, "templates", "pages"), with_init=True
@@ -112,9 +110,7 @@ def _create_app_boilerplate(dest, hooks, no_git=False):
 	with open(os.path.join(dest, hooks.app_name, "README.md"), "w") as f:
 		f.write(
 			frappe.as_unicode(
-				"## {}\n\n{}\n\n#### License\n\n{}".format(
-					hooks.app_title, hooks.app_description, hooks.app_license
-				)
+				f"## {hooks.app_title}\n\n{hooks.app_description}\n\n#### License\n\n{hooks.app_license}"
 			)
 		)
 
@@ -244,7 +240,7 @@ class PatchCreator:
 			raise Exception(f"Patch {self.patch_file} already exists")
 
 		*path, _filename = self.patch_file.relative_to(self.app_dir.parents[0]).parts
-		dotted_path = ".".join(path + [self.patch_file.stem])
+		dotted_path = ".".join([*path, self.patch_file.stem])
 
 		patches_txt = self.app_dir / "patches.txt"
 		existing_patches = patches_txt.read_text()

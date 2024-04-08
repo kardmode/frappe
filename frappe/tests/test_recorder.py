@@ -101,9 +101,12 @@ class TestRecorder(FrappeTestCase):
 
 		self.assertEqual(len(request["calls"]), len(queries))
 
-		for query, call in zip(queries, request["calls"]):
+		for query, call in zip(queries, request["calls"], strict=False):
 			self.assertEqual(
-				call["query"], sqlparse.format(query[sql_dialect].strip(), keyword_case="upper", reindent=True)
+				call["query"],
+				sqlparse.format(
+					query[sql_dialect].strip(), keyword_case="upper", reindent=True, strip_comments=True
+				),
 			)
 
 	def test_duplicate_queries(self):
@@ -123,7 +126,7 @@ class TestRecorder(FrappeTestCase):
 		requests = frappe.recorder.get()
 		request = frappe.recorder.get(requests[0]["uuid"])
 
-		for query, call in zip(queries, request["calls"]):
+		for query, call in zip(queries, request["calls"], strict=False):
 			self.assertEqual(call["exact_copies"], query[1])
 
 	def test_error_page_rendering(self):

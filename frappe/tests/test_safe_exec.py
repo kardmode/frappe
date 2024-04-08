@@ -18,7 +18,6 @@ class TestSafeExec(FrappeTestCase):
 		self.assertEqual(_locals["out"], 1)
 
 	def test_safe_eval(self):
-
 		TEST_CASES = {
 			"1+1": 2,
 			'"abc" in "abl"': False,
@@ -68,9 +67,7 @@ class TestSafeExec(FrappeTestCase):
 		self.assertEqual(frappe.db.sql("SELECT Max(name) FROM tabUser"), _locals["out"])
 
 	def test_safe_query_builder(self):
-		self.assertRaises(
-			frappe.PermissionError, safe_exec, """frappe.qb.from_("User").delete().run()"""
-		)
+		self.assertRaises(frappe.PermissionError, safe_exec, """frappe.qb.from_("User").delete().run()""")
 
 	def test_call(self):
 		# call non whitelisted method
@@ -91,7 +88,7 @@ class TestSafeExec(FrappeTestCase):
 	def test_ensure_getattrable_globals(self):
 		def check_safe(objects):
 			for obj in objects:
-				if isinstance(obj, (types.ModuleType, types.CodeType, types.TracebackType, types.FrameType)):
+				if isinstance(obj, types.ModuleType | types.CodeType | types.TracebackType | types.FrameType):
 					self.fail(f"{obj} wont work in safe exec.")
 				elif isinstance(obj, dict):
 					check_safe(obj.values())

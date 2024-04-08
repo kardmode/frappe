@@ -221,19 +221,14 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 		this.setup_datatable(this.data);
 	}
 
-	render_count() {
-		if (this.list_view_settings?.disable_count) {
-			return;
-		}
-		let $list_count = this.$paging_area.find(".list-count");
-		if (!$list_count.length) {
-			$list_count = $("<span>")
+	get_count_element() {
+		let $count = this.$paging_area.find(".list-count");
+		if (!$count.length) {
+			$count = $("<span>")
 				.addClass("text-muted list-count")
 				.prependTo(this.$paging_area.find(".level-right"));
 		}
-		this.get_count_str().then((str) => {
-			$list_count.text(str);
-		});
+		return $count;
 	}
 
 	on_update(data) {
@@ -897,7 +892,9 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 			.filter(standard_fields_filter);
 
 		// filter out docstatus field from picker
-		let std_fields = frappe.model.std_fields.filter((df) => df.fieldname !== "docstatus");
+		let std_fields = frappe.model.std_fields.filter(
+			(df) => !["docstatus", "_comments"].includes(df.fieldname)
+		);
 
 		// add status field derived from docstatus, if status is not a standard field
 		let has_status_values = false;
@@ -1475,7 +1472,8 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 					if (this.add_totals_row) {
 						const total_data = this.get_columns_totals(this.data);
 
-						total_data["name"] = __("Totals").bold();
+						total_data["name"] = __("Total");
+						total_data.is_total_row = true;
 						rows_in_order.push(total_data);
 					}
 
@@ -1554,32 +1552,30 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 				action: () => {
 					const args = this.get_args();
 					const selected_items = this.get_checked_items(true);
-					let fields = [
-						{
-							fieldtype: "Select",
-							label: __("Select File Type"),
-							fieldname: "file_format_type",
-							options: ["Excel", "CSV"],
-							default: "Excel",
-						},
-					];
 
-					if (this.total_count > this.count_without_children || args.page_length) {
-						fields.push({
-							fieldtype: "Check",
-							fieldname: "export_all_rows",
-							label: __("Export All {0} rows?", [(this.total_count + "").bold()]),
-						});
+					let extra_fields = null;
+					if (this.total_count > (this.count_without_children || args.page_length)) {
+						extra_fields = [
+							{
+								fieldtype: "Check",
+								fieldname: "export_all_rows",
+								label: __("Export All {0} rows?", [`<b>${this.total_count}</b>`]),
+							},
+						];
 					}
 
-					const d = new frappe.ui.Dialog({
-						title: __("Export Report: {0}", [__(this.doctype)]),
-						fields: fields,
-						primary_action_label: __("Download"),
-						primary_action: (data) => {
+					const d = frappe.report_utils.get_export_dialog(
+						__(this.doctype),
+						extra_fields,
+						(data) => {
 							args.cmd = "frappe.desk.reportview.export_query";
-							args.file_format_type = data.file_format_type;
+							args.file_format_type = data.file_format;
 							args.title = this.report_name || this.doctype;
+
+							if (data.file_format == "CSV") {
+								args.csv_delimiter = data.csv_delimiter;
+								args.csv_quoting = data.csv_quoting;
+							}
 
 							if (this.add_totals_row) {
 								args.add_totals_row = 1;
@@ -1600,8 +1596,8 @@ frappe.views.ReportView = class ReportView extends frappe.views.ListView {
 							open_url_post(frappe.request.url, args);
 
 							d.hide();
-						},
-					});
+						}
+					);
 
 					d.show();
 				},

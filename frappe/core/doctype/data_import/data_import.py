@@ -125,9 +125,7 @@ def start_import(data_import):
 
 
 @frappe.whitelist()
-def download_template(
-	doctype, export_fields=None, export_records=None, export_filters=None, file_type="CSV"
-):
+def download_template(doctype, export_fields=None, export_records=None, export_filters=None, file_type="CSV"):
 	"""
 	Download template from Exporter
 	        :param doctype: Document Type
@@ -242,10 +240,10 @@ def export_json(doctype, path, filters=None, or_filters=None, name=None, order_b
 			for key in del_keys:
 				if key in doc:
 					del doc[key]
-			for k, v in doc.items():
+			for _k, v in doc.items():
 				if isinstance(v, list):
 					for child in v:
-						for key in del_keys + ("docstatus", "doctype", "modified", "name"):
+						for key in (*del_keys, "docstatus", "doctype", "modified", "name"):
 							if key in child:
 								del child[key]
 

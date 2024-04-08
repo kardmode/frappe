@@ -1,5 +1,6 @@
 import json
 import sys
+import typing
 from contextlib import contextmanager
 from random import choice
 from threading import Thread
@@ -14,7 +15,7 @@ from werkzeug.test import TestResponse
 import frappe
 from frappe.installer import update_site_config
 from frappe.tests.utils import FrappeTestCase, patch_hooks
-from frappe.utils import cint, get_site_url, get_test_client
+from frappe.utils import cint, get_site_url, get_test_client, get_url
 
 try:
 	_site = frappe.local.site
@@ -35,9 +36,7 @@ def suppress_stdout():
 		sys.stdout = sys.__stdout__
 
 
-def make_request(
-	target: str, args: tuple | None = None, kwargs: dict | None = None
-) -> TestResponse:
+def make_request(target: str, args: tuple | None = None, kwargs: dict | None = None) -> TestResponse:
 	t = ThreadWithReturnValue(target=target, args=args, kwargs=kwargs)
 	t.start()
 	t.join()
@@ -50,7 +49,9 @@ def patch_request_header(key, *args, **kwargs):
 
 
 class ThreadWithReturnValue(Thread):
-	def __init__(self, group=None, target=None, name=None, args=(), kwargs={}):
+	def __init__(self, group=None, target=None, name=None, args=(), kwargs=None):
+		if kwargs is None:
+			kwargs = {}
 		Thread.__init__(self, group, target, name, args, kwargs)
 		self._return = None
 
@@ -104,7 +105,7 @@ class FrappeAPITestCase(FrappeTestCase):
 
 class TestResourceAPI(FrappeAPITestCase):
 	DOCTYPE = "ToDo"
-	GENERATED_DOCUMENTS = []
+	GENERATED_DOCUMENTS: typing.ClassVar[list] = []
 
 	@classmethod
 	def setUpClass(cls):
@@ -162,9 +163,7 @@ class TestResourceAPI(FrappeAPITestCase):
 
 	def test_get_list_fields(self):
 		# test 6: fetch response with fields
-		response = self.get(
-			f"/api/resource/{self.DOCTYPE}", {"sid": self.sid, "fields": '["description"]'}
-		)
+		response = self.get(f"/api/resource/{self.DOCTYPE}", {"sid": self.sid, "fields": '["description"]'})
 		self.assertEqual(response.status_code, 200)
 		json = frappe._dict(response.json)
 		self.assertIn("description", json.data[0])
@@ -212,9 +211,7 @@ class TestResourceAPI(FrappeAPITestCase):
 		self.assertIn(response.status_code, (403, 200))
 
 		if response.status_code == 403:
-			self.assertTrue(
-				set(response.json.keys()) == {"exc_type", "exception", "exc", "_server_messages"}
-			)
+			self.assertTrue(set(response.json.keys()) == {"exc_type", "exception", "exc", "_server_messages"})
 			self.assertEqual(response.json.get("exc_type"), "PermissionError")
 			self.assertEqual(
 				response.json.get("exception"), "frappe.exceptions.PermissionError: Not permitted"
@@ -276,7 +273,7 @@ class TestMethodAPI(FrappeAPITestCase):
 		response = self.get(f"{self.METHOD_PATH}/frappe.auth.get_logged_user")
 		self.assertEqual(response.status_code, 401)
 
-		authorization_token = f"NonExistentKey:INCORRECT"
+		authorization_token = "NonExistentKey:INCORRECT"
 		response = self.get(f"{self.METHOD_PATH}/frappe.auth.get_logged_user")
 		self.assertEqual(response.status_code, 401)
 
@@ -340,7 +337,7 @@ def after_request(*args, **kwargs):
 class TestResponse(FrappeAPITestCase):
 	def test_generate_pdf(self):
 		response = self.get(
-			f"/api/method/frappe.utils.print_format.download_pdf",
+			"/api/method/frappe.utils.print_format.download_pdf",
 			{"sid": self.sid, "doctype": "User", "name": "Guest"},
 		)
 		self.assertEqual(response.status_code, 200)
@@ -390,3 +387,18 @@ class TestResponse(FrappeAPITestCase):
 		self.assertEqual(response.headers["content-type"], "application/octet-stream")
 		self.assertGreater(cint(response.headers["content-length"]), 0)
 		self.assertEqual(response.headers["content-disposition"], f'filename="{encoded_filename}"')
+
+	def test_download_private_file_with_unique_url(self):
+		test_content = frappe.generate_hash()
+		file = frappe.get_doc(
+			{
+				"doctype": "File",
+				"file_name": test_content,
+				"content": test_content,
+				"is_private": 1,
+			}
+		)
+		file.insert()
+
+		self.assertEqual(self.get(file.unique_url, {"sid": self.sid}).text, test_content)
+		self.assertEqual(self.get(file.file_url, {"sid": self.sid}).text, test_content)

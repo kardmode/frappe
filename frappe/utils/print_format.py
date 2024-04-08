@@ -19,9 +19,7 @@ from frappe.www.printview import validate_print_permission
 
 
 @frappe.whitelist()
-def download_multi_pdf(
-	doctype, name, format=None, no_letterhead=False, letterhead=None, options=None
-):
+def download_multi_pdf(doctype, name, format=None, no_letterhead=False, letterhead=None, options=None):
 	"""
 	Concatenate multiple docs as PDF .
 
@@ -72,7 +70,7 @@ def download_multi_pdf(
 		result = json.loads(name)
 
 		# Concatenating pdf files
-		for i, ss in enumerate(result):
+		for _i, ss in enumerate(result):
 			pdf_writer = frappe.get_print(
 				doctype,
 				ss,
@@ -141,9 +139,7 @@ def download_pdf(
 			doctype, name, format, doc=doc, as_pdf=True, letterhead=letterhead, no_letterhead=no_letterhead,pdf_options=options, print_options=print_options
 		)
 
-	frappe.local.response.filename = "{name}.pdf".format(
-		name=name.replace(" ", "-").replace("/", "-")
-	)
+	frappe.local.response.filename = "{name}.pdf".format(name=name.replace(" ", "-").replace("/", "-"))
 	frappe.local.response.filecontent = pdf_file
 	frappe.local.response.type = "pdf"
 

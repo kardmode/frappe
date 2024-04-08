@@ -64,9 +64,7 @@ def enqueue_events_for_all_sites():
 
 def enqueue_events_for_site(site):
 	def log_and_raise():
-		error_message = "Exception in Enqueue Events for Site {}\n{}".format(
-			site, frappe.get_traceback()
-		)
+		error_message = f"Exception in Enqueue Events for Site {site}\n{frappe.get_traceback()}"
 		frappe.logger("scheduler").error(error_message)
 
 	try:
@@ -95,7 +93,7 @@ def enqueue_events(site):
 		frappe.flags.enqueued_jobs = []
 		queued_jobs = get_jobs(site=site, key="job_type").get(site) or []
 		for job_type in frappe.get_all("Scheduled Job Type", ("name", "method"), dict(stopped=0)):
-			if not job_type.method in queued_jobs:
+			if job_type.method not in queued_jobs:
 				# don't add it to queue if still pending
 				frappe.get_doc("Scheduled Job Type", job_type.name).enqueue()
 
@@ -175,9 +173,7 @@ def is_dormant(check_time=None):
 
 
 def _get_last_modified_timestamp(doctype):
-	timestamp = frappe.db.get_value(
-		doctype, filters={}, fieldname="modified", order_by="modified desc"
-	)
+	timestamp = frappe.db.get_value(doctype, filters={}, fieldname="modified", order_by="modified desc")
 	if timestamp:
 		return get_datetime(timestamp)
 

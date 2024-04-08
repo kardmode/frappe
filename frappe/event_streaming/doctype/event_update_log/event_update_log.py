@@ -16,9 +16,7 @@ class EventUpdateLog(Document):
 		)
 		jobs = get_jobs()
 		if not jobs or enqueued_method not in jobs[frappe.local.site]:
-			frappe.enqueue(
-				enqueued_method, doctype=self.ref_doctype, queue="long", enqueue_after_commit=True
-			)
+			frappe.enqueue(enqueued_method, doctype=self.ref_doctype, queue="long", enqueue_after_commit=True)
 
 
 def notify_consumers(doc, event):
@@ -27,7 +25,7 @@ def notify_consumers(doc, event):
 	if frappe.flags.in_install or frappe.flags.in_migrate:
 		return
 
-	if consumers := check_doctype_has_consumers(doc.doctype):
+	if check_doctype_has_consumers(doc.doctype):
 		if event == "after_insert":
 			doc.flags.event_update_log = make_event_update_log(doc, update_type="Create")
 		elif event == "on_trash":

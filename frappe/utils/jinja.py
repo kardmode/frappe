@@ -104,7 +104,7 @@ def guess_is_path(template):
 	# if its single line and ends with a html, then its probably a path
 	if "\n" not in template and "." in template:
 		extn = template.rsplit(".")[-1]
-		if extn in ("html", "css", "scss", "py", "md", "json", "js", "xml"):
+		if extn in ("html", "css", "scss", "py", "md", "json", "js", "xml", "txt"):
 			return True
 
 	return False
@@ -119,7 +119,9 @@ def get_jloader():
 		apps = frappe.get_hooks("template_apps")
 		if not apps:
 			apps = list(
-				reversed(frappe.local.flags.web_pages_apps or frappe.get_installed_apps(_ensure_on_bench=True))
+				reversed(
+					frappe.local.flags.web_pages_apps or frappe.get_installed_apps(_ensure_on_bench=True)
+				)
 			)
 
 		if "frappe" not in apps:

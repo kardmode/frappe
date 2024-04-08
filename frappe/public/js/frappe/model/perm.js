@@ -194,7 +194,7 @@ $.extend(frappe.perm, {
 
 		if (!perm) {
 			let is_hidden = df && (cint(df.hidden) || cint(df.hidden_due_to_dependency));
-			let is_read_only = df && cint(df.read_only);
+			let is_read_only = df && (cint(df.read_only) || cint(df.is_virtual));
 			return is_hidden ? "None" : is_read_only ? "Read" : "Write";
 		}
 
@@ -204,7 +204,7 @@ $.extend(frappe.perm, {
 
 		// permission
 		if (p) {
-			if (p.write && !df.disabled) {
+			if (p.write && !df.disabled && !df.is_virtual) {
 				status = "Write";
 			} else if (p.read) {
 				status = "Read";
@@ -289,10 +289,9 @@ $.extend(frappe.perm, {
 		const allowed_docs = filtered_perms.map((perm) => perm.doc);
 
 		if (with_default_doc) {
-			const default_doc =
-				allowed_docs.length === 1
-					? allowed_docs
-					: filtered_perms.filter((perm) => perm.is_default).map((record) => record.doc);
+			const default_doc = filtered_perms
+				.filter((perm) => perm.is_default)
+				.map((record) => record.doc);
 
 			return {
 				allowed_records: allowed_docs,
