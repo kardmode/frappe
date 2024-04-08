@@ -94,20 +94,53 @@ def get_print_format_doc(print_format_name, meta):
 			# if old name, return standard!
 			return None
 
-def add_mrp_print_templates(doc):
+def add_mrp_print_templates(doc, print_format_name):
 	doc.mrp_print_templates = {}
+	per_doc_fields  = []
+	global_format_fields  = []
 	
-	doc_details = frappe.db.sql("""
-					select t1.template_name , t2.print_field
+	if print_format_name:
+		per_doc_fields = frappe.db.sql("""
+						select t1.template_name , t2.print_field
+						from `tabMRP Print Templates` t1,
+						`tabPrint Fields` t2, 
+						`tabMRP Print Template Type` t3
+						where t1.use_for_all_doctypes = 0
+						and t3.type = %s
+						and t3.print_format = %s
+						and t1.name = t3.parent
+						and t2.name = t3.print_field
+						""", (doc.doctype, print_format_name), as_dict=True)
+
+
+	global_format_fields = frappe.db.sql("""
+					select t1.template_name , t2.print_field, t3.print_format
 					from `tabMRP Print Templates` t1,
 					`tabPrint Fields` t2, 
 					`tabMRP Print Template Type` t3
-					where
-					(t1.use_for_all_doctypes = 1 or (t3.type = %s and t1.name = t3.parent))
-					and t2.name = t1.print_field
+					where t1.use_for_all_doctypes = 0
+					and t3.type = %s
+					and (t3.print_format = '' OR t3.print_format IS NULL)
+					and t1.name = t3.parent
+					and t2.name = t3.print_field
 					""", (doc.doctype), as_dict=True)
 					
-	for d in doc_details:
+	global_doctype_fields = frappe.db.sql("""
+						select t1.template_name , t2.print_field
+						from `tabMRP Print Templates` t1,
+						`tabPrint Fields` t2
+						where t1.use_for_all_doctypes = 1 
+						and t2.name = t1.print_field
+						""",as_dict=True)
+				
+	for d in per_doc_fields:
+		doc.mrp_print_templates[d.template_name] = d.print_field
+		
+	for d in global_format_fields:
+		if d.template_name not in doc.mrp_print_templates:
+			doc.mrp_print_templates[d.template_name] = d.print_field
+		
+	for d in global_doctype_fields:
 		doc.mrp_print_templates[d.template_name] = d.print_field
 		
 def add_signature(doc,letterhead,sign_type = None):
@@ -236,14 +269,15 @@ def get_rendered_template(
 
 	jenv = frappe.get_jenv()
 	format_data, format_data_map = [], {}
-
+	print_format_name = None
 	# determine template
 	if print_format:
 		doc.print_section_headings = print_format.show_section_headings
 		doc.print_line_breaks = print_format.line_breaks
 		doc.align_labels_right = print_format.align_labels_right
 		doc.absolute_value = print_format.absolute_value
-
+		print_format_name = print_format.name
+		
 		def get_template_from_string():
 			return jenv.from_string(get_print_format(doc.doctype, print_format))
 
@@ -300,7 +334,7 @@ def get_rendered_template(
 	convert_markdown(doc, meta)
 	
 	signature_html = add_signature(doc,letterhead,sign_type)
-	add_mrp_print_templates(doc)
+	add_mrp_print_templates(doc, print_format_name)
 	
 	args = {}
 	# extract `print_heading_template` from the first field and remove it

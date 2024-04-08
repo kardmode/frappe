@@ -122,10 +122,15 @@ def get_letter_heads():
 
 def get_sign_types():
 	sign_types = []
-	for d in frappe.get_all("Signature DocType", fields = ["name"]):
-		sign_doc = frappe.get_doc('Signature DocType', d.name)
-		if sign_doc.has_permission("read"):
-			sign_types.append(d.name)
+	
+	try:
+		signature_types = frappe.get_all("Signature DocType", fields = ["name"])
+		for d in signature_types:
+			sign_doc = frappe.get_doc('Signature DocType', d.name)
+			if sign_doc.has_permission("read"):
+				sign_types.append(d.name)
+	except:
+		pass
 	return sign_types
 
 def load_conf_settings(bootinfo):

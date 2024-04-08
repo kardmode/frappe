@@ -52,6 +52,18 @@
 {% endif %}
 {% endmacro %}
 
+{% macro add_projects() %}
+    {%- set galleries = frappe.get_all('MRP Gallery', filters={}, fields=['name', 'title']) -%}
+    {%- set child_items = [] -%}
+    {%- for gallery in galleries -%}
+{%- set child_item = {'label': gallery.title, 'url': 'projects/' + gallery.name|lower|replace(' ', '-')|trim} -%}
+        {%- set _ = child_items.append(child_item) -%}
+	{%- endfor -%}
+
+    {%- set item = {'label': 'Projects', 'child_items': child_items} -%}
+    {{ render_item(item, parent=True) }}
+{% endmacro %}
+
 {% if top_bar_items -%}
 <ul class="mr-auto navbar-nav">
 	{%- for item in top_bar_items -%}
@@ -63,6 +75,10 @@
 {%- endif %}
 <ul class="ml-auto navbar-nav">
 	{% include "templates/includes/navbar/navbar_search.html" %}
+
+	{{ add_projects() }}
+
+	
 	{%- for item in top_bar_items -%}
 		{% if not item.parent_label and item.right -%}
 			{{ render_item(item, parent=True) }}

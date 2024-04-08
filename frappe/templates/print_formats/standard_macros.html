@@ -1,10 +1,6 @@
 {% macro render_field(df, doc, no_of_cols=2) -%}
 	{%- if df.fieldtype=="Table" -%}
-		{%- if df.fieldname=="packed_items" -%}
-			{{ render_table_custom(df, doc) }}
-		{%- else -%}
-			{{ render_table(df, doc) }}
-		{%- endif -%}
+		{{ render_table(df, doc) }}
 	{%- elif df.fieldtype=="HTML" and df.options -%}
 		<div>{{ frappe.render_template(df.options, {"doc": doc}) or "" }}</div>
 	{%- elif df.fieldtype in ("Text", "Text Editor", "Code", "Long Text") -%}
@@ -21,7 +17,7 @@
 		{{ render_signature(df, doc) }}
 	{%- elif df.fieldtype=="Currency" -%}
 		{%- if doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname) -%}
-			{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"doc":doc}) }}	
+			{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"doc":doc,"df":df}) }}	
 		{%- elif doc.print_templates and doc.print_templates.get(df.fieldname) -%}
 			{% include doc.print_templates[df.fieldname] %}
 		{%- else -%}
@@ -37,14 +33,15 @@
 	{%- set data = doc.get(df.fieldname)[df.start:df.end] -%}
 	{%- if doc.print_templates and doc.print_templates.get(df.fieldname) -%}
 		{% include doc.print_templates[df.fieldname] %}
-	{%- elif doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname) -%}
-		{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"doc":doc,"table_meta":table_meta,"data":data}) }}		
+	{%- elif doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname) and doc.mrp_print_templates.get(df.fieldname) not in ["packed_quote","packed_boq"] -%}	
+		{{ frappe.render_template(doc.mrp_print_templates[df.fieldname], {"doc":doc,"table_meta":table_meta,"data":data,"df":df}) }}		
+	{%- elif doc.mrp_print_templates and doc.mrp_print_templates.get(df.fieldname)-%}
+		{{ render_table_packed(df, doc, doc.mrp_print_templates.get(df.fieldname)) }}
 	{%- else -%}
 		{%- if doc.flags.compact_item_fields -%}
 		{%- else -%}
-		
 		{%- endif -%}
-					{%- set compact_item_fields = doc.flags.compact_item_fields -%}
+		{%- set compact_item_fields = doc.flags.compact_item_fields -%}
 
 		{%- if data -%}
 		{%- set visible_columns = get_visible_columns(doc.get(df.fieldname),
@@ -499,16 +496,13 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 	</div>
 {%- endmacro -%}
 
-{%- macro render_table_custom(df, doc) -%}
+{%- macro render_table_packed(df, doc, type) -%}
 	
 	{%- set table_meta = frappe.get_meta(df.options) -%}
 	
 	{% for bundle_parent in doc.get("items") %}
 		{% if bundle_parent.name in doc.get("packed_items")|map(attribute="parent_detail_docname") %}
 			{%- set data = [] -%}
-			
-			
-			
 			{% for dc in doc.get("packed_items") %}
 				{% if dc.parent_detail_docname == bundle_parent.name %}
 					<div class="hide">{{ data.append(dc) }}</div>
@@ -524,9 +518,6 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 			<div class="page-break"></div>
 			<div class="row section-break">
 			<div class="col-xs-12 column-break">
-				
-				
-
 				<h4>{{ custom_print_value('project', doc) }}
 					<br>
 					<small>
@@ -596,27 +587,20 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 					
 					</div>
 					<div class="col-xs-6 column-break">
+						{% if type == "packed_quote" %}
+						
+						
+					
 						<div class="row data-field" data-fieldname="total" data-fieldtype="Currency">
 							<div class="col-xs-4"><label>Total</label></div>
 							<div class="col-xs-8 text-right">
 							{{ frappe.utils.fmt_money(bundle_parent.amount/bundle_parent.qty, currency=doc.currency) }}
 							</div>
 						</div>
+						{% endif %}
 					</div>
 				</div>
-				
-			
-			
 			{%- endif -%}
-		
-			
-			
-			
 		{% endif %}
-		
-	{% endfor %}
-
-	
-
-		
+	{% endfor %}	
 {%- endmacro -%}

@@ -4,6 +4,7 @@
 		{%- if subtitle -%}
 		<p class="subtitle">{{ _(subtitle) }}</p>
 		{%- endif -%}
+		{%- if cta_label -%}		
 		<div class="mt-3">
 			<h4 class="action">
 				<a href="{{ cta_url }}" class="no-decoration">{{ _(cta_label) }}
@@ -11,6 +12,7 @@
 				</a>
 			</h4>
 		</div>
+		{%- endif -%}
 		{%- if cta_description -%}
 		<div class="description">
 			{{ _(cta_description) }}

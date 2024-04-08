@@ -1,16 +1,20 @@
 {
+ "actions": [],
  "allow_rename": 1,
  "autoname": "Prompt",
  "beta": 1,
  "creation": "2019-02-24 16:10:29.082489",
  "doctype": "DocType",
- "document_type": "Printing",
+ "document_type": "Setup",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
   "template_name",
-  "print_field",
+  "section_break_2zrdt",
   "use_for_all_doctypes",
+  "column_break_qxfqo",
+  "print_field",
+  "section_break_095zu",
   "types"
  ],
  "fields": [
@@ -18,7 +22,7 @@
    "fieldname": "template_name",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "Template Name",
+   "label": "Field Name",
    "reqd": 1
   },
   {
@@ -26,8 +30,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Print Field",
-   "options": "Print Fields",
-   "reqd": 1
+   "options": "Print Fields"
   },
   {
    "default": "0",
@@ -40,12 +43,26 @@
    "fieldtype": "Table",
    "label": "Types",
    "options": "MRP Print Template Type"
+  },
+  {
+   "fieldname": "section_break_2zrdt",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_qxfqo",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "section_break_095zu",
+   "fieldtype": "Section Break"
   }
  ],
- "modified": "2020-06-11 23:17:11.324894",
+ "links": [],
+ "modified": "2024-02-29 03:34:16.387986",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "MRP Print Templates",
+ "naming_rule": "Set by user",
  "owner": "Administrator",
  "permissions": [
   {
@@ -71,5 +88,6 @@
   }
  ],
  "sort_field": "modified",
- "sort_order": "DESC"
+ "sort_order": "DESC",
+ "states": []
 }
