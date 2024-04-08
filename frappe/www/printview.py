@@ -545,7 +545,6 @@ def validate_key(key, doc):
 def get_letter_head(doc, no_letterhead,letterhead=None):
 	if no_letterhead:
 		return {}
-<<<<<<< HEAD
 	if letterhead == "Default":
 		
 		if doc.get("company"):
@@ -571,17 +570,15 @@ def get_letter_head(doc, no_letterhead,letterhead=None):
 			return frappe.db.get_value("Letter Head", letter_head, ["content", "footer"], as_dict=True)
 		else:
 			return {}
-=======
 
-	letterhead_name = letterhead or doc.get("letter_head")
-	if letterhead_name:
-		return frappe.db.get_value(
-			"Letter Head",
-			letterhead_name,
-			["content", "footer", "header_script", "footer_script"],
-			as_dict=True,
-		)
->>>>>>> c3350b8fa862a80a27147afcea6c2f43db9554f2
+	# letterhead_name = letterhead or doc.get("letter_head")
+	# if letterhead_name:
+		# return frappe.db.get_value(
+			# "Letter Head",
+			# letterhead_name,
+			# ["content", "footer", "header_script", "footer_script"],
+			# as_dict=True,
+		# )
 	else:
 		return (
 			frappe.db.get_value(
