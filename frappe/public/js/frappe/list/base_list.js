@@ -306,6 +306,11 @@ frappe.views.BaseList = class BaseList {
 	setup_filter_area() {
 		if (this.hide_filters) return;
 		this.filter_area = new FilterArea(this);
+		
+		// Check if the doctype is submittable and there's no docstatus filter already present
+		if (frappe.model.is_submittable(this.doctype) && !this.filters.find((filter) => filter[1] === "docstatus")) {
+			this.filters.push([this.doctype, "docstatus", "!=", "2"]);
+		}
 
 		if (this.filters && this.filters.length > 0) {
 			return this.filter_area.set(this.filters);

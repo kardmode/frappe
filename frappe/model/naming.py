@@ -123,16 +123,6 @@ class NamingSeries:
 		prefix = self.get_prefix()
 		return cint(frappe.db.get_value("Series", prefix, "current", order_by="name"))
 
-# Types that can be using in naming series fields
-NAMING_SERIES_PART_TYPES = (
-	int,
-	str,
-	datetime.datetime,
-	datetime.date,
-	datetime.time,
-	datetime.timedelta,
-)
-
 def set_new_name(doc):
 	"""
 	Sets the `name` property for the document based on various rules.
@@ -589,7 +579,7 @@ def get_prefix_format_autoname(autoname_value):
 		if '#' in key:
 			return '.' + key
 		else:
-			return key + '.'
+			return '.' + key + '.'
 	
 	prefix = BRACED_PARAMS_PATTERN.sub(get_param_value_for_match_custom, autoname_value)
 	return prefix
@@ -631,10 +621,9 @@ def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
 			"MRP Autoname Rule", doctype, ["disable_company", "disable_date"], as_dict=1
 		)
 		
-		date_list = ['PDY','YYYY']		
-		# if not any(elem in naming_series_parts for elem in date_list):
-		
-		if default_date not in naming_series_parts:
+		date_list = ['PDY','YYYY','YY']
+		if all(date not in naming_series_parts for date in date_list):
+		# if not any(date in naming_series_parts for date in date_list):
 			if autoname_details and autoname_details.disable_date == True:
 				pass
 			else:
@@ -645,7 +634,7 @@ def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
 						else:
 							naming_series_parts.insert(len(naming_series_parts),default_date)
 					else:
-						naming_series_parts = ["PDY"]		
+						naming_series_parts = [default_date]		
 		
 		if company not in naming_series_parts:
 			if autoname_details and autoname_details.disable_company == True:

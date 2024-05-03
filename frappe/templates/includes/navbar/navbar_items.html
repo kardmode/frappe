@@ -53,16 +53,21 @@
 {% endmacro %}
 
 {% macro add_projects() %}
-    {%- set galleries = frappe.get_all('MRP Gallery', filters={}, fields=['name', 'title']) -%}
-    {%- set child_items = [] -%}
-    {%- for gallery in galleries -%}
-{%- set child_item = {'label': gallery.title, 'url': 'projects/' + gallery.name|lower|replace(' ', '-')|trim} -%}
-        {%- set _ = child_items.append(child_item) -%}
-	{%- endfor -%}
-
-    {%- set item = {'label': 'Projects', 'child_items': child_items} -%}
-    {{ render_item(item, parent=True) }}
+    {%- set galleries_exist = frappe.db.exists('DocType', 'MRP Gallery') -%}
+    {%- if galleries_exist -%}
+        {%- set galleries = frappe.get_all('MRP Gallery', filters={}, fields=['name', 'title']) -%}
+        {%- if galleries -%}  {# Check if galleries is not empty #}
+            {%- set child_items = [] -%}
+            {%- for gallery in galleries -%}
+                {%- set child_item = {'label': gallery.title, 'url': 'projects/' + gallery.name|lower|replace(' ', '-')|trim} -%}
+                {%- set _ = child_items.append(child_item) -%}
+            {%- endfor -%}
+            {%- set item = {'label': 'Projects', 'child_items': child_items} -%}
+            {{ render_item(item, parent=True) }}
+        {%- endif -%}
+    {%- endif -%}
 {% endmacro %}
+
 
 {% if top_bar_items -%}
 <ul class="mr-auto navbar-nav">

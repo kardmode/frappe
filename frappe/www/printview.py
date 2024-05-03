@@ -550,24 +550,24 @@ def get_letter_head(doc, no_letterhead,letterhead=None):
 		if doc.get("company"):
 			letter_head = frappe.db.get_value("Company", doc.company, "default_letter_head") or ""
 			if letter_head:
-				return frappe.db.get_value("Letter Head", letter_head, ["content", "footer"], as_dict=True)
+				return frappe.db.get_value("Letter Head", letter_head, ["content", "footer", "header_script", "footer_script"], as_dict=True)
 			else:
 				return {}
 		elif doc.get("letter_head"):
-			return frappe.db.get_value("Letter Head", doc.letter_head, ["content", "footer"], as_dict=True)
+			return frappe.db.get_value("Letter Head", doc.letter_head, ["content", "footer", "header_script", "footer_script"], as_dict=True)
 		
 		else:
-			return frappe.db.get_value("Letter Head", {"is_default": 1}, ["content", "footer"], as_dict=True) or {}
+			return frappe.db.get_value("Letter Head", {"is_default": 1}, ["content", "footer", "header_script", "footer_script"], as_dict=True) or {}
 
 	elif letterhead:
-		return frappe.db.get_value("Letter Head", letterhead, ["content", "footer"], as_dict=True)
+		return frappe.db.get_value("Letter Head", letterhead, ["content", "footer", "header_script", "footer_script"], as_dict=True)
 	elif doc.get("letter_head"):
-		return frappe.db.get_value("Letter Head", doc.letter_head, ["content", "footer"], as_dict=True)
+		return frappe.db.get_value("Letter Head", doc.letter_head, ["content", "footer", "header_script", "footer_script"], as_dict=True)
 	
 	elif doc.get("company"):
 		letter_head = frappe.db.get_value("Company", doc.company, "default_letter_head") or ""
 		if letter_head:
-			return frappe.db.get_value("Letter Head", letter_head, ["content", "footer"], as_dict=True)
+			return frappe.db.get_value("Letter Head", letter_head, ["content", "footer", "header_script", "footer_script"], as_dict=True)
 		else:
 			return {}
 

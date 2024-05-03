@@ -1,7 +1,8 @@
 {
  "actions": [],
+ "allow_rename": 1,
  "beta": 1,
- "creation": "2024-04-08 05:00:05.692337",
+ "creation": "2024-04-08 23:23:31.428391",
  "default_view": "List",
  "doctype": "DocType",
  "editable_grid": 1,
@@ -13,13 +14,13 @@
   {
    "fieldname": "key",
    "fieldtype": "Data",
-   "label": "key"
+   "label": "Key"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2024-04-08 05:00:30.158658",
+ "modified": "2024-04-08 23:23:31.428391",
  "modified_by": "Administrator",
  "module": "Website",
  "name": "MRP Recaptcha",
