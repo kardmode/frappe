@@ -1310,6 +1310,7 @@ class Database:
 		raise NotImplementedError
 
 	@staticmethod
+	@deprecated
 	def is_column_missing(e):
 		return frappe.db.is_missing_column(e)
 

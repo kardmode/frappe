@@ -291,10 +291,6 @@ def has_user_permission(doc, user=None):
 		# no user permission rules specified for this doctype
 		return True
 
-	# user can create own role permissions, so nothing applies
-	if get_role_permissions("User Permission", user=user).get("write"):
-		return True
-
 	# don't apply strict user permissions for single doctypes since they contain empty link fields
 	apply_strict_user_permissions = (
 		False if doc.meta.issingle else frappe.get_system_settings("apply_strict_user_permissions")
@@ -378,10 +374,8 @@ def has_controller_permissions(doc, ptype, user=None):
 	if not user:
 		user = frappe.session.user
 
-	methods = frappe.get_hooks("has_permission").get(doc.doctype, [])
-
-	if not methods:
-		return None
+	hooks = frappe.get_hooks("has_permission")
+	methods = hooks.get(doc.doctype, []) + hooks.get("*", [])
 
 	for method in reversed(methods):
 		controller_permission = frappe.call(frappe.get_attr(method), doc=doc, ptype=ptype, user=user)
@@ -393,7 +387,7 @@ def has_controller_permissions(doc, ptype, user=None):
 
 
 def get_doctypes_with_read():
-	return list({cstr(p.parent) for p in get_valid_perms() if p.parent})
+	return list({cstr(p.parent) for p in get_valid_perms() if p.parent and p.read})
 
 
 def get_valid_perms(doctype=None, user=None):
