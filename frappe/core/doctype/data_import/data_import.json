@@ -4,6 +4,7 @@
  "beta": 1,
  "creation": "2019-08-04 14:16:08.318714",
  "doctype": "DocType",
+ "document_type": "Document",
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
@@ -171,7 +172,7 @@
  ],
  "hide_toolbar": 1,
  "links": [],
- "modified": "2024-01-30 17:08:05.566686",
+ "modified": "2024-09-09 09:05:07.779265",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "Data Import",

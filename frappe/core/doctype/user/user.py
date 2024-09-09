@@ -121,6 +121,9 @@ class User(Document):
 			frappe.throw(_("Not a valid User Image."))
 
 	def on_update(self):
+		
+		frappe.defaults.set_user_default("company", self.default_company,user=self.name)
+
 		# clear new password
 		self.share_with_self()
 		clear_notifications(user=self.name)

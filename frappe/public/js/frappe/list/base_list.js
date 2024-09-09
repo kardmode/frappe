@@ -307,13 +307,25 @@ frappe.views.BaseList = class BaseList {
 		if (this.hide_filters) return;
 		this.filter_area = new FilterArea(this);
 		
-		// Check if the doctype is submittable and there's no docstatus filter already present
-		if (frappe.model.is_submittable(this.doctype) && !this.filters.find((filter) => filter[1] === "docstatus")) {
-			this.filters.push([this.doctype, "docstatus", "!=", "2"]);
+		// MRP - Check if the doctype is submittable and there's no docstatus filter already present
+		try {
+			if (this.doctype !== null && this.doctype !== undefined && this.doctype !== "") {
+				// this.doctype is not null, undefined, or an empty string
+				if (frappe.model.is_submittable(this.doctype)) {
+					if (this.filters !== null && this.filters !== undefined && Array.isArray(this.filters) && !this.filters.find((filter) => filter[1] === "docstatus")) {
+						this.filters.push([this.doctype, "docstatus", "!=", "2"]);
+					}
+				}
+			}
+		} catch (error) {
+			// Handle any additional logic or return value if necessary
+			console.error("Error in checking filters for docstatus: ", error);
 		}
 
 		if (this.filters && this.filters.length > 0) {
-			return this.filter_area.set(this.filters);
+			return this.filter_area.set(this.filters).catch(() => {
+				this.filter_area.clear(false);
+			});
 		}
 	}
 

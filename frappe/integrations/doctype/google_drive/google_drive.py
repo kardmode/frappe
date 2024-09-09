@@ -147,6 +147,8 @@ def upload_system_backup_to_google_drive():
 	account.load_from_db()
 
 	validate_file_size()
+	
+	delete_old_backups(google_drive, account.backup_folder_id, 14)
 
 	if frappe.flags.create_new_backup:
 		set_progress(1, _("Backing up Data."))
@@ -209,3 +211,55 @@ def set_progress(progress, message):
 		dict(progress=progress, total=3, message=message),
 		user=frappe.session.user,
 	)
+
+
+def delete_old_backups(google_drive, folder_id, retention_days):
+	"""
+	Delete backups older than retention_days in the specified Google Drive folder.
+	"""
+	
+	try:
+		from datetime import datetime, timedelta
+
+		cutoff_date = datetime.utcnow() - timedelta(days=retention_days)
+		deleted_files_summary = "Files marked for deletion:\n"
+		results = google_drive.files().list(
+			q=f"'{folder_id}' in parents and mimeType='application/gzip' and trashed=false",
+			spaces='drive',
+			fields='files(id, name, createdTime)',
+		).execute()
+		
+		batch = google_drive.new_batch_http_request(callback=batch_delete_callback)
+
+		for file in results.get('files', []):
+			file_id = file.get('id')
+			file_name = file.get('name')
+			created_time = file.get('createdTime')
+			created_datetime = datetime.strptime(created_time, '%Y-%m-%dT%H:%M:%S.%fZ')
+			
+			if created_datetime < cutoff_date:
+				batch.add(
+					google_drive.files().delete(fileId=file_id),
+					request_id=file_id
+				)
+				# google_drive.files().delete(fileId=file_id).execute()
+				deleted_files_summary += f"- {file_name} (ID: {file_id})\n"
+		
+		batch.execute()
+		
+		# send_email(True, "Google Drive", "Google Drive", "email", error_status=deleted_files_summary)
+	except HttpError as e:
+		# frappe.errprint(f"Failed to delete old backups: {e}")
+		send_email(False, "Google Drive", "Google Drive", "email", error_status=e)
+
+def batch_delete_callback(request_id, response, exception):
+	"""
+	Callback function for batch processing to handle each individual response.
+	"""
+	if exception is not None:
+		# Handle error for individual deletion
+		frappe.errprint(f"Failed to delete file with ID {request_id}: {exception}")
+	else:
+		pass
+		# Handle successful deletion
+		# frappe.errprint(f"Successfully deleted file with ID {request_id}")
