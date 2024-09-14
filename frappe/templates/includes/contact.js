@@ -7,34 +7,67 @@ frappe.ready(function() {
 	  $('[name="subject"]').val(frappe.utils.get_url_arg('subject'));
 	}
 
-	$('.btn-send').off("click").on("click", function() {
-		var email = $('[name="email"]').val();
-		var message = $('[name="message"]').val();
+	$('.btn-send').off("click").on("click", function(e) {
+		e.preventDefault();
 
-		if(!(email && message)) {
-			frappe.msgprint('{{ _("Please enter both your email and message so that we can get back to you. Thanks!") }}');
-			return false;
-		}
+		grecaptcha.ready(function() {
+			grecaptcha.execute('6LeDKzsqAAAAAIZ8IgkNI_QmtFgKrXJ4q35TgHKb', {action: 'submit'}).then(function(token) {
+				
+				frappe.call({
+					method: "mrp.mrp.doctype.mrp_recaptcha.mrp_recaptcha.verify_recaptcha",
+					args: {
+						token:token,
+					},
+					callback: function (r) {
+						var email = $('[name="email"]').val();
+						var message = $('[name="message"]').val();
+							
+						if(!(email)) {
+							frappe.msgprint('{{ _("Please enter a valid email address.") }}');
+							$('[name="email"]').focus();
+							return false;
+						}
+						
+						if(!(message)) {
+							frappe.msgprint('{{ _("Please enter a message.") }}');
+							$('[name="message"]').focus();
+							return false;
+						}
 
-		if(!validate_email(email)) {
-			frappe.msgprint('{{ _("You seem to have written your name instead of your email. Please enter a valid email address so that we can get back.") }}');
-			$('[name="email"]').focus();
-			return false;
-		}
+						if(!validate_email(email)) {
+							frappe.msgprint('{{ _("Please enter a valid email address.") }}');
+							$('[name="email"]').focus();
+							return false;
+						}
+						
+						if (r.message < 0.6)
+						{
+							frappe.msgprint('{{ _("Recaptcha Verification Failed.") }}');
+							return false;
+						}
 
-		$("#contact-alert").toggle(false);
-		frappe.send_message({
-			subject: $('[name="subject"]').val(),
-			sender: email,
-			message: message,
-			callback: function(r) {
-				if (!r.exc) {
-					frappe.msgprint('{{ _("Thank you for your message") }}', '{{ _("Message Sent") }}');
-				}
-				$(':input').val('');
-			}
-		}, this);
+						$("#contact-alert").toggle(false);
+						frappe.send_message({
+							subject: $('[name="subject"]').val(),
+							sender: email,
+							message: message,
+							callback: function(r) {
+								if (!r.exc) {
+									frappe.msgprint('{{ _("Thank you for your message") }}', '{{ _("Message Sent") }}');
+								}
+								$(':input').val('');
+							}
+						}, this);
+						return false;
+					},
+				});
+
+			});
+		});
+		
 		return false;
+
+		
 	});
 
 });
