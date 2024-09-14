@@ -5,6 +5,7 @@ import json
 
 import frappe
 from frappe.model.document import Document
+from frappe.permissions import AUTOMATIC_ROLES
 from frappe.utils import get_fullname, parse_addr
 
 exclude_from_linked_with = True
@@ -66,15 +67,17 @@ class ToDo(Document):
 			return
 
 		try:
-			assignments = frappe.get_all(
+			assignments = frappe.db.get_values(
 				"ToDo",
-				filters={
+				{
 					"reference_type": self.reference_type,
 					"reference_name": self.reference_name,
 					"status": ("not in", ("Cancelled", "Closed")),
 					"allocated_to": ("is", "set"),
 				},
-				pluck="allocated_to",
+				"allocated_to",
+				pluck=True,
+				for_update=True,
 			)
 			assignments.reverse()
 
@@ -82,7 +85,7 @@ class ToDo(Document):
 				self.reference_type,
 				self.reference_name,
 				"_assign",
-				json.dumps(assignments),
+				json.dumps(assignments) if assignments else "",
 				update_modified=False,
 			)
 
@@ -117,8 +120,7 @@ def get_permission_query_conditions(user):
 		user = frappe.session.user
 
 	todo_roles = frappe.permissions.get_doctype_roles("ToDo")
-	if "All" in todo_roles:
-		todo_roles.remove("All")
+	todo_roles = set(todo_roles) - set(AUTOMATIC_ROLES)
 
 	if any(check in todo_roles for check in frappe.get_roles(user)):
 		return None
@@ -131,8 +133,7 @@ def get_permission_query_conditions(user):
 def has_permission(doc, ptype="read", user=None):
 	user = user or frappe.session.user
 	todo_roles = frappe.permissions.get_doctype_roles("ToDo", ptype)
-	if "All" in todo_roles:
-		todo_roles.remove("All")
+	todo_roles = set(todo_roles) - set(AUTOMATIC_ROLES)
 
 	if any(check in todo_roles for check in frappe.get_roles(user)):
 		return True

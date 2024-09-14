@@ -174,15 +174,12 @@ def get_address_list(doctype, txt, filters, limit_start, limit_page_length=20, o
 	from frappe.www.list import get_list
 
 	user = frappe.session.user
-	ignore_permissions = True
 
 	if not filters:
 		filters = []
 	filters.append(("Address", "owner", "=", user))
 
-	return get_list(
-		doctype, txt, filters, limit_start, limit_page_length, ignore_permissions=ignore_permissions
-	)
+	return get_list(doctype, txt, filters, limit_start, limit_page_length)
 
 
 def has_website_permission(doc, ptype, user, verbose=False):
@@ -251,9 +248,21 @@ def address_query(doctype, txt, searchfield, start, page_len, filters):
 		else:
 			search_condition += f" or `tabAddress`.`{field}` like %(txt)s"
 
+	# Use custom title field if set
+	if meta.show_title_field_in_link and meta.title_field:
+		title = f"`tabAddress`.{meta.title_field}"
+	else:
+		title = "`tabAddress`.city"
+
+	# Get additional search fields
+	if searchfields:
+		extra_query_fields = ",".join([f"`tabAddress`.{field}" for field in searchfields])
+	else:
+		extra_query_fields = "`tabAddress`.country"
+
 	return frappe.db.sql(
 		"""select
-			`tabAddress`.name, `tabAddress`.city, `tabAddress`.country
+			`tabAddress`.name, {title}, {extra_query_fields}
 		from
 			`tabAddress`
 		join `tabDynamic Link`
@@ -275,6 +284,8 @@ def address_query(doctype, txt, searchfield, start, page_len, filters):
 			mcond=get_match_cond(doctype),
 			search_condition=search_condition,
 			condition=condition or "",
+			title=title,
+			extra_query_fields=extra_query_fields,
 		),
 		{
 			"txt": "%" + txt + "%",

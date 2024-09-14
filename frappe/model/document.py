@@ -981,7 +981,7 @@ class Document(BaseDocument):
 			"on_cancel": "Cancel",
 		}
 
-		if not self.flags.in_insert:
+		if not self.flags.in_insert and not self.flags.in_delete:
 			# value change is not applicable in insert
 			event_map["on_change"] = "Value Change"
 
@@ -1627,8 +1627,9 @@ def execute_action(__doctype, __name, __action, **kwargs):
 
 @frappe.whitelist()
 def unlock_document(doctype: str | None = None, name: str | None = None, args=None):
+	# Backward compatibility
 	if not doctype and not name and args:
-		# Backward compatibility
+		args = json.loads(args)
 		doctype = str(args["doctype"])
 		name = str(args["name"])
 	frappe.get_doc(doctype, name).unlock()

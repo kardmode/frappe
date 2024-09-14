@@ -9,6 +9,7 @@ import pyotp
 import frappe
 import frappe.defaults
 from frappe import _
+from frappe.permissions import ALL_USER_ROLE
 from frappe.utils import cint, get_datetime, get_url, time_diff_in_seconds
 from frappe.utils.background_jobs import enqueue
 from frappe.utils.password import decrypt, encrypt
@@ -116,8 +117,7 @@ def two_factor_is_enabled_for_(user):
 
 	if isinstance(user, str):
 		user = frappe.get_doc("User", user)
-
-	roles = [d.role for d in user.roles or []] + ["All"]
+	roles = [d.role for d in user.roles or []] + [ALL_USER_ROLE]
 
 	role_doctype = frappe.qb.DocType("Role")
 	no_of_users = frappe.db.count(
@@ -353,30 +353,14 @@ def send_token_via_email(user, token, otp_secret, otp_issuer, subject=None, mess
 	hotp = pyotp.HOTP(otp_secret)
 	otp = hotp.at(int(token))
 	template_args = {"otp": otp, "otp_issuer": otp_issuer}
-	if not subject:
-		subject = get_email_subject_for_2fa(template_args)
-	if not message:
-		message = get_email_body_for_2fa(template_args)
 
-	email_args = {
-		"recipients": user_email,
-		"sender": None,
-		"subject": subject,
-		"message": message,
-		"header": [_("Verfication Code"), "blue"],
-		"delayed": False,
-		"retry": 3,
-	}
-
-	enqueue(
-		method=frappe.sendmail,
-		queue="short",
-		timeout=300,
-		event=None,
-		is_async=True,
-		job_name=None,
-		now=False,
-		**email_args,
+	frappe.sendmail(
+		recipients=user_email,
+		subject=subject or get_email_subject_for_2fa(template_args),
+		message=message or get_email_body_for_2fa(template_args),
+		header=[_("Verification Code"), "blue"],
+		delayed=False,
+		retry=3,
 	)
 	return True
 

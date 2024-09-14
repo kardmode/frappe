@@ -44,16 +44,17 @@ def clear_sessions(user=None, keep_current=False, device=None, force=False):
 	if force:
 		reason = "Force Logged out by the user"
 
-	for sid in get_sessions_to_clear(user, keep_current, device):
+	for sid in get_sessions_to_clear(user, keep_current, device, force):
 		delete_session(sid, reason=reason)
 
 
-def get_sessions_to_clear(user=None, keep_current=False, device=None):
+def get_sessions_to_clear(user=None, keep_current=False, device=None, force=False):
 	"""Returns sessions of the current user. Called at login / logout
 
 	:param user: user name (default: current user)
 	:param keep_current: keep current session (default: false)
 	:param device: delete sessions of this device (default: desktop, mobile)
+	:param force: ignore simultaneous sessions count, log the user out of all except current (default: false)
 	"""
 	if not user:
 		user = frappe.session.user
@@ -65,14 +66,15 @@ def get_sessions_to_clear(user=None, keep_current=False, device=None):
 		device = (device,)
 
 	offset = 0
-	if user == frappe.session.user:
+	if not force and user == frappe.session.user:
 		simultaneous_sessions = frappe.db.get_value("User", user, "simultaneous_sessions") or 1
 		offset = simultaneous_sessions
 
 	session = frappe.qb.DocType("Sessions")
 	session_id = frappe.qb.from_(session).where((session.user == user) & (session.device.isin(device)))
 	if keep_current:
-		offset = max(0, offset - 1)
+		if not force:
+			offset = max(0, offset - 1)
 		session_id = session_id.where(session.sid != frappe.session.sid)
 
 	query = (
@@ -86,7 +88,7 @@ def delete_session(sid=None, user=None, reason="Session Expired"):
 	from frappe.core.doctype.activity_log.feed import logout_feed
 
 	if frappe.flags.read_only:
-		# This isn't manually initated logout, most likely user's cookies were expired in such case
+		# This isn't manually initiated logout, most likely user's cookies were expired in such case
 		# we should just ignore it till database is back up again.
 		return
 
@@ -223,7 +225,15 @@ class Session:
 
 		else:
 			if self.user:
+				self.validate_user()
 				self.start()
+
+	def validate_user(self):
+		if not frappe.get_cached_value("User", self.user, "enabled"):
+			frappe.throw(
+				_("User {0} is disabled. Please contact your System Manager.").format(self.user),
+				frappe.ValidationError,
+			)
 
 	def start(self):
 		"""start a new session"""
@@ -295,6 +305,7 @@ class Session:
 		if data:
 			self.data.update({"data": data, "user": data.user, "sid": self.sid})
 			self.user = data.user
+			self.validate_user()
 			validate_ip_address(self.user)
 			self.device = data.device
 		else:

@@ -14,7 +14,6 @@ from frappe.desk.doctype.notification_settings.notification_settings import (
 	toggle_notifications,
 )
 from frappe.desk.notifications import clear_notifications
-from frappe.model.delete_doc import check_if_doc_is_linked
 from frappe.model.document import Document
 from frappe.query_builder import DocType
 from frappe.rate_limiter import rate_limit
@@ -280,7 +279,11 @@ class User(Document):
 							user=self.name, pwd=new_password, logout_all_sessions=self.logout_all_sessions
 						)
 
-					if not self.flags.no_welcome_mail and cint(self.send_welcome_email):
+					if (
+						not self.flags.no_welcome_mail
+						and cint(self.send_welcome_email)
+						and not self.flags.email_sent
+					):
 						self.send_welcome_mail_to_user()
 						self.flags.email_sent = 1
 						if frappe.session.user != "Guest":
@@ -466,11 +469,20 @@ class User(Document):
 		# Delete EPS data
 		frappe.db.delete("Energy Point Log", {"user": self.name})
 
-		# Ask user to disable instead if document is still linked
-		try:
-			check_if_doc_is_linked(self)
-		except frappe.LinkExistsError:
-			frappe.throw(_("You can disable the user instead of deleting it."), frappe.LinkExistsError)
+		# Remove user link from Workflow Action
+		frappe.db.set_value("Workflow Action", {"user": self.name}, "user", None)
+
+		# Delete user's List Filters
+		frappe.db.delete("List Filter", {"for_user": self.name})
+
+		# Remove user from Note's Seen By table
+		seen_notes = frappe.get_all("Note", filters=[["Note Seen By", "user", "=", self.name]], pluck="name")
+		for note_id in seen_notes:
+			note = frappe.get_doc("Note", note_id)
+			for row in note.seen_by:
+				if row.user == self.name:
+					note.remove(row)
+			note.save(ignore_permissions=True)
 
 	def before_rename(self, old_name, new_name, merge=False):
 		frappe.clear_cache(user=old_name)
@@ -702,7 +714,10 @@ def get_all_roles(arg=None):
 
 	roles = frappe.get_all(
 		"Role",
-		filters={"name": ("not in", "Administrator,Guest,All"), "disabled": 0},
+		filters={
+			"name": ("not in", frappe.permissions.AUTOMATIC_ROLES),
+			"disabled": 0,
+		},
 		or_filters={"ifnull(restrict_to_domain, '')": "", "restrict_to_domain": ("in", active_domains)},
 		order_by="name",
 	)

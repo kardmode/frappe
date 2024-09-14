@@ -47,7 +47,7 @@ from .utils.jinja import (
 )
 from .utils.lazy_loader import lazy_import
 
-__version__ = "14.73.0"
+__version__ = "14.81.3"
 __title__ = "Frappe Framework"
 
 controllers = {}
@@ -791,7 +791,7 @@ def is_whitelisted(method):
 		summary = _("You are not permitted to access this resource.")
 		detail = _("Function {0} is not whitelisted.").format(bold(f"{method.__module__}.{method.__name__}"))
 		msg = f"<details><summary>{summary}</summary>{detail}</details>"
-		throw(msg, PermissionError, title="Method Not Allowed")
+		throw(msg, PermissionError, title=_("Method Not Allowed"))
 
 	if is_guest and method not in xss_safe_methods:
 		# strictly sanitize form_dict
@@ -2443,8 +2443,8 @@ def _register_fault_handler():
 	import sys
 
 	# Some libraries monkey patch stderr, we need actual fd
-	if isinstance(sys.stderr, io.TextIOWrapper):
-		faulthandler.register(signal.SIGUSR1, file=sys.stderr)
+	if isinstance(sys.__stderr__, io.TextIOWrapper):
+		faulthandler.register(signal.SIGUSR1, file=sys.__stderr__)
 
 
 if _tune_gc:

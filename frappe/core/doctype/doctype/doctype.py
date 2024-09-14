@@ -30,6 +30,7 @@ from frappe.model.document import Document
 from frappe.model.meta import Meta
 from frappe.modules import get_doc_path, make_boilerplate
 from frappe.modules.import_file import get_file_path
+from frappe.permissions import ALL_USER_ROLE, AUTOMATIC_ROLES, SYSTEM_USER_ROLE
 from frappe.query_builder.functions import Concat
 from frappe.utils import cint, is_a_property, random_string
 from frappe.website.utils import clear_cache
@@ -1400,9 +1401,21 @@ def validate_fields(meta):
 					options_list.append(_option)
 			field.options = "\n".join(options_list)
 
-	def scrub_fetch_from(field):
-		if hasattr(field, "fetch_from") and field.fetch_from:
-			field.fetch_from = field.fetch_from.strip("\n").strip()
+	def validate_fetch_from(field):
+		if not field.get("fetch_from"):
+			return
+
+		field.fetch_from = field.fetch_from.strip()
+
+		if "." not in field.fetch_from:
+			return
+		source_field, _target_field = field.fetch_from.split(".", maxsplit=1)
+
+		if source_field == field.fieldname:
+			msg = _(
+				"{0} contains an invalid Fetch From expression, Fetch From can't be self-referential."
+			).format(_(field.label, context=field.parent))
+			frappe.throw(msg, title=_("Recursive Fetch From"))
 
 	def validate_data_field_type(docfield):
 		if docfield.get("is_virtual"):
@@ -1467,7 +1480,7 @@ def validate_fields(meta):
 		check_unique_and_text(meta.get("name"), d)
 		check_table_multiselect_option(d)
 		scrub_options_in_select(d)
-		scrub_fetch_from(d)
+		validate_fetch_from(d)
 		validate_data_field_type(d)
 
 		if not frappe.flags.in_migrate:
@@ -1560,7 +1573,7 @@ def validate_permissions(doctype, for_remove=False, alert=False):
 			)
 
 	def check_level_zero_is_set(d):
-		if cint(d.permlevel) > 0 and d.role != "All":
+		if cint(d.permlevel) > 0 and d.role not in (ALL_USER_ROLE, SYSTEM_USER_ROLE):
 			has_zero_perm = False
 			for p in permissions:
 				if p.role == d.role and (p.permlevel or 0) == 0 and p != d:
@@ -1619,11 +1632,11 @@ def validate_permissions(doctype, for_remove=False, alert=False):
 			return
 
 		if doctype.custom:
-			if d.role == "All":
+			if d.role in AUTOMATIC_ROLES:
 				frappe.throw(
 					_(
 						"Row # {0}: Non administrator user can not set the role {1} to the custom doctype"
-					).format(d.idx, frappe.bold(_("All"))),
+					).format(d.idx, frappe.bold(_(d.role))),
 					title=_("Permissions Error"),
 				)
 
@@ -1673,8 +1686,7 @@ def make_module_and_roles(doc, perm_fieldname="permissions"):
 				m.custom = 1
 			m.insert()
 
-		default_roles = ["Administrator", "Guest", "All"]
-		roles = [p.role for p in doc.get("permissions") or []] + default_roles
+		roles = [p.role for p in doc.get("permissions") or []] + list(AUTOMATIC_ROLES)
 
 		for role in list(set(roles)):
 			if frappe.db.table_exists("Role", cached=False) and not frappe.db.exists("Role", role):
