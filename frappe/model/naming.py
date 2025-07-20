@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
 NAMING_SERIES_PATTERN = re.compile(r"^[\w\- \/.#{}]+$", re.UNICODE)
 BRACED_PARAMS_PATTERN = re.compile(r"(\{[\w | #]+\})")
+DATE_FIELDS = ["posting_date", "custom_posting_date", "transaction_date", "attendance_date"]
 
 
 # Types that can be using in naming series fields
@@ -348,22 +349,7 @@ def parse_naming_series(
 		elif e == 'YYYY':
 			part = today.strftime('%Y')
 		elif e=='PDY':
-			date = ''
-			date_string = ''
-			if doc and doc.get('posting_date'):
-				date = doc.posting_date
-			elif doc and doc.get('transaction_date'):
-				date = doc.transaction_date
-			elif doc and doc.get('attendance_date'):
-				date = doc.attendance_date
-			
-			if date:
-				import datetime
-				year = (getdate(date)).year
-				date_string = str(year)
-			
-			part = date_string	
-			
+			part = get_part_from_date(doc)	
 		elif e=='COM':
 			abbr = ''
 			if doc and doc.get('company'):
@@ -387,7 +373,6 @@ def parse_naming_series(
 			name += cstr(part).strip()
 
 	return name
-
 
 def has_custom_parser(e):
 	"""Returns true if the naming series part has a custom parser"""
@@ -634,7 +619,6 @@ def _format_autoname(autoname, doc):
 
 def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
 	naming_series_parts = parts
-	
 	if not doctype and doc:
 		doctype = doc.get("doctype")
 	
@@ -652,14 +636,13 @@ def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
 			if autoname_details and autoname_details.disable_date == True:
 				pass
 			else:
-				if frappe.get_meta(doctype).has_field("posting_date") or frappe.get_meta(doctype).has_field("transaction_date") or frappe.get_meta(doctype).has_field("attendance_date"): 
-					if len(naming_series_parts) > 0:
-						if '#' in naming_series_parts[len(naming_series_parts)-1]:
-							naming_series_parts.insert(len(naming_series_parts)-1,default_date)
-						else:
-							naming_series_parts.insert(len(naming_series_parts),default_date)
-					else:
-						naming_series_parts = [default_date]		
+				if any(frappe.get_meta(doctype).has_field(field) for field in DATE_FIELDS):
+					# Find the position of the first '###' or similar placeholder
+					insert_index = next((i for i, part in enumerate(naming_series_parts) if '#' in part), len(naming_series_parts))
+
+					# Insert the default_date at the determined position
+					naming_series_parts.insert(insert_index, default_date)
+	
 		
 		if company not in naming_series_parts:
 			if autoname_details and autoname_details.disable_company == True:
@@ -668,5 +651,17 @@ def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
 				if frappe.get_meta(doctype).has_field("company"):
 					naming_series_parts.insert(0,company)
 					naming_series_parts.insert(1,"-")
-						
 	return naming_series_parts
+	
+def get_part_from_date(doc):
+	field_names = ['posting_date','custom_posting_date', 'transaction_date', 'attendance_date']
+	for field in field_names:
+		if doc.get(field):
+			date = doc.get(field)
+			try:
+				year = getdate(date).year
+				return str(year)
+			except Exception:
+				pass
+
+	return None

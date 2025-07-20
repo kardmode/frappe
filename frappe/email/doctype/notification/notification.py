@@ -274,6 +274,9 @@ def get_context(context):
 		bcc = []
 		for recipient in self.recipients:
 			if recipient.condition:
+				if recipient.user:
+					context["recipient_user"] = recipient.user
+				
 				if not frappe.safe_eval(recipient.condition, None, context):
 					continue
 			if recipient.receiver_by_document_field:

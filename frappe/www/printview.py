@@ -753,11 +753,16 @@ def has_value(df, doc):
 	return True
 
 
-def get_print_style(style=None, print_format=None, for_legacy=False):
+def get_print_style(style=None, print_format=None, for_legacy=False, letterhead = None):
 	print_settings = frappe.get_doc("Print Settings")
 
 	if not style:
-		style = print_settings.print_style or ""
+		letterhead_print_style = None
+		# Check for custom style field if letterhead is provided
+		if letterhead and frappe.get_meta("Letter Head").has_field("custom_mrp_print_style"):
+			letterhead_print_style = frappe.db.get_value(print_format.doc_type, print_format.docname, "custom_mrp_print_style")
+			
+		style = letterhead_print_style or print_settings.print_style or ""
 
 	context = {
 		"print_settings": print_settings,

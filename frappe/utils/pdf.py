@@ -287,7 +287,14 @@ def _get_base64_image(src):
 
 def prepare_header_footer(soup: BeautifulSoup):
 	options = {}
-
+	head_main = soup.find("head")
+	for html_id in ("header-html", "footer-html"):
+		if content := soup.find(id=html_id):
+			# before we remove it, pull out any <style> tags and copy them into the main <head>
+			for style_tag in content.find_all("style"):
+				if head_main:
+					head_main.append(style_tag)
+					
 	head = soup.find("head").contents
 	styles = soup.find_all("style")
 
