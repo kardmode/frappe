@@ -126,6 +126,24 @@ frappe.ui.Page = class Page {
 		this.body = this.main = this.wrapper.find(".layout-main-section");
 		this.container = this.wrapper.find(".page-body");
 		this.sidebar = this.wrapper.find(".layout-side-section");
+		
+
+		let is_workspace_page = this.wrapper.attr("id") === "page-Workspaces";
+
+		if (frappe.utils.is_xs() || frappe.utils.is_sm()) {
+			// Mobile: ensure overlay works
+			this.sidebar.css("display", "");
+		} else if (!is_workspace_page) {
+			// Desktop: minimize sidebar for all pages except Workspaces
+			this.sidebar.hide();
+			this.update_sidebar_icon();
+		} else {
+			// Workspace: keep sidebar visible
+			this.sidebar.css("display", "");
+		}
+
+		
+		
 		this.footer = this.wrapper.find(".layout-footer");
 		this.indicator = this.wrapper.find(".indicator-pill");
 
@@ -172,16 +190,16 @@ frappe.ui.Page = class Page {
 		
 		if (this.disable_sidebar_toggle || !sidebar_wrapper.length) {
 			sidebar_toggle.last().remove();
+			this.wrapper.addClass("no-list-sidebar");
 		} else {
-			sidebar_toggle.attr("title", __("Toggle Sidebar")).tooltip({
+			/* sidebar_toggle.attr("title", __("Toggle Sidebar")).tooltip({
 				delay: { show: 600, hide: 100 },
 				trigger: "hover",
-			});
+			}); */
 			sidebar_toggle.click(() => {
 				if (frappe.utils.is_xs() || frappe.utils.is_sm()) {
 					this.setup_overlay_sidebar();
 				} else {
-					//this.setup_overlay_sidebar();
 					sidebar_wrapper.toggle();
 				}
 				$(document.body).trigger("toggleSidebar");
@@ -191,23 +209,32 @@ frappe.ui.Page = class Page {
 	}
 	
 	setup_overlay_sidebar() {
+		this.sidebar.css("display", "");
 		this.sidebar.find(".close-sidebar").remove();
-		let overlay_sidebar = this.sidebar.find(".overlay-sidebar").addClass("opened");
-		$('<div class="close-sidebar">').hide().appendTo(this.sidebar).fadeIn(100,"linear");
-		let scroll_container = $("html").css("overflow-y", "hidden");
+		
+		if (this.sidebar.hasClass('opened')) {
+			this.close_sidebar();
+		} else {
+			// Find the overlay sidebar and add the "opened" class
+			let overlay_sidebar = this.sidebar.find(".overlay-sidebar").addClass("opened");
+			$('<div class="close-sidebar">').hide().appendTo(this.sidebar).fadeIn(100, "linear");
+			let scroll_container = $("html").css("overflow-y", "hidden");
 
-		this.sidebar.find(".close-sidebar").on("click", (e) => this.close_sidebar(e));
-		this.sidebar.on("click", "button:not(.dropdown-toggle)", (e) => this.close_sidebar(e));
-
-		this.close_sidebar = () => {
-			scroll_container.css("overflow-y", "");
-			this.sidebar.find("div.close-sidebar").fadeOut(100,"linear",() => {
-				overlay_sidebar
-					.removeClass("opened")
-					.find(".dropdown-toggle")
-					.removeClass("text-muted");
-			});
-		};
+			this.sidebar.find(".close-sidebar").on("click", (e) => this.close_sidebar(e));
+			this.sidebar.on("click", "button:not(.dropdown-toggle)", (e) => this.close_sidebar(e));
+			
+			// Redefine the close_sidebar function with the proper cleanup
+			this.close_sidebar = () => {
+				scroll_container.css("overflow-y", "");
+				this.sidebar.find("div.close-sidebar").fadeOut(100, "linear", () => {
+					overlay_sidebar
+						.removeClass("opened")
+						.find(".dropdown-toggle")
+						.removeClass("text-muted");
+					this.sidebar.find("div.close-sidebar").remove();
+				});
+			};
+		}
 	}
 
 	update_sidebar_icon() {
@@ -784,13 +811,12 @@ frappe.ui.Page = class Page {
 		</span>`;
 
 		if (icon) {
-			dropdown_label = `<span class="hidden-xs">
+			dropdown_label = `<span class="">
 				${frappe.utils.icon(icon)}
+			</span>
+			<span class="hidden-xs">
 				<span class="custom-btn-group-label">${__(label)}</span>
 				${frappe.utils.icon("select", "xs")}
-			</span>
-			<span class="visible-xs">
-				${frappe.utils.icon(icon)}
 			</span>`;
 		}
 
