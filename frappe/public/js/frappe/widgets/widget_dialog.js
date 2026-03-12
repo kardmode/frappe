@@ -768,6 +768,133 @@ class CustomBlockDialog extends WidgetDialog {
 	}
 }
 
+class FolderDialog extends WidgetDialog {
+	constructor(opts) {
+		super(opts);
+	}
+
+	get_fields() {
+		return [
+			{
+				fieldtype: "Data",
+				fieldname: "label",
+				label: __("Folder Label"),
+				reqd: 1,
+			},
+			{
+				fieldtype: "Section Break",
+				label: __("Folder Items"),
+			},
+			{
+				fieldname: "items",
+				fieldtype: "Table",
+				label: __("Items"),
+				editable_grid: 1,
+				data: this.values ? this.values.items : [],
+				get_data: () => {
+					return this.values ? this.values.items : [];
+				},
+				fields: [
+					{
+						fieldname: "label",
+						fieldtype: "Data",
+						in_list_view: 1,
+						label: __("Label"),
+					},
+					{
+						fieldname: "icon",
+						fieldtype: "Icon",
+						in_list_view: 1,
+						label: __("Icon"),
+						default: "folder-normal",
+					},
+					{
+						fieldname: "type",
+						fieldtype: "Select",
+						in_list_view: 1,
+						label: __("Type"),
+						options: ["DocType", "Report", "Page", "Dashboard", "URL"],
+						default: "DocType",
+					},
+					{
+						fieldname: "link_to",
+						fieldtype: "Dynamic Link",
+						in_list_view: 1,
+						label: __("Link To"),
+						get_options: (df) => df.doc.type,
+						depends_on: (doc) => doc.type !== "URL",
+					},
+					{
+						fieldname: "url",
+						fieldtype: "Data",
+						label: __("URL"),
+						depends_on: (doc) => doc.type === "URL",
+					},
+					{
+						fieldname: "doc_view",
+						fieldtype: "Select",
+						label: __("View"),
+						options: ["List", "Report Builder", "Dashboard", "Tree", "New", "Calendar", "Kanban"],
+						default: "List",
+						depends_on: (doc) => doc.type === "DocType",
+					},
+				],
+			},
+		];
+	}
+
+	process_data(data) {
+		if (!data.items || data.items.length === 0) {
+			frappe.msgprint(__("Please add at least one item to the folder."));
+			return;
+		}
+
+		data.items.forEach((item) => {
+			if (!item.label) {
+				item.label = item.type === "URL" ? item.url : item.link_to;
+			}
+
+			if (item.type === "URL") {
+				item.route = item.url;
+			} else if (item.type === "DocType") {
+				let route = item.link_to.trim().replace(/\s+/g, "-").toLowerCase();
+				switch (item.doc_view) {
+					case "List":
+						item.route = `app/list/${route}`;
+						break;
+					case "Report Builder":
+						item.route = `app/list/${route}/view/report`;
+						break;
+					case "Dashboard":
+						item.route = `app/list/${route}/view/dashboard`;
+						break;
+					case "Tree":
+						item.route = `app/list/${route}/view/tree`;
+						break;
+					case "New":
+						item.route = `app/list/${route}/new`;
+						break;
+					case "Calendar":
+						item.route = `app/list/${route}/view/calendar`;
+						break;
+					case "Kanban":
+						item.route = `app/list/${route}/view/kanban`;
+						break;
+				}
+			} else if (item.type === "Report") {
+				item.route = `app/query-report/${item.link_to}`;
+			} else if (item.type === "Dashboard") {
+				item.route = `app/dashboard/${item.link_to}`;
+			} else if (item.type === "Page") {
+				item.route = `app/${item.link_to}`;
+			}
+		});
+
+		return data;
+	}
+}
+
+
 export default function get_dialog_constructor(type) {
 	const widget_map = {
 		chart: ChartDialog,
@@ -777,7 +904,9 @@ export default function get_dialog_constructor(type) {
 		quick_list: QuickListDialog,
 		number_card: NumberCardDialog,
 		custom_block: CustomBlockDialog,
+		folder: FolderDialog,
 	};
+
 
 	return widget_map[type] || WidgetDialog;
 }

@@ -7,6 +7,8 @@ import NewWidget from "../widgets/new_widget";
 import NumberCardWidget from "../widgets/number_card_widget";
 import QuickListWidget from "../widgets/quick_list_widget";
 import CustomBlock from "../widgets/custom_block_widget";
+import FolderWidget from "./folder_widget.js";
+
 
 frappe.provide("frappe.widget");
 
@@ -19,7 +21,9 @@ frappe.widget.widget_factory = {
 	number_card: NumberCardWidget,
 	quick_list: QuickListWidget,
 	custom_block: CustomBlock,
+	folder: FolderWidget,
 };
+
 
 frappe.widget.make_widget = (opts) => {
 	const widget_class = frappe.widget.widget_factory[opts.widget_type];
@@ -84,6 +88,7 @@ export default class WidgetGroup {
 			...widget,
 			widget_type: this.type,
 			container: this.body,
+
 			height: this.height || null,
 			options: {
 				...this.options,

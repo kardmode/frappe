@@ -93,7 +93,6 @@ class NamingSeries:
 
 		if prefix is None:
 			frappe.throw(_("Invalid Naming Series: {}").format(self.series))
-
 		return prefix
 
 	def get_preview(self, doc=None) -> list[str]:
@@ -328,6 +327,7 @@ def parse_naming_series(
 		number_generator = getseries
 		
 	parts = get_custom_naming_series_by_parts(parts,doc,doctype=doctype)
+
 	series_set = False
 	today = now_datetime()
 	for e in parts:
@@ -371,7 +371,6 @@ def parse_naming_series(
 			name += part
 		elif isinstance(part, NAMING_SERIES_PART_TYPES):
 			name += cstr(part).strip()
-
 	return name
 
 def has_custom_parser(e):
@@ -652,16 +651,18 @@ def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
 					naming_series_parts.insert(0,company)
 					naming_series_parts.insert(1,"-")
 	return naming_series_parts
-	
-def get_part_from_date(doc):
-	field_names = ['posting_date','custom_posting_date', 'transaction_date', 'attendance_date']
-	for field in field_names:
-		if doc.get(field):
-			date = doc.get(field)
-			try:
-				year = getdate(date).year
-				return str(year)
-			except Exception:
-				pass
 
+# gets the date from the doc
+def get_part_from_date(doc):
+	for field in DATE_FIELDS:
+		date = doc.get(field)
+		if not date:
+			continue
+		try:
+			year = getdate(date).year
+			if year >= 2027:
+				return "3000"
+			return str(year)
+		except Exception:
+			continue
 	return None
