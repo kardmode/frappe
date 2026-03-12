@@ -26,9 +26,18 @@ def get_context(context, **dict_params):
 
 
 @frappe.whitelist(allow_guest=True)
-def get(doctype, txt=None, limit_start=0, limit=20, pathname=None, **kwargs):
-	"""Returns processed HTML page for a standard listing."""
+def get(
+	doctype: str,
+	txt: str | None = None,
+	limit_start: int = 0,
+	limit: int = 20,
+	pathname: str | None = None,
+	**kwargs,
+):
+	"""Return processed HTML page for a standard listing."""
 	limit_start = cint(limit_start)
+	limit = cint(limit)
+
 	raw_result = get_list_data(doctype, txt, limit_start, limit=limit + 1, **kwargs)
 	show_more = len(raw_result) > limit
 	if show_more:
@@ -75,10 +84,18 @@ def get(doctype, txt=None, limit_start=0, limit=20, pathname=None, **kwargs):
 
 @frappe.whitelist(allow_guest=True)
 def get_list_data(
-	doctype, txt=None, limit_start=0, fields=None, cmd=None, limit=20, web_form_name=None, **kwargs
+	doctype: str,
+	txt: str | None = None,
+	limit_start: int = 0,
+	fields: list | None = None,
+	cmd: str | None = None,
+	limit: int = 20,
+	web_form_name: str | None = None,
+	**kwargs,
 ):
 	"""Returns processed HTML page for a standard listing."""
 	limit_start = cint(limit_start)
+	limit = cint(limit)
 
 	if frappe.is_table(doctype):
 		frappe.throw(_("Child DocTypes are not allowed"), title=_("Invalid DocType"))
@@ -154,8 +171,11 @@ def prepare_filters(doctype, controller, kwargs):
 				filters[key] = val
 
 	# filter the filters to include valid fields only
+	from frappe.model.meta import DEFAULT_FIELD_LABELS
+
 	for fieldname in list(filters.keys()):
-		if not meta.has_field(fieldname):
+		# add a check for default fields, as they are not present in meta.fields
+		if not meta.has_field(fieldname) and fieldname not in DEFAULT_FIELD_LABELS.keys():
 			del filters[fieldname]
 
 	return filters
@@ -186,7 +206,7 @@ def get_list_context(context, doctype, web_form_name=None):
 	# get context for custom webform
 	if meta.custom and web_form_name:
 		webform_list_contexts = frappe.get_hooks("webform_list_context")
-		if webform_list_contexts:
+		if webform_list_contexts and not frappe.get_doc("Module Def", meta.module).custom:
 			out = frappe._dict(frappe.get_attr(webform_list_contexts[0])(meta.module) or {})
 			if out:
 				list_context = out

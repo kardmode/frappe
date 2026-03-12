@@ -25,7 +25,18 @@ frappe.ui.form.Toolbar = class Toolbar {
 				this.page.hide_menu();
 				this.print_icon && this.print_icon.addClass("hide");
 			} else {
-				this.page.show_menu();
+				const is_children_visible =
+					this.page.menu.children().filter(function () {
+						return (
+							$(this).css("display") !== "none" &&
+							!$(this).hasClass("dropdown-divider")
+						);
+					}).length > 0;
+				if (is_children_visible) {
+					this.page.show_menu();
+				} else {
+					this.page.hide_menu();
+				}
 				this.print_icon && this.print_icon.removeClass("hide");
 			}
 		}
@@ -205,7 +216,7 @@ frappe.ui.form.Toolbar = class Toolbar {
 				let label = __("New Name");
 				if (me.frm.meta.autoname && me.frm.meta.autoname.startsWith("field:")) {
 					let fieldname = me.frm.meta.autoname.split(":")[1];
-					label = __("New {0}", [me.frm.get_docfield(fieldname).label]);
+					label = __("New {0}", [__(me.frm.get_docfield(fieldname).label)]);
 				}
 
 				fields.push(

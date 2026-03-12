@@ -13,6 +13,7 @@ from ldap3.core.exceptions import (
 	LDAPInvalidFilterError,
 	LDAPNoSuchObjectResult,
 )
+from ldap3.utils.conv import escape_filter_chars
 from ldap3.utils.hashed import hashed
 
 import frappe
@@ -59,7 +60,7 @@ class LDAPSettings(Document):
 
 				except LDAPAttributeError as ex:
 					frappe.throw(
-						_("LDAP settings incorrect. validation response was: {0}").format(ex),
+						_("LDAP settings incorrect. validation response was: {0}").format(str(ex)),
 						title=_("Misconfigured"),
 					)
 
@@ -233,18 +234,19 @@ class LDAPSettings(Document):
 		if self.ldap_directory_server.lower() == "active directory":
 			ldap_object_class = "Group"
 			ldap_group_members_attribute = "member"
-			user_search_str = user.entry_dn
+			user_search_str = escape_filter_chars(user.entry_dn)
 
 		elif self.ldap_directory_server.lower() == "openldap":
 			ldap_object_class = "posixgroup"
 			ldap_group_members_attribute = "memberuid"
-			user_search_str = getattr(user, self.ldap_username_field).value
+			user_search_str = escape_filter_chars(getattr(user, self.ldap_username_field).value)
 
 		elif self.ldap_directory_server.lower() == "custom":
 			ldap_object_class = self.ldap_group_objectclass
 			ldap_group_members_attribute = self.ldap_group_member_attribute
 			ldap_custom_group_search = self.ldap_custom_group_search or "{0}"
-			user_search_str = ldap_custom_group_search.format(getattr(user, self.ldap_username_field).value)
+			user_value = escape_filter_chars(getattr(user, self.ldap_username_field).value)
+			user_search_str = ldap_custom_group_search.format(user_value)
 
 		else:
 			# NOTE: depreciate this else path
@@ -271,6 +273,7 @@ class LDAPSettings(Document):
 		if not self.enabled:
 			frappe.throw(_("LDAP is not enabled."))
 
+		username = escape_filter_chars(username)
 		user_filter = self.ldap_search_string.format(username)
 		ldap_attributes = self.get_ldap_attributes()
 		conn = self.connect_to_ldap(self.base_dn, self.get_password(raise_exception=False))
@@ -298,7 +301,8 @@ class LDAPSettings(Document):
 		except LDAPInvalidCredentialsResult:
 			frappe.throw(_("Invalid username or password"))
 
-	def reset_password(self, user, password, logout_sessions=False):
+	def reset_password(self, user: str, password: str, logout_sessions: int = 0):
+		user = escape_filter_chars(user)
 		search_filter = f"({self.ldap_email_field}={user})"
 
 		conn = self.connect_to_ldap(self.base_dn, self.get_password(raise_exception=False), read_only=False)
@@ -378,12 +382,21 @@ def login():
 	frappe.form_dict.pop("pwd", None)
 	frappe.local.login_manager.post_login()
 
+	try:
+		from frappe.core.doctype.activity_log.activity_log import add_authentication_log
+
+		add_authentication_log(_("{0} logged in").format(user.full_name), user.name)
+	except ImportError:
+		pass
+
 	# because of a GET request!
 	frappe.db.commit()
 
 
 @frappe.whitelist()
-def reset_password(user, password, logout):
+def reset_password(user: str, password: str, logout: int):
+	frappe.only_for("System Manager")
+
 	ldap: LDAPSettings = frappe.get_doc("LDAP Settings")
 	if not ldap.enabled:
 		frappe.throw(_("LDAP is not enabled."))

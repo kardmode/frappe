@@ -18,6 +18,7 @@
   "date_format",
   "time_format",
   "number_format",
+  "use_number_format_from_currency",
   "first_day_of_the_week",
   "column_break_7",
   "float_precision",
@@ -79,9 +80,11 @@
   "store_attached_pdf_document",
   "prepared_report_section",
   "max_auto_email_report_per_user",
+  "delete_background_exported_reports_after",
   "system_updates_section",
   "disable_system_update_notification",
   "disable_change_log_notification",
+  "max_report_rows",
   "telemetry_section",
   "enable_telemetry",
   "files_section",
@@ -608,12 +611,33 @@
    "fieldname": "rate_limit_email_link_login",
    "fieldtype": "Int",
    "label": "Rate limit for email link login"
+  },
+  {
+   "default": "0",
+   "fieldname": "use_number_format_from_currency",
+   "fieldtype": "Check",
+   "label": "Use Number Format from Currency"
+  },
+  {
+   "default": "100000",
+   "description": "This value specifies the max number of rows that can be rendered in report view. ",
+   "fieldname": "max_report_rows",
+   "fieldtype": "Int",
+   "label": "Max Report Rows"
+  },
+  {
+   "default": "48",
+   "description": "Defines how long exported reports sent via email are kept in the system. Older files will be automatically deleted.",
+   "fieldname": "delete_background_exported_reports_after",
+   "fieldtype": "Int",
+   "label": "Delete Background Exported Reports After (Hours)",
+   "non_negative": 1
   }
  ],
  "icon": "fa fa-cog",
  "issingle": 1,
  "links": [],
- "modified": "2024-03-22 16:35:52.338727",
+ "modified": "2025-05-19 14:17:40.748786",
  "modified_by": "Administrator",
  "module": "Core",
  "name": "System Settings",

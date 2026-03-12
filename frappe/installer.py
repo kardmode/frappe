@@ -242,6 +242,8 @@ def parse_app_name(name: str) -> str:
 		else:
 			_repo = name.rsplit("/", 2)[2]
 		repo = _repo.split(".", 1)[0]
+	elif name in frappe.get_all_apps():
+		return name
 	else:
 		_, repo, _ = fetch_details_from_tag(name)
 	return repo
@@ -315,6 +317,7 @@ def install_app(name, verbose=False, set_as_patched=True, force=False):
 	for after_sync in app_hooks.after_sync or []:
 		frappe.get_attr(after_sync)()  #
 
+	frappe.clear_cache()
 	frappe.flags.in_install = False
 
 
@@ -336,6 +339,8 @@ def remove_from_installed_apps(app_name):
 			"DefaultValue", {"defkey": "installed_apps"}, "defvalue", json.dumps(installed_apps)
 		)
 		_clear_cache("__global")
+		frappe.local.doc_events_hooks = None
+		frappe.get_single("Installed Applications").update_versions()
 		frappe.db.commit()
 		if frappe.flags.in_install:
 			post_install()
@@ -394,6 +399,7 @@ def remove_app(app_name, dry_run=False, yes=False, no_backup=False, force=False)
 		remove_from_installed_apps(app_name)
 		frappe.get_single("Installed Applications").update_versions()
 		frappe.db.commit()
+		frappe.clear_cache()
 
 	for after_uninstall in app_hooks.after_uninstall or []:
 		frappe.get_attr(after_uninstall)()
@@ -403,6 +409,9 @@ def remove_app(app_name, dry_run=False, yes=False, no_backup=False, force=False)
 
 	click.secho(f"Uninstalled App {app_name} from Site {site}", fg="green")
 	frappe.flags.in_uninstall = False
+
+	if not dry_run:
+		frappe.clear_cache()
 
 
 def _delete_modules(modules: list[str], dry_run: bool) -> list[str]:
@@ -424,6 +433,7 @@ def _delete_modules(modules: list[str], dry_run: bool) -> list[str]:
 
 			if not dry_run:
 				if doctype.issingle:
+					frappe.delete_doc(doctype.name, doctype.name, ignore_on_trash=True, force=True)
 					frappe.delete_doc("DocType", doctype.name, ignore_on_trash=True)
 				else:
 					drop_doctypes.append(doctype.name)

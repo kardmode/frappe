@@ -103,6 +103,10 @@ class FrappeAPITestCase(FrappeTestCase):
 	def delete(self, path, **kwargs) -> TestResponse:
 		return make_request(target=self.TEST_CLIENT.delete, args=(path,), kwargs=kwargs)
 
+	def tearDown(self) -> None:
+		frappe.db.rollback()
+		return super().tearDown()
+
 
 class TestResourceAPI(FrappeAPITestCase):
 	DOCTYPE = "ToDo"
@@ -118,6 +122,7 @@ class TestResourceAPI(FrappeAPITestCase):
 
 	@classmethod
 	def tearDownClass(cls):
+		frappe.db.commit()
 		for name in cls.GENERATED_DOCUMENTS:
 			frappe.delete_doc_if_exists(cls.DOCTYPE, name)
 		frappe.db.commit()
@@ -396,13 +401,15 @@ class TestResponse(FrappeAPITestCase):
 
 	def test_login_redirects(self):
 		expected_redirects = {
-			"/app/user": "/app/user",
-			"/app/user?enabled=1": "/app/user?enabled=1",
-			"http://example.com": "/app",  # No external redirect
-			"https://google.com": "/app",
-			"http://localhost:8000": "/app",
+			"/app/user": "http://localhost/app/user",
+			"/app/user?enabled=1": "http://localhost/app/user?enabled=1",
+			"http://example.com": "http://localhost/app",  # No external redirect
+			"https://google.com": "http://localhost/app",
+			"http://localhost:8000": "http://localhost/app",
 			"http://localhost/app": "http://localhost/app",
+			"////example.com": "http://localhost//example.com",  # malicious redirect attempt
 		}
+
 		for redirect, expected_redirect in expected_redirects.items():
 			response = self.get(f"/login?{urlencode({'redirect-to':redirect})}", {"sid": self.sid})
 			self.assertEqual(response.location, expected_redirect)

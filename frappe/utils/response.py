@@ -6,6 +6,7 @@ import decimal
 import json
 import mimetypes
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 
@@ -29,12 +30,9 @@ if TYPE_CHECKING:
 
 def report_error(status_code):
 	"""Build error. Show traceback in developer mode"""
-	allow_traceback = cint(frappe.db.get_system_setting("allow_error_traceback")) if frappe.db else True
-	if (
-		allow_traceback
-		and (status_code != 404 or frappe.conf.logging)
-		and not frappe.local.flags.disable_traceback
-	):
+	allow_traceback = is_traceback_allowed() and (status_code != 404 or frappe.conf.logging)
+
+	if allow_traceback:
 		traceback = frappe.utils.get_traceback()
 		if traceback:
 			frappe.errprint(traceback)
@@ -43,6 +41,14 @@ def report_error(status_code):
 	response = build_response("json")
 	response.status_code = status_code
 	return response
+
+
+def is_traceback_allowed():
+	return (
+		frappe.db
+		and frappe.get_system_settings("allow_error_traceback")
+		and (not frappe.local.flags.disable_traceback or frappe._dev_server)
+	)
 
 
 def build_response(response_type=None):
@@ -136,9 +142,7 @@ def make_logs(response=None):
 	if not response:
 		response = frappe.local.response
 
-	allow_traceback = frappe.get_system_settings("allow_error_traceback") if frappe.db else False
-
-	if frappe.error_log and allow_traceback:
+	if frappe.error_log and is_traceback_allowed():
 		response["exc"] = json.dumps([frappe.utils.cstr(d["exc"]) for d in frappe.local.error_log])
 
 	if frappe.local.message_log:
@@ -183,6 +187,9 @@ def json_handler(obj):
 
 	elif callable(obj):
 		return repr(obj)
+
+	elif isinstance(obj, Path):
+		return str(obj)
 
 	else:
 		raise TypeError(f"""Object of type {type(obj)} with value of {obj!r} is not JSON serializable""")

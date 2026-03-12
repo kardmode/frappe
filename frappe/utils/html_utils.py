@@ -138,12 +138,12 @@ def clean_script_and_style(html):
 	return frappe.as_unicode(soup)
 
 
-def sanitize_html(html, linkify=False):
+def sanitize_html(html, linkify=False, always_sanitize=False, disallowed_tags=None):
 	"""
 	Sanitize HTML tags, attributes and style to prevent XSS attacks
 	Based on bleach clean, bleach whitelist and html5lib's Sanitizer defaults
 
-	Does not sanitize JSON, as it could lead to future problems
+	Does not sanitize JSON unless explicitly specified, as it could lead to future problems
 	"""
 	import bleach
 	from bs4 import BeautifulSoup
@@ -151,23 +151,34 @@ def sanitize_html(html, linkify=False):
 	if not isinstance(html, str):
 		return html
 
-	elif is_json(html):
-		return html
+	if not always_sanitize:
+		if is_json(html):
+			return html
 
-	if not bool(BeautifulSoup(html, "html.parser").find()):
-		return html
+		if not bool(BeautifulSoup(html, "html.parser").find()):
+			return html
 
-	tags = (
-		acceptable_elements
-		+ svg_elements
-		+ mathml_elements
-		+ ["html", "head", "meta", "link", "body", "style", "o:p"]
-	)
+	tags = {
+		*acceptable_elements,
+		*svg_elements,
+		*mathml_elements,
+		"html",
+		"head",
+		"meta",
+		"link",
+		"body",
+		"style",
+		"o:p",
+	}
 
 	def attributes_filter(tag, name, value):
 		if name.startswith("data-"):
 			return True
 		return name in acceptable_attributes
+
+	# Allow caller to explicitly disallow some tags
+	if disallowed_tags:
+		tags.difference_update(disallowed_tags)
 
 	attributes = {"*": attributes_filter, "svg": svg_attributes}
 	styles = bleach_allowlist.all_styles
@@ -305,6 +316,7 @@ acceptable_elements = [
 	"strike",
 	"strong",
 	"sub",
+	"summary",
 	"sup",
 	"table",
 	"tbody",

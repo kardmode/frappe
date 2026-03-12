@@ -146,10 +146,18 @@ class Document(BaseDocument):
 			self._fix_numeric_types()
 
 		else:
-			d = frappe.db.get_value(self.doctype, self.name, "*", as_dict=1, for_update=self.flags.for_update)
+			get_value_kwargs = {"for_update": self.flags.for_update, "as_dict": True}
+			if not isinstance(self.name, dict | list):
+				get_value_kwargs["order_by"] = None
+
+			d = frappe.db.get_value(
+				doctype=self.doctype, filters=self.name, fieldname="*", **get_value_kwargs
+			)
+
 			if not d:
 				frappe.throw(
-					_("{0} {1} not found").format(_(self.doctype), self.name), frappe.DoesNotExistError
+					_("{0} {1} not found").format(_(self.doctype), self.name),
+					frappe.DoesNotExistError(doctype=self.doctype),
 				)
 
 			super().__init__(d)
@@ -196,7 +204,7 @@ class Document(BaseDocument):
 	def check_permission(self, permtype="read", permlevel=None):
 		"""Raise `frappe.PermissionError` if not permitted"""
 		if not self.has_permission(permtype):
-			self.raise_no_permission_to(permtype)
+			self._handle_permission_failure(permtype)
 
 	def has_permission(self, permtype="read", verbose=False) -> bool:
 		"""
@@ -212,6 +220,12 @@ class Document(BaseDocument):
 		import frappe.permissions
 
 		return frappe.permissions.has_permission(self.doctype, permtype, self)
+
+	def _handle_permission_failure(self, perm_type):
+		from frappe.permissions import check_doctype_permission
+
+		check_doctype_permission(self.doctype, perm_type)
+		self.raise_no_permission_to(perm_type)
 
 	def raise_no_permission_to(self, perm_type):
 		"""Raise `frappe.PermissionError`."""
@@ -253,9 +267,9 @@ class Document(BaseDocument):
 		self._set_defaults()
 		self.set_user_and_timestamp()
 		self.set_docstatus()
+		self.check_permission("create")
 		self.check_if_latest()
 		self._validate_links()
-		self.check_permission("create")
 		self.run_method("before_insert")
 		self.set_new_name(set_name=set_name, set_child_names=set_child_names)
 		self.set_parent_in_children()

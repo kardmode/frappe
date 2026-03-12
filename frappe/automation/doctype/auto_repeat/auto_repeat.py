@@ -58,9 +58,8 @@ class AutoRepeat(Document):
 
 	def before_insert(self):
 		if not frappe.flags.in_test:
-			start_date = getdate(self.start_date)
-			today_date = getdate(today())
-			if start_date <= today_date:
+			today_date = getdate()
+			if getdate(self.start_date) < today_date:
 				self.start_date = today_date
 
 	def after_save(self):
@@ -101,12 +100,18 @@ class AutoRepeat(Document):
 			return
 
 		if self.end_date:
+			end_date = getdate(self.end_date)
+
 			self.validate_from_to_dates("start_date", "end_date")
 
-		if self.end_date == self.start_date:
-			frappe.throw(
-				_("{0} should not be same as {1}").format(frappe.bold("End Date"), frappe.bold("Start Date"))
-			)
+			if end_date == getdate():
+				frappe.throw(_("End Date cannot be today."))
+			if end_date == getdate(self.start_date):
+				frappe.throw(
+					_("{0} should not be same as {1}").format(
+						frappe.bold(_("End Date")), frappe.bold(_("Start Date"))
+					)
+				)
 
 	def validate_email_id(self):
 		if self.notify_by_email:
@@ -171,7 +176,7 @@ class AutoRepeat(Document):
 		if self.end_date:
 			next_date = self.get_next_schedule_date(schedule_date=start_date, for_full_schedule=True)
 
-			while getdate(next_date) < getdate(end_date):
+			while getdate(next_date) <= getdate(end_date):
 				row = {
 					"reference_document": self.reference_document,
 					"frequency": self.frequency,
@@ -533,14 +538,15 @@ def update_reference(docname: str, reference: str):
 	return "success"  # backward compatbility
 
 
-@frappe.whitelist()
-def generate_message_preview(reference_dt, reference_doc, message=None, subject=None):
+@frappe.whitelist(methods=["POST"])
+def generate_message_preview(name: str):
 	frappe.has_permission("Auto Repeat", "write", throw=True)
-	doc = frappe.get_doc(reference_dt, reference_doc)
+	auto_repeat = frappe.get_doc("Auto Repeat", str(name))
+	doc = frappe.get_doc(auto_repeat.reference_doctype, auto_repeat.reference_document)
 	doc.check_permission()
 	subject_preview = _("Please add a subject to your email")
-	msg_preview = frappe.render_template(message, {"doc": doc})
-	if subject:
-		subject_preview = frappe.render_template(subject, {"doc": doc})
+	msg_preview = frappe.render_template(auto_repeat.message, {"doc": doc})
+	if auto_repeat.subject:
+		subject_preview = frappe.render_template(auto_repeat.subject, {"doc": doc})
 
 	return {"message": msg_preview, "subject": subject_preview}

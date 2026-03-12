@@ -341,7 +341,11 @@ class Communication(Document, CommunicationEmailMixin):
 			return
 
 		for doctype, docname in parse_email([self.recipients, self.cc, self.bcc]):
-			if not frappe.db.get_value(doctype, docname, ignore=True):
+			# Both document and doctype names should be case insensitive in email addresses.
+			doctype = frappe.db.get_value("DocType", doctype)
+			if doctype:
+				docname = frappe.db.get_value(doctype, docname, ignore=True)
+			if not (doctype and docname):
 				continue
 
 			self.add_link(doctype, docname)
@@ -509,7 +513,7 @@ def parse_email(email_strings):
 				if len(document_parts) != 2:
 					continue
 
-				doctype = unquote(document_parts[0])
+				doctype = frappe.unscrub(unquote(document_parts[0]))
 				docname = unquote(document_parts[1])
 
 			if doctype and docname:
@@ -568,7 +572,10 @@ def update_first_response_time(parent, communication):
 			is_system_user(communication.sender)
 			or frappe.get_cached_value("User", frappe.session.user, "user_type") == "System User"
 		):
-			if communication.sent_or_received == "Sent":
+			if (
+				communication.sent_or_received == "Sent"
+				and communication.communication_type == "Communication"
+			):
 				first_responded_on = communication.creation
 				if parent.meta.has_field("first_responded_on"):
 					parent.db_set("first_responded_on", first_responded_on)

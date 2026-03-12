@@ -38,8 +38,13 @@ class Report(Document):
 			if frappe.db.get_value("Report", self.name, "is_standard") == "Yes":
 				frappe.throw(_("Cannot edit a standard report. Please duplicate and create a new report"))
 
-		if self.is_standard == "Yes" and frappe.session.user != "Administrator":
-			frappe.throw(_("Only Administrator can save a standard report. Please rename and save."))
+		if self.is_standard == "Yes":
+			if frappe.session.user != "Administrator":
+				frappe.throw(_("Only Administrator can save a standard report. Please rename and save."))
+
+			# Letter Head is visible only for non-standard reports.
+			# It should not remain set when it's invisible.
+			self.letter_head = None
 
 		if self.report_type == "Report Builder":
 			self.update_report_json()
@@ -342,6 +347,11 @@ class Report(Document):
 			frappe.throw(_("You are not allowed to edit the report."))
 
 		self.db_set("disabled", cint(disable))
+
+	@frappe.whitelist()
+	def enable_prepared_report(self):
+		enable_prepared_report(self.name)
+		frappe.msgprint(_("Prepared Report Enabled"))
 
 
 def is_prepared_report_disabled(report):

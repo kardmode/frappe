@@ -68,7 +68,13 @@ def get_list(
 
 @frappe.whitelist()
 def get_count(doctype, filters=None, debug=False, cache=False):
-	return frappe.db.count(doctype, get_safe_filters(filters), debug, cache)
+	from frappe.desk.reportview import get_count
+
+	frappe.form_dict.doctype = doctype
+	frappe.form_dict.filters = get_safe_filters(filters)
+	frappe.form_dict.debug = debug
+
+	return get_count()
 
 
 @frappe.whitelist()
@@ -498,9 +504,13 @@ def delete_doc(doctype, name):
 	if frappe.is_table(doctype):
 		values = frappe.db.get_value(doctype, name, ["parenttype", "parent", "parentfield"])
 		if not values:
-			raise frappe.DoesNotExistError
+			raise frappe.DoesNotExistError(doctype=doctype)
+
 		parenttype, parent, parentfield = values
 		parent = frappe.get_doc(parenttype, parent)
+		if not parent.has_permission("write"):
+			raise frappe.DoesNotExistError(doctype=doctype)
+
 		for row in parent.get(parentfield):
 			if row.name == name:
 				parent.remove(row)

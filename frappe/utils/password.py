@@ -57,12 +57,17 @@ def get_decrypted_password(doctype, name, fieldname="password", raise_exception=
 	).run()
 
 	if result and result[0][0]:
-		return decrypt(result[0][0])
+		try:
+			return decrypt(result[0][0], key=f"{doctype}.{name}.{fieldname}")
+		except frappe.ValidationError as e:
+			if raise_exception:
+				raise e
 
-	elif raise_exception:
+			return None
+
+	if raise_exception:
 		frappe.throw(
 			_("Password not found for {0} {1} {2}").format(doctype, name, fieldname),
-			frappe.AuthenticationError,
 		)
 
 
@@ -209,7 +214,7 @@ def encrypt(txt, encryption_key=None):
 	return cipher_text
 
 
-def decrypt(txt, encryption_key=None):
+def decrypt(txt, encryption_key=None, key: str | None = None):
 	# Only use encryption_key value generated with Fernet.generate_key().decode()
 
 	try:
@@ -218,12 +223,13 @@ def decrypt(txt, encryption_key=None):
 	except InvalidToken:
 		# encryption_key in site_config is changed and not valid
 		frappe.throw(
-			_("Encryption key is invalid! Please check site_config.json")
-			+ "<br>"
+			(_("Failed to decrypt key {0}").format(key) + "<br><br>" if key else "")
+			+ _("Encryption key is invalid! Please check site_config.json")
+			+ "<br><br>"
 			+ _(
 				"If you have recently restored the site you may need to copy the site config contaning original Encryption Key."
 			)
-			+ "<br>"
+			+ "<br><br>"
 			+ _(
 				"Please visit https://frappecloud.com/docs/sites/migrate-an-existing-site#encryption-key for more information."
 			),

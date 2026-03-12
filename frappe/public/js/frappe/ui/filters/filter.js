@@ -41,6 +41,7 @@ frappe.ui.Filter = class {
 			Date: ["like", "not like"],
 			Datetime: ["like", "not like", "in", "not in", "=", "!="],
 			Data: ["Between", "Timespan"],
+			Time: ["Between", "Timespan"],
 			Select: ["like", "not like", "Between", "Timespan"],
 			Link: ["Between", "Timespan", ">", "<", ">=", "<="],
 			Currency: ["Between", "Timespan"],
@@ -464,7 +465,8 @@ frappe.ui.filter_utils = {
 	},
 
 	get_default_condition(df) {
-		if (df.fieldtype == "Data") {
+		const meta = frappe.get_meta(df.parent);
+		if (df.fieldtype == "Data" && !meta?.is_large_table) {
 			return "like";
 		} else if (df.fieldtype == "Date" || df.fieldtype == "Datetime") {
 			return "Between";

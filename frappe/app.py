@@ -22,6 +22,7 @@ import frappe.utils.response
 from frappe import _
 from frappe.core.doctype.comment.comment import update_comments_in_parent_after_request
 from frappe.middlewares import StaticDataMiddleware
+from frappe.permissions import handle_does_not_exist_error
 from frappe.utils import cint, get_site_name, sanitize_html
 from frappe.utils.data import escape_html
 from frappe.utils.error import make_error_snapshot
@@ -73,6 +74,11 @@ if frappe._tune_gc:
 	import frappe.website.website_generator  # web page doctypes
 
 # end: module pre-loading
+
+# better werkzeug default
+# this is necessary because frappe desk sends most requests as form data
+# and some of them can exceed werkzeug's default limit of 500kb
+Request.max_form_memory_size = None
 
 
 @local_manager.middleware
@@ -157,14 +163,13 @@ def init_request(request):
 		# site does not exist
 		raise NotFound
 
+	frappe.connect(set_admin_as_user=False)
 	if frappe.local.conf.maintenance_mode:
-		frappe.connect()
 		if frappe.local.conf.allow_reads_during_maintenance:
 			setup_read_only_mode()
 		else:
 			raise frappe.SessionStopped("Session Stopped")
-	else:
-		frappe.connect(set_admin_as_user=False)
+
 	if request.path.startswith("/api/method/upload_file"):
 		from frappe.core.api.file import get_max_file_size
 
@@ -285,6 +290,7 @@ def make_form_dict(request: Request):
 	frappe.local.form_dict.pop("_", None)
 
 
+@handle_does_not_exist_error
 def handle_exception(e):
 	response = None
 	http_status_code = getattr(e, "http_status_code", 500)

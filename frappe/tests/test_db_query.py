@@ -469,6 +469,23 @@ class TestReportview(FrappeTestCase):
 		)
 		self.assertTrue("_relevance" in data[0])
 
+		# Test that fields with keywords in strings are allowed
+		data = DatabaseQuery("DocType").execute(
+			fields=["name", "locate('select', name)"],
+			limit_start=0,
+			limit_page_length=1,
+		)
+		self.assertTrue(data)
+
+		# Test that subqueries with other DML are blocked
+		self.assertRaises(
+			frappe.DataError,
+			DatabaseQuery("DocType").execute,
+			fields=["name", "issingle", "(insert into tabUser values (1))"],
+			limit_start=0,
+			limit_page_length=1,
+		)
+
 		data = DatabaseQuery("DocType").execute(
 			fields=["name", "issingle", "date(creation) as creation"], limit_start=0, limit_page_length=1
 		)
@@ -1153,6 +1170,12 @@ class TestReportview(FrappeTestCase):
 		data = get()
 		self.assertEqual(len(data["values"]), 1)
 
+	def test_ifnull_none(self):
+		query = frappe.get_all("DocField", {"fieldname": None}, run=0)
+		self.assertIn("''", query)
+		self.assertNotIn("\\'", query)
+		self.assertFalse(frappe.get_all("DocField", {"name": None}))
+
 
 class TestReportView(FrappeTestCase):
 	def setUp(self) -> None:
@@ -1321,6 +1344,20 @@ class TestReportView(FrappeTestCase):
 
 		response = execute_cmd("frappe.desk.reportview.get")
 		self.assertListEqual(response["keys"], ["field_label", "field_name", "_aggregate_column"])
+
+	def test_db_filter_not_set(self):
+		"""
+		Test if the 'not set' filter always translates correctly with/without qb under the hood.
+		"""
+		frappe.get_doc({"doctype": "ToDo", "description": "filter test"}).insert()
+		frappe.get_doc({"doctype": "ToDo", "description": "filter test", "reference_name": ""}).insert()
+
+		# `get_all` does not use QueryBuilder while `count` does. Both should return the same result.
+		# `not set` must consider empty strings and NULL values both.
+		self.assertEqual(
+			len(frappe.get_all("ToDo", filters={"reference_name": ["is", "not set"]})),
+			frappe.db.count("ToDo", {"reference_name": ["is", "not set"]}),
+		)
 
 
 def add_child_table_to_blog_post():

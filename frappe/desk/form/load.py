@@ -12,7 +12,7 @@ from frappe import _, _dict
 from frappe.desk.form.document_follow import is_document_followed
 from frappe.model.utils import is_virtual_doctype
 from frappe.model.utils.user_settings import get_user_settings
-from frappe.permissions import get_doc_permissions
+from frappe.permissions import check_doctype_permission, get_doc_permissions
 from frappe.utils.data import cstr
 
 
@@ -20,7 +20,7 @@ from frappe.utils.data import cstr
 def getdoc(doctype, name, user=None):
 	"""
 	Loads a doclist for a given document. This method is called directly from the client.
-	Requries "doctype", "name" as form variables.
+	Requires "doctype", "name" as form variables.
 	Will also call the "onload" method on the document.
 	"""
 
@@ -31,16 +31,19 @@ def getdoc(doctype, name, user=None):
 		name = doctype
 
 	if not is_virtual_doctype(doctype) and not frappe.db.exists(doctype, name):
+		check_doctype_permission(doctype)
 		return []
 
 	doc = frappe.get_doc(doctype, name)
-	run_onload(doc)
 
 	if not doc.has_permission("read"):
+		check_doctype_permission(doctype)
 		frappe.flags.error_message = _("Insufficient Permission for {0}").format(
-			frappe.bold(doctype + " " + name)
+			frappe.bold(_(doctype) + " " + name)
 		)
 		raise frappe.PermissionError(("read", doctype, name))
+
+	run_onload(doc)
 
 	# ignores system setting (apply_perm_level_on_api_calls) unconditionally to maintain backward compatibility
 	doc.apply_fieldlevel_read_permissions()
@@ -130,7 +133,7 @@ def get_docinfo(doc=None, doctype=None, name=None):
 		}
 	)
 
-	update_user_info(docinfo)
+	update_user_info(docinfo, doc)
 
 	frappe.response["docinfo"] = docinfo
 
@@ -198,7 +201,7 @@ def get_attachments(dt, dn):
 def get_versions(doc):
 	return frappe.get_all(
 		"Version",
-		filters=dict(ref_doctype=doc.doctype, docname=doc.name),
+		filters=dict(ref_doctype=doc.doctype, docname=str(doc.name)),
 		fields=["name", "owner", "creation", "data"],
 		limit=10,
 		order_by="creation desc",
@@ -432,8 +435,8 @@ def get_title_values_for_link_and_dynamic_link_fields(doc, link_fields=None):
 
 		doctype = field.options if field.fieldtype == "Link" else doc.get(field.options)
 
-		meta = frappe.get_meta(doctype)
-		if not meta or not (meta.title_field and meta.show_title_field_in_link):
+		meta = frappe.get_meta(doctype) if doctype else None
+		if not meta or not meta.title_field or not meta.show_title_field_in_link:
 			continue
 
 		link_title = frappe.db.get_value(doctype, link_docname, meta.title_field, cache=True, order_by=None)
@@ -467,7 +470,13 @@ def send_link_titles(link_titles):
 	frappe.local.response["_link_titles"].update(link_titles)
 
 
-def update_user_info(docinfo):
+def update_user_info(docinfo, doc=None):
+	if doc:
+		for field in ("owner", "modified_by"):
+			user = doc.get(field)
+			if user:
+				frappe.utils.add_user_info(user, docinfo.user_info)
+
 	for d in docinfo.communications:
 		frappe.utils.add_user_info(d.sender, docinfo.user_info)
 
@@ -478,6 +487,9 @@ def update_user_info(docinfo):
 		frappe.utils.add_user_info(d.owner, docinfo.user_info)
 
 	for d in docinfo.views:
+		frappe.utils.add_user_info(d.owner, docinfo.user_info)
+
+	for d in docinfo.versions:
 		frappe.utils.add_user_info(d.owner, docinfo.user_info)
 
 
