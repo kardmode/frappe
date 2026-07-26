@@ -13,24 +13,49 @@ frappe.ui.form.on("Bulk Update", {
 		});
 		frm.trigger("set_field_options");
 		frm.page.set_primary_action(__("Update"), function () {
-			if (!frm.doc.update_value) {
+			if (!frm.doc.only_list && (frm.doc.update_value === undefined || frm.doc.update_value === null || frm.doc.update_value === "")) {
 				frappe.throw(__('Field "value" is mandatory. Please specify value to be updated'));
 			} else {
 				frm.call("bulk_update").then((r) => {
-					let failed = r.message;
-					if (!failed) failed = [];
+					let res = r.message;
+					if (!res) res = [[], []];
+
+					let failed = res[0] || [];
+					let docnames = res[1] || [];
+
+					if (frm.doc.only_list) {
+						frappe.msgprint({
+							title: __("Affected Documents ({0})", [docnames.length]),
+							message: docnames.join(", "),
+							indicator: "blue",
+						});
+						frappe.hide_progress();
+						return;
+					}
+
+					let successful = docnames.filter(d => !failed.includes(d));
 
 					if (failed.length && !r._server_messages) {
-						frappe.throw(
-							__("Cannot update {0}", [
-								failed.map((f) => (f.bold ? f.bold() : f)).join(", "),
-							])
-						);
+						let msg = __("Cannot update {0}", [
+							failed.map((f) => (f.bold ? f.bold() : f)).join(", "),
+						]);
+						if (successful.length) {
+							msg += "<br><br>" + __("Successfully updated {0}", [
+								successful.map((s) => (s.bold ? s.bold() : s)).join(", "),
+							]);
+						}
+						msg += "<br><br>" + __("Please check the Error Log in the desk for detailed tracebacks.");
+						frappe.throw(msg);
 					} else {
+						let msg = __("Updated Successfully");
+						if (successful.length) {
+							msg = __("Successfully updated: {0}", [successful.join(", ")]);
+						}
 						frappe.msgprint({
 							title: __("Success"),
-							message: __("Updated Successfully"),
+							message: msg,
 							indicator: "green",
+							alert: true,
 						});
 					}
 

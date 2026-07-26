@@ -24,13 +24,13 @@ class BulkUpdate(Document):
 			f"""select name from `tab{self.document_type}`{condition} limit {limit} offset 0"""
 		)
 		
-		if self.only_list or self.field==None:
-			return [[],docnames]
-		
+		if self.only_list or self.field is None:
+			return [[], docnames]
+
 		# set update_value to field: to dynamically get a field value from that doc
 		if self.sql_update:
 			# Check if update_value is a dynamic field reference
-			if self.update_value.startswith('field:'):
+			if self.update_value and isinstance(self.update_value, str) and self.update_value.startswith('field:'):
 				meta = frappe.get_meta(self.document_type)
 
 				# Extract the field name from update_value
@@ -44,25 +44,33 @@ class BulkUpdate(Document):
 				update_query = f"""UPDATE `tab{self.document_type}` AS t1 SET t1.`{self.field}` = (SELECT t2.`{referenced_field}` FROM `tab{self.document_type}` AS t2 WHERE t2.name = t1.name LIMIT 1){condition} LIMIT {limit}"""
 				# frappe.errprint(update_query)
 				frappe.db.sql(update_query)
-				
+
 			else:
 				frappe.db.sql(
-					f"""UPDATE `tab{self.document_type}` SET {self.field} = {self.update_value}{condition} limit {limit}"""
+					f"""UPDATE `tab{self.document_type}`
+					SET `{self.field}` = %s
+					{condition}
+					LIMIT {limit}""",
+					(self.update_value,)
 				)
-				return [[],docnames]
-			
+			frappe.db.commit()
+			for d in docnames:
+				frappe.clear_document_cache(self.document_type, d)
+			return [[], docnames]
+
 		else:
-			return submit_cancel_or_update_docs(
-				self.document_type, docnames, "update", {self.field: self.update_value}, self.ignore_validate_update_after_submit
+			res = submit_cancel_or_update_docs(
+				self.document_type, docnames, "update", {self.field: self.update_value}, self.ignore_validate_after_submit
 			)
+			return [res, docnames]
 
 
 @frappe.whitelist()
-def submit_cancel_or_update_docs(doctype, docnames, action="submit", data=None, ignore_validate_update_after_submit=None):
+def submit_cancel_or_update_docs(doctype, docnames, action="submit", data=None, ignore_validate_after_submit=None):
 	docnames = frappe.parse_json(docnames)
 
 	if len(docnames) < 20:
-		return _bulk_action(doctype, docnames, action, data, ignore_validate_update_after_submit)
+		return _bulk_action(doctype, docnames, action, data, ignore_validate_after_submit)
 	elif len(docnames) <= 500:
 		frappe.msgprint(_("Bulk operation is enqueued in background."), alert=True)
 		frappe.enqueue(
@@ -71,7 +79,7 @@ def submit_cancel_or_update_docs(doctype, docnames, action="submit", data=None, 
 			docnames=docnames,
 			action=action,
 			data=data,
-			ignore_validate_update_after_submit=ignore_validate_update_after_submit,
+			ignore_validate_after_submit=ignore_validate_after_submit,
 			queue="short",
 			timeout=1000,
 		)
@@ -79,7 +87,7 @@ def submit_cancel_or_update_docs(doctype, docnames, action="submit", data=None, 
 		frappe.throw(_("Bulk operations only support up to 500 documents."), title=_("Too Many Documents"))
 
 
-def _bulk_action(doctype, docnames, action, data, ignore_validate_update_after_submit=None):
+def _bulk_action(doctype, docnames, action, data, ignore_validate_after_submit=None):
 	if data:
 		data = frappe.parse_json(data)
 
@@ -96,27 +104,21 @@ def _bulk_action(doctype, docnames, action, data, ignore_validate_update_after_s
 				doc.cancel()
 				message = _("Cancelling {0}").format(doctype)
 			elif action == "update" and not doc.docstatus.is_cancelled():
-				custom_update = False
-				custom_data = {}
-				for key in data:
-					if data[key].startswith('field:'):
-						fieldname = (data[key])[6:]
-						
-						if doc.get(fieldname):
-							field_value = doc.get(fieldname)
-						else:
-							continue
-							
-						custom_update = True
-						custom_data[key] = field_value
-				if custom_update:
-					doc.update(custom_data)
-				else:
-					doc.update(data)
-					
-				if ignore_validate_update_after_submit:
+				update_data = {}
+				for key, val in data.items():
+					if isinstance(val, str) and val.startswith('field:'):
+						fieldname = val[6:]
+						field_value = doc.get(fieldname)
+						if field_value is not None:
+							update_data[key] = field_value
+					else:
+						update_data[key] = val
+
+				doc.update(update_data)
+
+				if ignore_validate_after_submit:
 					doc.flags.ignore_validate_update_after_submit = True
-				
+
 				doc.save()
 				message = _("Updating {0}").format(doctype)
 			else:
@@ -127,6 +129,7 @@ def _bulk_action(doctype, docnames, action, data, ignore_validate_update_after_s
 		except Exception:
 			failed.append(d)
 			frappe.db.rollback()
+			frappe.log_error(title=_("Bulk Action Failed for {0}").format(d))
 
 	return failed
 
