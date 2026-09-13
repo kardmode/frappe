@@ -157,72 +157,88 @@ def add_mrp_print_templates(doc, print_format_name):
 		doc.mrp_print_templates[d.template_name] = d.print_field
 		
 def add_signature(doc,letterhead,sign_type = None):
-
 	if not sign_type or sign_type == "None":
 		return ""
 
 	sign_info = frappe._dict(frappe.db.get_value("Signature DocType", sign_type, ["has_stamp", "print_field","has_sign","full_authority_sign","use_signoff"], as_dict=True) or {})
-	
 	if not sign_info:
 		return ""
-		
-	
+
 	if letterhead == "Default":
 		if doc.get("company"):
 			letterhead = frappe.db.get_value("Company", doc.company, "default_letter_head") or "Default"
 		else:
 			letterhead = frappe.db.get_value("Letter Head", {"is_default": 1}, "name") or "Default"
+
 	signoff = "Authorized Signatory"
 	signature = ""
 	if sign_info.has_sign:
 		if sign_info.full_authority_sign:
-			signature = frappe.db.get_value("Authority Signature", letterhead, "company_signature") or ""
-			user_signoff = frappe.db.get_value("Authority Signature", letterhead, "signoff") or "Authorized Signatory"
-			if signature:
-				sign_doc = frappe.get_doc('Authority Signature', letterhead) or {}
-				if not sign_doc.has_permission("read"):
-					signature = ""
-			
-			if user_signoff or user_signoff != "":
-				signoff = user_signoff
-			else:
-				signoff = "Authorized Signatory"
-				
-	
+			# Strictly look up Authority Signature by letterhead
+			if letterhead and frappe.db.exists("Authority Signature", letterhead):
+				if frappe.has_permission("Authority Signature", "read", user=frappe.session.user):
+					signature = frappe.db.get_value("Authority Signature", letterhead, "company_signature") or ""
+					user_signoff = frappe.db.get_value("Authority Signature", letterhead, "signoff") or "Authorized Signatory"
+					if user_signoff:
+						signoff = user_signoff
 		else:
-			
+			# User's personal signature
 			signature = frappe.db.get_value("User", frappe.session.user, "signature") or ""
 			user_signoff = frappe.db.get_value("User", frappe.session.user, "signoff") or "Authorized Signatory"
-		
-			if signature:
-				sign_doc = frappe.get_doc('User', frappe.session.user) or {}
-				if not sign_doc.has_permission("read"):
-					signature = ""
-					
 			if sign_info.use_signoff:
-				if user_signoff or user_signoff != "":
-					signoff = user_signoff
-				else:
-					signoff = "Authorized Signatory"
-	
+				signoff = user_signoff or "Authorized Signatory"
+
 	stamp = ""
-	if sign_info.has_stamp:
-		stamp = frappe.db.get_value("MRP Company Stamps", {'company':letterhead},"stamp") or ""
-		stamp_doc = frappe.get_doc('MRP Company Stamps', {'company':letterhead}) or {}
-		if not stamp_doc.has_permission("read"):
-			stamp = ""
-	
+	if sign_info.has_stamp and letterhead:
+		# Strictly look up MRP Company Stamp by selected letterhead
+		stamp_name = frappe.db.get_value("MRP Company Stamps", {"company": letterhead}, "name")
+		if stamp_name and frappe.has_permission("MRP Company Stamps", "read", user=frappe.session.user):
+			stamp = frappe.db.get_value("MRP Company Stamps", stamp_name, "stamp") or ""
+
+	def _to_base64_uri(file_url):
+		if not file_url or not isinstance(file_url, str) or file_url.startswith("data:"):
+			return file_url
+		try:
+			import mimetypes, base64
+			fname = file_url.split("/")[-1]
+			file_names = frappe.db.get_values("File", {"file_url": file_url}, "name") or frappe.db.get_values("File", {"file_name": fname}, "name")
+			if file_names:
+				file_doc = frappe.get_doc("File", file_names[0][0])
+				content = file_doc.get_content()
+				if content:
+					if isinstance(content, str):
+						content = content.encode("utf-8")
+					m_type = mimetypes.guess_type(fname)[0] or "image/png"
+					b64 = base64.b64encode(content).decode("utf-8")
+					return f"data:{m_type};base64,{b64}"
+		except Exception:
+			pass
+		return file_url
+
+	if signature:
+		signature = _to_base64_uri(signature)
+	if stamp:
+		stamp = _to_base64_uri(stamp)
+
 	allow = frappe.db.get_single_value('System Settings', 'allow_signature_if_not_submitted')
 
 	if allow:
-		if stamp and signature:
-			authorized_signature = frappe.render_template(frappe.db.get_value("Print Fields", "Signature with Stamp", "print_field"), {"doc":doc,"authorized_signature":signature,"stamp":stamp})
-		elif signature:
-			authorized_signature = frappe.render_template(frappe.db.get_value("Print Fields", "Signature Only", "print_field"), {"doc":doc,"authorized_signature":signature,"stamp":stamp})		
-		elif stamp:
-			authorized_signature = frappe.render_template(frappe.db.get_value("Print Fields", "Stamp Only", "print_field"), {"doc":doc,"authorized_signature":signature,"stamp":stamp})		
-		else:
-			authorized_signature = ''
+		try:
+			if stamp and signature:
+				tmpl = frappe.db.get_value("Print Fields", "Signature with Stamp", "print_field") or ""
+				authorized_signature = frappe.render_template(tmpl, {"doc": doc, "authorized_signature": signature, "stamp": stamp})
+			elif signature:
+				tmpl = frappe.db.get_value("Print Fields", "Signature Only", "print_field") or ""
+				authorized_signature = frappe.render_template(tmpl, {"doc": doc, "authorized_signature": signature, "stamp": stamp})
+			elif stamp:
+				tmpl = frappe.db.get_value("Print Fields", "Stamp Only", "print_field") or ""
+				authorized_signature = frappe.render_template(tmpl, {"doc": doc, "authorized_signature": signature, "stamp": stamp})
+			else:
+				authorized_signature = ''
+		except Exception as e:
+			frappe.log_error(title="add_signature template error", message=f"Error rendering signature template: {e}\nsignature: {signature}\nstamp: {stamp}\nletterhead: {letterhead}")
+			frappe.msgprint(f"Signature render error: {e}", indicator="red")
+			authorized_signature = signature or ''
 
 	else:
 		# if doc.meta.is_submittable and doc.docstatus==1:
@@ -233,7 +249,13 @@ def add_signature(doc,letterhead,sign_type = None):
 	
 	signature_html = ""
 	if sign_info.print_field:
-		signature_html = frappe.render_template(frappe.db.get_value("Print Fields",  sign_info.print_field, "print_field"), {"doc":doc,"authorized_signature":authorized_signature,"signoff":signoff})
+		try:
+			tmpl_main = frappe.db.get_value("Print Fields", sign_info.print_field, "print_field") or ""
+			signature_html = frappe.render_template(tmpl_main, {"doc": doc, "authorized_signature": authorized_signature, "signoff": signoff})
+		except Exception as e:
+			frappe.log_error(title="add_signature sign_info error", message=f"Error rendering sign_info field {sign_info.print_field}: {e}")
+			frappe.msgprint(f"Signature field '{sign_info.print_field}' error: {e}", indicator="red")
+			signature_html = authorized_signature
 	return signature_html
 	
 def get_rendered_template(

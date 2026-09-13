@@ -129,7 +129,12 @@ def has_permission(
 			doc = frappe.get_doc(meta.name, doc)
 		perm = get_doc_permissions(doc, user=user, ptype=ptype).get(ptype)
 		if not perm:
-			push_perm_check_log(_("User {0} does not have access to this document").format(frappe.bold(user)))
+			doc_name = getattr(doc, "name", cstr(doc))
+			push_perm_check_log(
+				_("User {0} does not have access to this document ({1}: {2})").format(
+					frappe.bold(user), frappe.bold(doctype), frappe.bold(doc_name)
+				)
+			)
 	else:
 		if ptype == "submit" and not cint(meta.is_submittable):
 			push_perm_check_log(_("Document Type is not submittable"))

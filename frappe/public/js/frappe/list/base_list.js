@@ -157,9 +157,9 @@ frappe.views.BaseList = class BaseList {
 		return frappe.model.with_doctype(this.doctype);
 	}
 
-	show_skeleton() {}
+	show_skeleton() { }
 
-	hide_skeleton() {}
+	hide_skeleton() { }
 
 	check_permissions() {
 		return true;
@@ -308,21 +308,6 @@ frappe.views.BaseList = class BaseList {
 	setup_filter_area() {
 		if (this.hide_filters) return;
 		this.filter_area = new FilterArea(this);
-		
-		// MRP - Check if the doctype is submittable and there's no docstatus filter already present
-		try {
-			if (this.doctype !== null && this.doctype !== undefined && this.doctype !== "") {
-				// this.doctype is not null, undefined, or an empty string
-				if (frappe.model.is_submittable(this.doctype)) {
-					if (this.filters !== null && this.filters !== undefined && Array.isArray(this.filters) && !this.filters.find((filter) => filter[1] === "docstatus")) {
-						this.filters.push([this.doctype, "docstatus", "!=", "2"]);
-					}
-				}
-			}
-		} catch (error) {
-			// Handle any additional logic or return value if necessary
-			console.error("Error in checking filters for docstatus: ", error);
-		}
 
 		if (this.filters && this.filters.length > 0) {
 			return this.filter_area.set(this.filters).catch(() => {
@@ -378,15 +363,15 @@ frappe.views.BaseList = class BaseList {
 				<div class="level-left">
 					<div class="btn-group">
 						${paging_values
-							.map(
-								(value) => `
+				.map(
+					(value) => `
 							<button type="button" class="btn btn-default btn-sm btn-paging"
 								data-value="${value}">
 								${value}
 							</button>
 						`
-							)
-							.join("")}
+				)
+				.join("")}
 					</div>
 				</div>
 				<div class="level-right">
@@ -555,9 +540,9 @@ frappe.views.BaseList = class BaseList {
 		// show a freeze message while data is loading
 	}
 
-	before_render() {}
+	before_render() { }
 
-	after_render() {}
+	after_render() { }
 
 	render() {
 		// for child classes

@@ -2,14 +2,15 @@
  "button_gradients": 0,
  "button_rounded_corners": 1,
  "button_shadows": 0,
- "creation": "2015-02-19 13:37:33.925909",
+ "creation": "2026-08-28 03:54:57.325679",
  "custom": 0,
  "custom_overrides": "",
  "custom_scss": ".navbar\n{\n    padding:10px;\n}\n\n.navbar-brand img\n{\n    max-width: 250px;\n    max-height: 35px;\n}",
  "docstatus": 0,
  "doctype": "Website Theme",
  "font_properties": "wght@300;400;500;600;700;800",
- "idx": 51,
+ "font_size": "",
+ "idx": 5,
  "ignored_apps": [
   {
    "app": "erpnext"
@@ -21,6 +22,9 @@
    "app": "hrms"
   },
   {
+   "app": "mrp"
+  },
+  {
    "app": "payments"
   },
   {
@@ -30,12 +34,12 @@
    "app": "resume_builder"
   }
  ],
- "modified": "2026-08-28 04:23:24.224003",
+ "modified": "2026-08-28 04:21:58.864010",
  "modified_by": "Administrator",
  "module": "Website",
- "name": "Standard",
+ "name": "Custom",
  "owner": "Administrator",
- "theme": "Standard",
+ "theme": "Custom",
  "theme_scss": "$enable-shadows: false;\n$enable-gradients: false;\n$enable-rounded: true;\n\n// Bootstrap Variable Overrides\n\n\n// Import themes from installed apps\n@import \"frappe/public/scss/website.bundle\";\n\n\n\n// Custom Theme\n.navbar\n{\n    padding:10px;\n}\n\n.navbar-brand img\n{\n    max-width: 250px;\n    max-height: 35px;\n}\n\n:root {\n\t}\n",
- "theme_url": "/files/website_theme/standard_style.css"
+ "theme_url": "/files/website_theme/custom_style.css"
 }

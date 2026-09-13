@@ -28,10 +28,10 @@ frappe.ui.form.Layout = class Layout {
 		}
 
 		if (this.is_tabbed_layout()) {
-			// this.setup_tabbed_layout();
+			this.setup_tabbed_layout();
 		}
 
-		// this.setup_tab_events();
+		this.setup_tab_events();
 		this.render();
 	}
 
@@ -148,24 +148,24 @@ frappe.ui.form.Layout = class Layout {
 
 		fields.forEach((df) => {
 			switch (df.fieldtype) {
-				case "Fold":
-					this.make_page(df);
-					break;
-				case "Page Break":
-					this.make_page_break();
-					this.make_section(df);
-					break;
-				case "Section Break":
-					this.make_section(df);
-					break;
-				case "Column Break":
-					this.make_column(df);
-					break;
-				case "Tab Break":
-					this.make_section(df);
-					break;
-				default:
-					this.make_field(df);
+			case "Fold":
+				this.make_page(df);
+				break;
+			case "Page Break":
+				this.make_page_break();
+				this.make_section(df);
+				break;
+			case "Section Break":
+				this.make_section(df);
+				break;
+			case "Column Break":
+				this.make_column(df);
+				break;
+			case "Tab Break":
+				this.make_tab(df);
+				break;
+			default:
+				this.make_field(df);
 			}
 		});
 	}
