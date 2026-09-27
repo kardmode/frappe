@@ -420,10 +420,12 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 
 {%- macro add_header(page_num, max_pages, doc, letter_head, no_letterhead, footer, print_settings=None,print_heading_template=None,mrp_print_options=None) -%}
 	{%- set header_caption = "" -%} 
-	{% if mrp_print_options and mrp_print_options.mrp_print_caption_options 
-		and mrp_print_options.mrp_print_caption_options.caption_text 
-		and mrp_print_options.mrp_print_caption_options.show_in_header == 1 %}
-		{%- set header_caption = mrp_print_options.mrp_print_caption_options.caption_text -%} 
+	{% if mrp_print_options and mrp_print_options.mrp_print_caption_options %}
+		{% if mrp_print_options.mrp_print_caption_options.header_caption %}
+			{%- set header_caption = mrp_print_options.mrp_print_caption_options.header_caption -%}
+		{% elif mrp_print_options.mrp_print_caption_options.caption_text and mrp_print_options.mrp_print_caption_options.show_in_header == 1 %}
+			{%- set header_caption = mrp_print_options.mrp_print_caption_options.caption_text -%} 
+		{% endif %}
 	{% endif %}
 	
 	<div class="letter-head" style="position:relative;">
@@ -474,11 +476,16 @@ data-fieldname="{{ df.fieldname }}" data-fieldtype="{{ df.fieldtype }}"
 
 			{% endif %}
 			
-			{% if mrp_print_options and mrp_print_options.mrp_print_caption_options 
-				and mrp_print_options.mrp_print_caption_options.caption_text
-				and mrp_print_options.mrp_print_caption_options.show_in_footer == 1 %}
-				<div class="footer-caption text-right">{{ _(mrp_print_options.mrp_print_caption_options.caption_text) }}</h2>
-
+			{%- set footer_caption = "" -%}
+			{% if mrp_print_options and mrp_print_options.mrp_print_caption_options %}
+				{% if mrp_print_options.mrp_print_caption_options.footer_caption %}
+					{%- set footer_caption = mrp_print_options.mrp_print_caption_options.footer_caption -%}
+				{% elif mrp_print_options.mrp_print_caption_options.caption_text and mrp_print_options.mrp_print_caption_options.show_in_footer == 1 %}
+					{%- set footer_caption = mrp_print_options.mrp_print_caption_options.caption_text -%}
+				{% endif %}
+			{% endif %}
+			{% if (footer_caption != "") %}
+				<div class="footer-caption text-right">{{ _(footer_caption) }}</div>
 			{% endif %}
 			
 		</div>
