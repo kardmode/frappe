@@ -48,7 +48,7 @@ from .utils.jinja import (
 )
 from .utils.lazy_loader import lazy_import
 
-__version__ = "14.100.4"
+__version__ = "14.101.1"
 __title__ = "Frappe Framework"
 
 controllers = {}
@@ -2029,7 +2029,6 @@ def get_print(
 	password=None,
 	pdf_options=None,
 	letterhead=None,
-	print_options=None,
 ):
 	"""Get Print Format for given document.
 
@@ -2049,10 +2048,7 @@ def get_print(
 	local.form_dict.doc = doc
 	local.form_dict.no_letterhead = no_letterhead
 	local.form_dict.letterhead = letterhead
-	
-	# mrp_edited - more print options
-	local.form_dict.print_options = print_options
-	
+
 	pdf_options = pdf_options or {}
 	if password:
 		pdf_options["password"] = password
@@ -2060,17 +2056,7 @@ def get_print(
 	if not html:
 		html = get_response_content("printview")
 
-	if as_pdf:
-		if print_options:
-			_print_options = json.loads(print_options)
-			
-			pdf_options["orientation"] = _print_options.get('orientation') or "Portrait"
-			pdf_options["page-size"] =_print_options.get('page_size') or "A4"
-
-		return get_pdf(html, options=pdf_options, output=output)
-	else:
-		return html
-
+	return get_pdf(html, options=pdf_options, output=output) if as_pdf else html
 
 
 def attach_print(
@@ -2084,7 +2070,6 @@ def attach_print(
 	lang=None,
 	print_letterhead=True,
 	password=None,
-	print_options=None,
 	letterhead=None,
 ):
 	from frappe.translate import print_language
@@ -2101,7 +2086,6 @@ def attach_print(
 		no_letterhead=not print_letterhead,
 		letterhead=letterhead,
 		password=password,
-		print_options=print_options,
 	)
 
 	local.flags.ignore_print_permissions = True

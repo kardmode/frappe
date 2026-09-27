@@ -45,7 +45,6 @@ def make(
 	print_letterhead=True,
 	email_template=None,
 	communication_type=None,
-	mrp_print_options=None,
 	now=False,
 	**kwargs,
 ) -> dict[str, str]:
@@ -100,7 +99,6 @@ def make(
 		email_template=email_template,
 		communication_type=communication_type,
 		add_signature=False,
-		mrp_print_options=mrp_print_options,
 		now=now,
 	)
 
@@ -127,7 +125,6 @@ def _make(
 	email_template=None,
 	communication_type=None,
 	add_signature=True,
-	mrp_print_options=None,
 	now=False,
 ) -> dict[str, str]:
 	"""Internal method to make a new communication that ignores Permission checks."""
@@ -156,7 +153,6 @@ def _make(
 			"read_receipt": read_receipt,
 			"has_attachment": 1 if attachments else 0,
 			"communication_type": communication_type,
-			"mrp_print_options":mrp_print_options
 		}
 	)
 	comm.flags.skip_add_signature = not add_signature
