@@ -1,7 +1,7 @@
 {%- from "templates/print_formats/standard_macros.html" import add_header, add_footer, print_date, render_field with context -%}
 
 <div {% if print_settings.repeat_header_footer %} id="header-html" class="hidden-pdf" {% endif %}>
-	{{ add_header(1, layout|len, doc, letter_head, no_letterhead, footer, print_settings,print_heading_template,mrp_print_options) }}
+	{{ add_header(1, layout|len, doc, letter_head, no_letterhead, footer, print_settings, print_heading_template, doc.mrp_print_options) }}
 </div>
 
 {% for page in layout %}
@@ -36,5 +36,5 @@
 {%- endif -%}
 {% endfor %}
 
-{{ add_footer(layout|len, doc, no_letterhead, footer,signature_html, print_settings,mrp_print_options) }}
+{{ add_footer(layout|len, doc, no_letterhead, footer, doc.signature_html, print_settings, doc.mrp_print_options) }}
 
