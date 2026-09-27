@@ -593,7 +593,7 @@ def get_prefix_format_autoname(autoname_value):
 	prefix = BRACED_PARAMS_PATTERN.sub(get_param_value_for_match_custom, autoname_value)
 	return prefix
 	
-	
+# mrp_edited
 def _format_autoname(autoname, doc):
 	"""
 	Generate autoname by replacing all instances of braced params (fields, date params ('DD', 'MM', 'YY'), series)
@@ -616,6 +616,7 @@ def _format_autoname(autoname, doc):
 	# name = BRACED_PARAMS_PATTERN.sub(get_param_value_for_match, autoname_value)
 	return name
 
+# mrp_edited
 def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
 	naming_series_parts = parts
 	if not doctype and doc:
@@ -652,7 +653,7 @@ def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
 					naming_series_parts.insert(1,"-")
 	return naming_series_parts
 
-# gets the date from the doc
+# mrp_edited gets the date from the doc
 def get_part_from_date(doc):
 	for field in DATE_FIELDS:
 		date = doc.get(field)

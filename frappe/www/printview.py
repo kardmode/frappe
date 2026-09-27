@@ -35,7 +35,7 @@ def get_context(context):
 	else:
 		doc = frappe.get_doc(frappe.form_dict.doctype, frappe.form_dict.name)
 
-	# mrp added
+	# mrp_edited
 	if frappe.form_dict.print_options:
 		print_options = frappe.form_dict.print_options	
 	else:
@@ -190,6 +190,7 @@ def add_signature(doc,letterhead,sign_type = None):
 
 	stamp = ""
 	if sign_info.has_stamp and letterhead:
+		# mrp_edited
 		# Strictly look up MRP Company Stamp by selected letterhead
 		stamp_name = frappe.db.get_value("MRP Company Stamps", {"company": letterhead}, "name")
 		if stamp_name and frappe.has_permission("MRP Company Stamps", "read", user=frappe.session.user):
@@ -697,7 +698,7 @@ def make_layout(doc, meta, format_data=None):
 			if df.fieldtype=='Section Break' and df.label:
 				section['label'] = df.label
 				
-				# MRP ADDED TO GIVE SECTIONS HEADERS
+				# mrp_edited TO GIVE SECTIONS HEADERS
 				if df.get("force_heading"):
 					section['force_heading'] = df.force_heading
 				else:
@@ -774,6 +775,7 @@ def is_visible(df, doc):
 def has_value(df, doc):
 	value = doc.get(df.fieldname)
 	
+	# mrp_edited
 	# mrp tables should always show
 	if df.fieldtype=="Table":
 		return True

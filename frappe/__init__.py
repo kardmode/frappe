@@ -2050,7 +2050,7 @@ def get_print(
 	local.form_dict.no_letterhead = no_letterhead
 	local.form_dict.letterhead = letterhead
 	
-	# mrp by me - more options
+	# mrp_edited - more print options
 	local.form_dict.print_options = print_options
 	
 	pdf_options = pdf_options or {}
