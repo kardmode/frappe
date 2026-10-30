@@ -81,7 +81,6 @@ def download_multi_pdf(doctype, name, format=None, no_letterhead=False, letterhe
 				no_letterhead=no_letterhead,
 				letterhead=letterhead,
 				pdf_options=options,
-				print_options=print_options,
 			)
 		frappe.local.response.filename = "{doctype}.pdf".format(
 			doctype=doctype.replace(" ", "-").replace("/", "-")
@@ -99,7 +98,6 @@ def download_multi_pdf(doctype, name, format=None, no_letterhead=False, letterhe
 						no_letterhead=no_letterhead,
 						letterhead=letterhead,
 						pdf_options=options,
-						print_options=print_options,
 					)
 				except Exception:
 					frappe.log_error(
@@ -126,19 +124,14 @@ def read_multi_pdf(output: PdfWriter) -> bytes:
 
 @frappe.whitelist(allow_guest=True)
 def download_pdf(
-	doctype: str, name: str, format=None, doc=None, no_letterhead=0, language=None, letterhead=None,print_options=None
+	doctype: str, name: str, format=None, doc=None, no_letterhead=0, language=None, letterhead=None
 ):
 	doc = doc or frappe.get_doc(doctype, name)
 	validate_print_permission(doc)
-	
-	import json
-	_print_options = json.loads(print_options)
-	options = {"orientation":  _print_options.get('orientation') or "Portrait",
-		"page-size":_print_options.get('page_size') or "A4"}
 
 	with print_language(language):
 		pdf_file = frappe.get_print(
-			doctype, name, format, doc=doc, as_pdf=True, letterhead=letterhead, no_letterhead=no_letterhead,pdf_options=options, print_options=print_options
+			doctype, name, format, doc=doc, as_pdf=True, letterhead=letterhead, no_letterhead=no_letterhead
 		)
 
 	frappe.local.response.filename = "{name}.pdf".format(name=name.replace(" ", "-").replace("/", "-"))
