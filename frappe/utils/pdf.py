@@ -105,14 +105,15 @@ def prepare_options(html, options):
 	)
 
 	if not options.get("margin-right"):
-		options['margin-right'] = '12.5mm'
+		options["margin-right"] = "15mm"
 
 	if not options.get("margin-left"):
-		options['margin-left'] = '12.5mm'
-
+		options["margin-left"] = "15mm"
 
 	html, html_options = read_options_from_html(html)
 	options.update(html_options or {})
+
+	# cookies
 	options.update(get_cookie_options())
 	html = inline_private_images(html)
 
@@ -130,11 +131,7 @@ def prepare_options(html, options):
 		)
 	else:
 		options["page-size"] = pdf_page_size
-		
-	# page size
-	if not (options.get("page-width") or options.get("page-height")) and not options.get("page-size"):
-		options['page-size'] = frappe.db.get_single_value("Print Settings", "pdf_page_size") or "A4"
-	
+
 	return html, options
 
 
@@ -153,45 +150,6 @@ def get_cookie_options():
 		options["cookie-jar"] = cookiejar
 
 	return options
-
-def get_cookie_options_new():
-	options = {}
-	if frappe.session and frappe.session.sid and hasattr(frappe.local, "request"):
-		sid = frappe.session.sid
-		if frappe.session.user and sid == frappe.session.user:
-			from frappe.sessions import get_sessions_to_clear
-			sids = get_sessions_to_clear()
-			if len(sids) > 0:
-				sid = sids[0]
-		
-		
-		# Use wkhtmltopdf's cookie-jar feature to set cookies and restrict them to host domain
-		cookiejar = f"/tmp/{frappe.generate_hash()}.jar"
-
-		# Remove port from request.host
-		# https://werkzeug.palletsprojects.com/en/0.16.x/wrappers/#werkzeug.wrappers.BaseRequest.host
-		domain = frappe.utils.get_host_name().split(":", 1)[0]
-		with open(cookiejar, "w") as f:
-			f.write(f"sid={sid}; Domain={domain};\n")
-
-		options["cookie-jar"] = cookiejar
-
-	return options
-	
-def get_cookie_options_mine():
-	options = {}
-	if frappe.session and frappe.session.sid and hasattr(frappe.local, "request"):
-		sid = frappe.session.sid
-		if frappe.session.user and sid == frappe.session.user:
-			from frappe.sessions import get_sessions_to_clear
-			sids = get_sessions_to_clear()
-			if len(sids) > 0:
-				sid = sids[0]
-
-		options['cookie'] = [('sid', '{0}'.format(sid))]
-
-	return options
-
 
 
 def read_options_from_html(html):
@@ -212,7 +170,7 @@ def read_options_from_html(html):
 		"page-size",
 		"header-spacing",
 		"orientation",
-		"page-width", 
+		"page-width",
 		"page-height",
 	)
 	options |= {style.name: style.value for style in valid_styles if style.name in attrs}
@@ -287,14 +245,7 @@ def _get_base64_image(src):
 
 def prepare_header_footer(soup: BeautifulSoup):
 	options = {}
-	head_main = soup.find("head")
-	for html_id in ("header-html", "footer-html"):
-		if content := soup.find(id=html_id):
-			# before we remove it, pull out any <style> tags and copy them into the main <head>
-			for style_tag in content.find_all("style"):
-				if head_main:
-					head_main.append(style_tag)
-					
+
 	head = soup.find("head").contents
 	styles = soup.find_all("style")
 
@@ -330,12 +281,13 @@ def prepare_header_footer(soup: BeautifulSoup):
 			with open(fname, "wb") as f:
 				f.write(html.encode("utf-8"))
 
+			# {"header-html": "/tmp/frappe-pdf-random.html"}
 			options[html_id] = fname
 		else:
 			if html_id == "header-html":
-				options["margin-top"] = "12.5mm"
+				options["margin-top"] = "15mm"
 			elif html_id == "footer-html":
-				options["margin-bottom"] = "12.5mm"
+				options["margin-bottom"] = "15mm"
 
 	return options
 
