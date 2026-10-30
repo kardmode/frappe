@@ -61,7 +61,6 @@
    "default": "0",
    "fieldname": "disabled",
    "fieldtype": "Check",
-   "in_standard_filter": 1,
    "label": "Disabled"
   },
   {
@@ -282,6 +281,5 @@
  ],
  "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
  "track_changes": 1
 }

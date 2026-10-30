@@ -1140,10 +1140,6 @@ class BaseDocument:
 
 			df = get_default_df(fieldname)
 
-		if not df:
-			frappe.errprint("Error")
-			frappe.errprint(fieldname)
-
 		if (
 			df
 			and df.fieldtype == "Currency"
