@@ -12,7 +12,7 @@ import frappe
 from frappe import _
 from frappe.model import log_types
 from frappe.query_builder import DocType
-from frappe.utils import cint, cstr, now_datetime, getdate
+from frappe.utils import cint, cstr, now_datetime
 from frappe.utils.caching import redis_cache
 
 if TYPE_CHECKING:
@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 
 NAMING_SERIES_PATTERN = re.compile(r"^[\w\- \/.#{}]+$", re.UNICODE)
 BRACED_PARAMS_PATTERN = re.compile(r"(\{[\w | #]+\})")
-DATE_FIELDS = ["posting_date", "custom_posting_date", "transaction_date", "attendance_date"]
 
 
 # Types that can be using in naming series fields
@@ -93,6 +92,7 @@ class NamingSeries:
 
 		if prefix is None:
 			frappe.throw(_("Invalid Naming Series: {}").format(self.series))
+
 		return prefix
 
 	def get_preview(self, doc=None) -> list[str]:
@@ -124,13 +124,16 @@ class NamingSeries:
 		prefix = self.get_prefix()
 		return cint(frappe.db.get_value("Series", prefix, "current", order_by="name"))
 
+
 def set_new_name(doc):
 	"""
 	Sets the `name` property for the document based on various rules.
+
 	1. If amended doc, set suffix.
 	2. If `autoname` method is declared, then call it.
 	3. If `autoname` property is set in the DocType (`meta`), then build it using the `autoname` property.
 	4. If no rule defined, use hash.
+
 	:param doc: Document to be named.
 	"""
 
@@ -325,8 +328,6 @@ def parse_naming_series(
 
 	if not number_generator:
 		number_generator = getseries
-		
-	parts = get_custom_naming_series_by_parts(parts,doc,doctype=doctype)
 
 	series_set = False
 	today = now_datetime()
@@ -346,15 +347,8 @@ def parse_naming_series(
 			part = today.strftime("%m")
 		elif e == "DD":
 			part = today.strftime("%d")
-		elif e == 'YYYY':
-			part = today.strftime('%Y')
-		elif e=='PDY':
-			part = get_part_from_date(doc)	
-		elif e=='COM':
-			abbr = ''
-			if doc and doc.get('company'):
-				abbr = str(frappe.db.get_value("Company", doc.company, "abbr")) or ''
-			part = abbr
+		elif e == "YYYY":
+			part = today.strftime("%Y")
 		elif e == "WW":
 			part = determine_consecutive_week_number(today)
 		elif e == "timestamp":
@@ -371,24 +365,13 @@ def parse_naming_series(
 			name += part
 		elif isinstance(part, NAMING_SERIES_PART_TYPES):
 			name += cstr(part).strip()
+
 	return name
+
 
 def has_custom_parser(e):
 	"""Returns true if the naming series part has a custom parser"""
 	return frappe.get_hooks("naming_series_variables", {}).get(e)
-
-
-def determine_consecutive_week_number(datetime):
-	"""Determines the consecutive calendar week"""
-	m = datetime.month
-	# ISO 8601 calandar week
-	w = datetime.strftime("%V")
-	# Ensure consecutiveness for the first and last days of a year
-	if m == 1 and int(w) >= 52:
-		w = "00"
-	elif m == 12 and int(w) <= 1:
-		w = "53"
-	return w
 
 
 def determine_consecutive_week_number(datetime):
@@ -447,15 +430,8 @@ def revert_series_if_last(key, name, doc=None):
 	                * prefix = #### and hashes = 2021 (hash doesn't exist)
 	                * will search hash in key then accordingly get prefix = ""
 	"""
-	
-	if key.startswith("format:"):
-		first_colon_index = key.find(":")
-		autoname_value = key[first_colon_index + 1 :]
-		key = get_prefix_format_autoname(autoname_value)
-	
 	if ".#" in key:
 		prefix, hashes = key.rsplit(".", 1)
-
 		if "#" not in hashes:
 			# get the hash part from the key
 			hash = re.search("#+", key)
@@ -465,15 +441,11 @@ def revert_series_if_last(key, name, doc=None):
 			prefix = prefix.replace(hash.group(), "")
 	else:
 		prefix = key
-	
-			
-	# ignore check for . so we can add default prefixes
-	prefix = parse_naming_series(prefix.split('.'),doc=doc)
-	
-	# if '.' in prefix:
-		# prefix = parse_naming_series(prefix.split('.'),doc=doc)
 
-	count = cint(name.replace(prefix, ""))	
+	if "." in prefix:
+		prefix = parse_naming_series(prefix.split("."), doc=doc)
+
+	count = cint(name.replace(prefix, ""))
 	series = DocType("Series")
 	current = (frappe.qb.from_(series).where(series.name == prefix).for_update().select("current")).run()
 
@@ -525,6 +497,7 @@ def validate_name(doctype: str, name: int | str, case: str | None = None):
 
 	return name
 
+
 def append_number_if_name_exists(doctype, value, fieldname="name", separator="-", filters=None):
 	if not filters:
 		filters = dict()
@@ -551,16 +524,17 @@ def append_number_if_name_exists(doctype, value, fieldname="name", separator="-"
 
 	return value
 
-def _set_amended_name(doc, separator='-'):
+
+def _set_amended_name(doc):
 	am_id = 1
 	am_prefix = doc.amended_from
 	if frappe.db.get_value(doc.doctype, doc.amended_from, "amended_from"):
-		am_id = cint(doc.amended_from.split(separator)[-1]) + 1
-		am_prefix = separator.join(doc.amended_from.split(separator)[:-1]) # except the last hyphen
+		am_id = cint(doc.amended_from.split("-")[-1]) + 1
+		am_prefix = "-".join(doc.amended_from.split("-")[:-1])  # except the last hyphen
 
-	doc.name = am_prefix + separator + str(am_id)
-
+	doc.name = am_prefix + "-" + str(am_id)
 	return doc.name
+
 
 def _field_autoname(autoname, doc, skip_slicing=None):
 	"""
@@ -581,19 +555,7 @@ def _prompt_autoname(autoname, doc):
 	if not doc.name:
 		frappe.throw(_("Please set the document name"))
 
-def get_prefix_format_autoname(autoname_value):
-	def get_param_value_for_match_custom(match):
-		param = match.group()
-		key = param[1:-1]
-		if '#' in key:
-			return '.' + key
-		else:
-			return '.' + key + '.'
-	
-	prefix = BRACED_PARAMS_PATTERN.sub(get_param_value_for_match_custom, autoname_value)
-	return prefix
-	
-# mrp_edited
+
 def _format_autoname(autoname, doc):
 	"""
 	Generate autoname by replacing all instances of braced params (fields, date params ('DD', 'MM', 'YY'), series)
@@ -604,66 +566,12 @@ def _format_autoname(autoname, doc):
 
 	first_colon_index = autoname.find(":")
 	autoname_value = autoname[first_colon_index + 1 :]
-	
-	prefix = get_prefix_format_autoname(autoname_value)
-	name = parse_naming_series(prefix.split('.'),doc=doc)
-	
-	# def get_param_value_for_match(match):
-		# param = match.group()
-		# return parse_naming_series([param[1:-1]], doc=doc)
 
-	# # Replace braced params with their parsed value
-	# name = BRACED_PARAMS_PATTERN.sub(get_param_value_for_match, autoname_value)
+	def get_param_value_for_match(match):
+		param = match.group()
+		return parse_naming_series([param[1:-1]], doc=doc)
+
+	# Replace braced params with their parsed value
+	name = BRACED_PARAMS_PATTERN.sub(get_param_value_for_match, autoname_value)
+
 	return name
-
-# mrp_edited
-def get_custom_naming_series_by_parts(parts,doc=None,doctype=None):
-	naming_series_parts = parts
-	if not doctype and doc:
-		doctype = doc.get("doctype")
-	
-	if doctype:
-		default_date = "PDY"
-		company = "COM"
-		
-		autoname_details = frappe.db.get_value(
-			"MRP Autoname Rule", doctype, ["disable_company", "disable_date"], as_dict=1
-		)
-		
-		date_list = ['PDY','YYYY','YY']
-		if all(date not in naming_series_parts for date in date_list):
-		# if not any(date in naming_series_parts for date in date_list):
-			if autoname_details and autoname_details.disable_date == True:
-				pass
-			else:
-				if any(frappe.get_meta(doctype).has_field(field) for field in DATE_FIELDS):
-					# Find the position of the first '###' or similar placeholder
-					insert_index = next((i for i, part in enumerate(naming_series_parts) if '#' in part), len(naming_series_parts))
-
-					# Insert the default_date at the determined position
-					naming_series_parts.insert(insert_index, default_date)
-	
-		
-		if company not in naming_series_parts:
-			if autoname_details and autoname_details.disable_company == True:
-				pass
-			else:
-				if frappe.get_meta(doctype).has_field("company"):
-					naming_series_parts.insert(0,company)
-					naming_series_parts.insert(1,"-")
-	return naming_series_parts
-
-# mrp_edited gets the date from the doc
-def get_part_from_date(doc):
-	for field in DATE_FIELDS:
-		date = doc.get(field)
-		if not date:
-			continue
-		try:
-			year = getdate(date).year
-			if year >= 2027:
-				return "3000"
-			return str(year)
-		except Exception:
-			continue
-	return None
