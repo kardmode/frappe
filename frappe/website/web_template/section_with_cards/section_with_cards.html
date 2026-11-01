@@ -21,7 +21,13 @@
 			<h3 class="card-title mt-0">{{ title or '' }}</h3>
 			<p class="card-text">{{ content or '' }}</p>
 		</div>
-		<a href="{{ url or '#' }}" class="stretched-link"></a>
+		{%- if url -%}
+				<a href="{{ url or '#' }}" class="stretched-link"></a>
+
+		{%- else -%}
+				<a class="stretched-link"></a>
+
+		{%- endif -%}
 	</div>
 </div>
 {%- endmacro -%}
@@ -47,4 +53,11 @@
 			{%- endfor -%}
 		</div>
 	</div>
+	{%- if primary_action -%}
+	<div style="padding-top:20px;">
+		<a class="btn btn-lg btn-primary" href="{{ primary_action }}">
+			{{ _(primary_action_label) }}
+		</a>
+	</div>
+	{%- endif -%}
 </div>

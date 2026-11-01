@@ -1,4 +1,5 @@
 {
+ "__unsaved": 1,
  "creation": "2020-04-21 20:55:01.740525",
  "docstatus": 0,
  "doctype": "Web Template",
@@ -292,14 +293,29 @@
    "fieldtype": "Small Text",
    "label": "URL",
    "reqd": 0
+  },
+  {
+   "__unsaved": 1,
+   "fieldname": "primary_action_label",
+   "fieldtype": "Data",
+   "label": "primary_action_label",
+   "reqd": 0
+  },
+  {
+   "__unsaved": 1,
+   "fieldname": "primary_action",
+   "fieldtype": "Data",
+   "label": "primary_action",
+   "reqd": 0
   }
  ],
  "idx": 0,
- "modified": "2023-06-05 13:26:34.470232",
+ "modified": "2024-04-07 06:21:02.027215",
  "modified_by": "Administrator",
  "module": "Website",
  "name": "Section with Cards",
  "owner": "Administrator",
  "standard": 1,
+ "template": "",
  "type": "Section"
 }
