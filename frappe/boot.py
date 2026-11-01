@@ -124,6 +124,7 @@ def get_letter_heads():
 
 	return letter_heads
 
+
 def load_conf_settings(bootinfo):
 	from frappe.core.api.file import get_max_file_size
 
