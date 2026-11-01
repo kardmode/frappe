@@ -8,11 +8,7 @@
 			{# link tag does not work in footer in wkhtmltopdf,
 				so this is a workaround to include bootstrap and still have auto footer height working #}
 			<style>
-			{{ bootstrap }}
-			</style>
-
-			<style>
-			{{ fontawesome }}
+			{{ css }}
 			</style>
 
 		{% else %}
@@ -27,16 +23,12 @@
 			body {
 				margin: 0 !important;
 				border: 0 !important;
-				padding: 1mm 0 !important;
+				padding: 15mm 0 5mm !important;
 			}
-			
-			.letter-head{
-				margin-top: 2mm !important;
-				padding: 2mm 0 !important;
-			}
+
+			.letter-head,
 			.letter-head-footer {
-				margin-bottom: 1mm !important;
-				padding: 2mm 0 !important;
+				margin-top: -15mm !important;
 			}
 
 			/* Dont show explicit links for <a> tags */
